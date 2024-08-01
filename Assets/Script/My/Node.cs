@@ -41,36 +41,31 @@ public class Node : MonoBehaviour
         }
     }
 
-    #region MouseEvent
-    private void OnMouseUpAsButton()
-    {
-        Debug.Log($"{sc.Id}:{sc.Name}");
-    }
-
-    #endregion
 
     #region LineManager
     void UpdateLine()
     {
-        List<Vector3Int> 前置路径列表 = sc.PathNode.ParesV3IList();
-        List<int> 前置节点列表 = sc.Pre_technology.ToList();
-        if (前置节点列表 is null)
+        List<Vector3Int> List前置路径 = sc.PathNode.ParesV3IList();
+        List<int> List前置节点 = sc.Pre_technology.ToList();
+        if (List前置节点 is null)
         {
             return;
         }
         else
         {
-            foreach (var pre in 前置节点列表)
+            foreach (var 节点id in List前置节点)
             {
-                GameObject p = parent.transform.Find(pre.ToString()).gameObject;
+                GameObject p = parent.transform.Find(节点id.ToString()).gameObject;
                 Science psc = p.GetComponent<Node>().sc;
                 string lineName = $"{psc.Id}->{sc.Id}";
                 GameObject lineGO = Instantiate(linesPrefab, transform.position, new(), transform);
                 lineGO.name = lineName;
+
                 var line = lineGO.GetComponent<LineRenderer>();
                 line.startColor = getColor(psc.IconColor);
                 line.endColor = getColor(sc.IconColor);
-                if (前置路径列表.Count == 0)
+
+                if (List前置路径.Count == 0)
                 {
                     line.SetPositions(new[] {
                     p.transform.position + Vector3.forward,
@@ -79,12 +74,14 @@ public class Node : MonoBehaviour
                 }
                 else
                 {
-                    List<Vector3> positions = new() { p.transform.position + Vector3.forward};
-                    foreach (var item in 前置路径列表)
+                    List<Vector3> positions = new() { 
+                        p.transform.position + Vector3.forward
+                    };
+                    foreach (var 路径 in List前置路径)
                     {
-                        if (item.x == psc.Id)
+                        if (路径.x == psc.Id)
                         {
-                            var pos = grid.CellToWorld(new(item.z, item.y, 1));
+                            var pos = grid.CellToWorld(new(路径.z, 路径.y, 1));
                             positions.Add(pos);
                         }
                     }

@@ -1,7 +1,4 @@
 using Assets.Script.My.Excel;
-using OfficeOpenXml.FormulaParsing.Excel.Functions.Logical;
-using OfficeOpenXml.FormulaParsing.Excel.Functions.Math;
-using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -9,6 +6,12 @@ using UnityEngine.UI;
 
 public class MainManager : MonoBehaviour
 {
+    enum Mode
+    {
+        none,
+        science,
+        productionList,
+    }
     public const string WorkSpace_Sprite = "D:\\work\\manager\\Assets WorkSpace\\FreeWorld\\sprite\\";
     public const string WorkSpace_Excel = "D:\\work\\manager\\策划\\项目企划\\数据表\\";
 
@@ -34,6 +37,10 @@ public class MainManager : MonoBehaviour
     Grid grid;
     #endregion
 
+    #region UI
+    public Dropdown dpMainPage;
+    #endregion
+
     private void Start()
     {
         camera = GameObject.Find("CameraSence").GetComponent<Camera>();
@@ -41,7 +48,6 @@ public class MainManager : MonoBehaviour
         initUI();
         initTechMap();
         initScienceNode();
-
     }
 
     private void Update()
@@ -49,30 +55,45 @@ public class MainManager : MonoBehaviour
         updateMouseEvent();
     }
 
-
-
-    private void initScienceNode()
+    #region UI
+    public void SwitchPage()
     {
-        foreach (var sc in ScienceDict.Values)
+        switch (dpMainPage.value)
         {
-
-            GameObject o = Instantiate(Node, tilemap.transform);
-            o.transform.position = grid.CellToWorld(new(sc.HexGridY, sc.HexGridX, 0));
-            o.name = sc.Id.ToString();
-            o.GetComponent<Node>().sc = sc;
+            case (int)Mode.science: OnDrawScience(); break;
+            case (int)Mode.productionList: OffDrawScience(); break;
+            default:
+                break;
         }
     }
+
+    private void OnDrawScience()
+    {
+        camera.GetComponent<GridDrawer>().渲染至游戏 = true;
+        camera.GetComponent<CameraEventControll>().相机控制 = true;
+        tilemap.SetActive(true);
+    }
+
+    private void OffDrawScience()
+    {
+        camera.GetComponent<GridDrawer>().渲染至游戏 = false;
+        camera.GetComponent<CameraEventControll>().相机控制 = false;
+        tilemap.SetActive(false);
+    }
+
+    public void btnCommandClicked()
+    {
+        Debug.Log($"{ifx.text},{ify.text}clicked");
+        testGenerateHeaxgon();
+    }
+
+    #endregion
+
 
     private void initReadExcel()
     {
         em = new();
         ScienceDict = em.Load(WorkSpace_Excel + "Science.xlsx");
-    }
-
-    private void initTechMap()
-    {
-        tilemap = GameObject.Find("Tilemap");
-        grid = GameObject.Find("Grid").GetComponent<Grid>();
     }
 
     private void initUI()
@@ -82,26 +103,43 @@ public class MainManager : MonoBehaviour
         ify = GameObject.Find("InputField_Command_y").GetComponent<InputField>();
     }
 
-    public void btnCommandClicked()
+    private void initTechMap()
     {
-        Debug.Log($"{ifx.text},{ify.text}clicked");
-        testGenerateHeaxgon();
+        tilemap = GameObject.Find("Tilemap");
+        grid = GameObject.Find("Grid").GetComponent<Grid>();
     }
+
+    private void initScienceNode()
+    {
+        foreach (var sc in ScienceDict.Values)
+        {
+
+            GameObject o = Instantiate(Node, grid.CellToWorld(new(sc.HexGridY, sc.HexGridX, 0)), new Quaternion(), tilemap.transform);
+            o.name = sc.Id.ToString();
+            o.GetComponent<Node>().sc = sc;
+        }
+    }
+
+
+
+
 
     #region 鼠标事件
     private void updateMouseEvent()
     {
         if (Input.GetMouseButtonDown(1))
         {
-            ///name是科技节点
-            string name = rayDetect();
-            if (name is not null)
+            GameObject target = rayDetect();
+            string debug;
+            if (target is not null)
             {
-                GameObject o = tilemap.transform.Find(name).gameObject;
-                if (o)
+                debug = target.name;
+                target.TryGetComponent(out Node n);
+                if (n)
                 {
-                    Debug.Log(o.GetComponent<Node>().sc.Name);
+                    debug += $"\n{n.sc.Name}";
                 }
+                Debug.Log(debug);
             }
 
         }
@@ -109,16 +147,16 @@ public class MainManager : MonoBehaviour
     #endregion
 
     #region 射线检测
-    string rayDetect()
+    GameObject rayDetect()
     {
-        string target = null;
+        GameObject ob = null;
         Vector3 vvv = camera.ScreenToWorldPoint(Input.mousePosition);
         RaycastHit2D hit = Physics2D.Raycast(vvv, Vector3.forward, Mathf.Infinity);
         if (hit)
         {
-            target = hit.transform.name;
+            ob = hit.transform.gameObject;
         }
-        return target;
+        return ob;
 
     }
     #endregion

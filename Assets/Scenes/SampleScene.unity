@@ -615,6 +615,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Node: {fileID: 8987857040390006947, guid: 1f05a0cea3d639849a8d14ede664e2ef, type: 3}
+  dpMainPage: {fileID: 1502700580}
 --- !u!4 &129809004
 Transform:
   m_ObjectHideFlags: 0
@@ -6380,15 +6381,27 @@ MonoBehaviour:
   m_Value: 0
   m_Options:
     m_Options:
-    - m_Text: "\u7A7A\u9009\u9879"
-      m_Image: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-    - m_Text: Option B
+    - m_Text: "\u2193 \u5C55\u5F00\u9009\u62E9"
       m_Image: {fileID: 0}
-    - m_Text: Option C
+    - m_Text: "\u79D1\u6280\u8868"
+      m_Image: {fileID: 0}
+    - m_Text: "\u914D\u65B9\u8868"
       m_Image: {fileID: 0}
   m_OnValueChanged:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 129809003}
+        m_TargetAssemblyTypeName: MainManager, Assembly-CSharp
+        m_MethodName: SwitchPage
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   m_AlphaFadeSpeed: 0.15
 --- !u!114 &1502700581
 MonoBehaviour:
@@ -8762,7 +8775,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.48883057, g: 0.5385814, b: 0.6132076, a: 0}
+  m_BackGroundColor: {r: 0.622, g: 0.666, b: 0.6981132, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -8831,7 +8844,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   scale: 1
-  lineColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.1764706}
+  lineColor: {r: 0.23529412, g: 0.23529412, b: 0.23529412, a: 0.1764706}
   "\u8C03\u8BD5\u4FE1\u606F": 0
   "\u6E32\u67D3\u81F3\u6E38\u620F": 1
   "\u6E32\u67D3\u81F3\u573A\u666F": 1
@@ -9197,7 +9210,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UiScaleMode: 1
+  m_UiScaleMode: 0
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 1920, y: 1080}
@@ -9470,7 +9483,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u7A7A\u9009\u9879"
+  m_Text: "\u2193 \u5C55\u5F00\u9009\u62E9"
 --- !u!222 &2144503367
 CanvasRenderer:
   m_ObjectHideFlags: 0
