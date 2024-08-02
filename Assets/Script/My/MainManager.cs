@@ -1,5 +1,6 @@
 using Assets.Script.My.Excel;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,8 +17,7 @@ public class MainManager : MonoBehaviour
     public const string WorkSpace_Excel = "D:\\work\\manager\\策划\\项目企划\\数据表\\";
 
     public GameObject Node;
-
-    Camera camera;
+    public Camera camSence;
     #region Excel
     ExcelManager em;
     #endregion
@@ -39,11 +39,12 @@ public class MainManager : MonoBehaviour
 
     #region UI
     public Dropdown dpMainPage;
+    public GameObject panelNodeEditPrefab;
+    public GameObject canvas;
     #endregion
 
     private void Start()
     {
-        camera = GameObject.Find("CameraSence").GetComponent<Camera>();
         initReadExcel();
         initUI();
         initTechMap();
@@ -69,15 +70,15 @@ public class MainManager : MonoBehaviour
 
     private void OnDrawScience()
     {
-        camera.GetComponent<GridDrawer>().渲染至游戏 = true;
-        camera.GetComponent<CameraEventControll>().相机控制 = true;
+        camSence.GetComponent<GridDrawer>().渲染至游戏 = true;
+        camSence.GetComponent<CameraEventControll>().相机控制 = true;
         tilemap.SetActive(true);
     }
 
     private void OffDrawScience()
     {
-        camera.GetComponent<GridDrawer>().渲染至游戏 = false;
-        camera.GetComponent<CameraEventControll>().相机控制 = false;
+        camSence.GetComponent<GridDrawer>().渲染至游戏 = false;
+        camSence.GetComponent<CameraEventControll>().相机控制 = false;
         tilemap.SetActive(false);
     }
 
@@ -125,21 +126,29 @@ public class MainManager : MonoBehaviour
 
 
     #region 鼠标事件
+    bool edit = false;
+    public void setEditFalse() => edit = false;
     private void updateMouseEvent()
     {
-        if (Input.GetMouseButtonDown(1))
+        if (!edit && Input.GetMouseButtonDown(0))
         {
             GameObject target = rayDetect();
-            string debug;
+            string name;
             if (target is not null)
             {
-                debug = target.name;
+                name = target.name;
                 target.TryGetComponent(out Node n);
                 if (n)
                 {
-                    debug += $"\n{n.sc.Name}";
+                    GameObject p = Instantiate(panelNodeEditPrefab);
+                    p.transform.SetParent(canvas.transform.Find("Panel/Panel_RightContent"),false);
+                    p.name = $"{name}(Edit)";
+                    ScienceDict.TryGetValue(int.Parse(name),out var sc);
+                    p.GetComponent<PanelScienceEdit>().sc = sc; 
+                    edit = true;
+                    name += $"\n{n.sc.Name}";
+                    Debug.Log(name);
                 }
-                Debug.Log(debug);
             }
 
         }
@@ -150,7 +159,7 @@ public class MainManager : MonoBehaviour
     GameObject rayDetect()
     {
         GameObject ob = null;
-        Vector3 vvv = camera.ScreenToWorldPoint(Input.mousePosition);
+        Vector3 vvv = camSence.ScreenToWorldPoint(Input.mousePosition);
         RaycastHit2D hit = Physics2D.Raycast(vvv, Vector3.forward, Mathf.Infinity);
         if (hit)
         {
