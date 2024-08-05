@@ -58,6 +58,15 @@ public class PanelScienceEdit : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        
+    }
+
+    public void UpdatePositionTextImmediate(Vector2Int pos)
+    {
+        sc.HexGridX = pos.y;
+        sc.HexGridY = pos.x;
+        i_x.text = sc.HexGridX.ToString();
+        i_y.text = sc.HexGridY.ToString();
 
     }
 
@@ -125,8 +134,6 @@ public class PanelScienceEdit : MonoBehaviour
             float.Parse(i_time.text),
             d_color.value +1,
             i_trigger.text
-
-
             );
     }
 }

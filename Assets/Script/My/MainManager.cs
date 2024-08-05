@@ -18,18 +18,13 @@ public class MainManager : MonoBehaviour
 
     public GameObject Node;
     public Camera camSence;
+    public GridDrawer gridDrawer;
     #region Excel
     ExcelManager em;
     #endregion
 
     #region Dictionary
     Dictionary<int, Science> ScienceDict;
-    #endregion
-
-    #region CommandDebug
-    Button btn;
-    InputField ifx;
-    InputField ify;
     #endregion
 
     #region Hexagon Tilemap
@@ -43,12 +38,16 @@ public class MainManager : MonoBehaviour
     public GameObject canvas;
     #endregion
 
+    #region Command
+    Toggle useMoveCam;
+    Toggle useMoveNode;
+    Toggle useEditNode;
+    #endregion
+
+
     private void Start()
     {
-        initReadExcel();
-        initUI();
-        initTechMap();
-        initScienceNode();
+        Init();
     }
 
     private void Update()
@@ -56,7 +55,7 @@ public class MainManager : MonoBehaviour
         updateMouseEvent();
     }
 
-    #region UI
+    #region UI，界面选择
     public void SwitchPage()
     {
         switch (dpMainPage.value)
@@ -67,6 +66,13 @@ public class MainManager : MonoBehaviour
                 break;
         }
     }
+
+    public void ToggleMoveCam()
+    {
+        camSence.GetComponent<CameraEventControll>().相机控制 = useMoveCam.isOn;
+    }
+
+
 
     private void OnDrawScience()
     {
@@ -82,13 +88,23 @@ public class MainManager : MonoBehaviour
         tilemap.SetActive(false);
     }
 
-    public void btnCommandClicked()
-    {
-        Debug.Log($"{ifx.text},{ify.text}clicked");
-        testGenerateHeaxgon();
-    }
+    //public void btnCommandClicked()
+    //{
+    //    Debug.Log($"{ifx.text},{ify.text}clicked");
+    //    testGenerateHeaxgon();
+    //}
 
     #endregion
+
+
+    #region INIT
+    private void Init()
+    {
+        initReadExcel();
+        initUI();
+        initTechMap();
+        initScienceNode();
+    }
 
 
     private void initReadExcel()
@@ -99,9 +115,9 @@ public class MainManager : MonoBehaviour
 
     private void initUI()
     {
-        btn = GameObject.Find("Button_Command").GetComponent<Button>();
-        ifx = GameObject.Find("InputField_Command_x").GetComponent<InputField>();
-        ify = GameObject.Find("InputField_Command_y").GetComponent<InputField>();
+        useMoveCam = GameObject.Find("ToggleMoveCam").GetComponent<Toggle>();
+        useMoveNode = GameObject.Find("ToggleMoveNode").GetComponent<Toggle>();
+        useEditNode = GameObject.Find("ToggleEditNode").GetComponent<Toggle>();
     }
 
     private void initTechMap()
@@ -121,17 +137,19 @@ public class MainManager : MonoBehaviour
         }
     }
 
-
-
-
+    #endregion
 
     #region 鼠标事件
     bool edit = false;
     public void setEditFalse() => edit = false;
+    private GameObject nodeMove;
     private void updateMouseEvent()
     {
-        if (!edit && Input.GetMouseButtonDown(0))
+
+        //鼠标选择节点
+        if (useEditNode.isOn && !edit && Input.GetMouseButtonDown(1))
         {
+
             GameObject target = rayDetect();
             string name;
             if (target is not null)
@@ -141,16 +159,50 @@ public class MainManager : MonoBehaviour
                 if (n)
                 {
                     GameObject p = Instantiate(panelNodeEditPrefab);
-                    p.transform.SetParent(canvas.transform.Find("Panel/Panel_RightContent"),false);
+                    p.transform.SetParent(canvas.transform.Find("Panel/Panel_RightContent"), false);
                     p.name = $"{name}(Edit)";
-                    ScienceDict.TryGetValue(int.Parse(name),out var sc);
-                    p.GetComponent<PanelScienceEdit>().sc = sc; 
+                    ScienceDict.TryGetValue(int.Parse(name), out var sc);
+                    p.GetComponent<PanelScienceEdit>().sc = sc;
                     edit = true;
+                    n.ShowLineAnchor();
+
                     name += $"\n{n.sc.Name}";
                     Debug.Log(name);
                 }
             }
+        }
 
+        //鼠标拖动节点
+        if (useMoveNode.isOn && Input.GetMouseButtonDown(0))
+        {
+            nodeMove = rayDetect();
+        }
+        if (nodeMove && Input.GetMouseButton(0))
+        {
+            Vector3 worldPos = camSence.ScreenToWorldPoint(Input.mousePosition);
+            Vector3Int gridPosI = grid.WorldToCell(new Vector3(worldPos.x, worldPos.y, 0));
+            Vector3 gridPos = grid.CellToWorld(gridPosI);
+            nodeMove.transform.position = gridPos;
+            Node n = nodeMove.GetComponent<Node>();
+            n.UpdateGridPos(gridPosI);
+            foreach (var item in n.sc.After_technology)
+            {
+                GameObject child = tilemap.transform.Find(item.ToString()).gameObject;
+                if (child)
+                {
+                    child.GetComponent<Node>().UpdateLineStart(n.transform.position);
+                }
+            }
+            GameObject edit = GameObject.Find($"{nodeMove.name}(Edit)");
+            if (edit)
+            {
+                edit.GetComponent<PanelScienceEdit>().UpdatePositionTextImmediate(new(gridPosI.x, gridPosI.y));
+
+            }
+        }
+        if (Input.GetMouseButtonUp(0))
+        {
+            nodeMove = null;
         }
     }
     #endregion
@@ -171,31 +223,31 @@ public class MainManager : MonoBehaviour
     #endregion
 
     #region 测试_绘制一个六边形在六边形网格地图中
-    private void testGenerateHeaxgon()
-    {
-        GameObject o = new($"Hex({ifx.text},{ify.text})");
-        o.transform.SetParent(tilemap.transform);
-        o.transform.position = grid.CellToWorld(new(int.Parse(ify.text), int.Parse(ifx.text), 0));
+    //private void testGenerateHeaxgon()
+    //{
+    //    GameObject o = new($"Hex({ifx.text},{ify.text})");
+    //    o.transform.SetParent(tilemap.transform);
+    //    o.transform.position = grid.CellToWorld(new(int.Parse(ify.text), int.Parse(ifx.text), 0));
 
-        GameObject h = new("hex");
-        h.transform.SetParent(o.transform);
-        h.transform.position = o.transform.position;
-        var h_sr = h.AddComponent<SpriteRenderer>();
-        h_sr.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Packages/com.unity.2d.sprite/Editor/ObjectMenuCreation/DefaultAssets/Textures/v2/HexagonFlatTop.png");
+    //    GameObject h = new("hex");
+    //    h.transform.SetParent(o.transform);
+    //    h.transform.position = o.transform.position;
+    //    var h_sr = h.AddComponent<SpriteRenderer>();
+    //    h_sr.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Packages/com.unity.2d.sprite/Editor/ObjectMenuCreation/DefaultAssets/Textures/v2/HexagonFlatTop.png");
 
-        #region 显示文本生成
-        GameObject text = new("text");
-        text.transform.SetParent(o.transform);
-        text.transform.position = o.transform.position;
-        text.AddComponent<MeshRenderer>();
-        var tm = text.AddComponent<TextMesh>();
-        tm.fontSize = 200;
-        tm.characterSize = 0.015f;
-        tm.text = $"{ifx.text},{ify.text}";
-        tm.color = Color.black;
-        tm.anchor = TextAnchor.MiddleCenter;
-        tm.alignment = TextAlignment.Center;
-        #endregion
-    }
+    //    #region 显示文本生成
+    //    GameObject text = new("text");
+    //    text.transform.SetParent(o.transform);
+    //    text.transform.position = o.transform.position;
+    //    text.AddComponent<MeshRenderer>();
+    //    var tm = text.AddComponent<TextMesh>();
+    //    tm.fontSize = 200;
+    //    tm.characterSize = 0.015f;
+    //    tm.text = $"{ifx.text},{ify.text}";
+    //    tm.color = Color.black;
+    //    tm.anchor = TextAnchor.MiddleCenter;
+    //    tm.alignment = TextAlignment.Center;
+    //    #endregion
+    //}
     #endregion
 }

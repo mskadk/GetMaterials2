@@ -147,6 +147,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   linesPrefab: {fileID: 1796392183635708893, guid: a117ad99512994244acd41a31e62f386, type: 3}
+  anchorPrefab: {fileID: 3415169004693108125, guid: a70c1eec6a44a594c9b64568fd06c225, type: 3}
 --- !u!212 &4470933511077935478
 SpriteRenderer:
   m_ObjectHideFlags: 0

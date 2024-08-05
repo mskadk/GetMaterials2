@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 using UnityEngine.Windows;
 using Input = UnityEngine.Input;
 
@@ -9,6 +10,7 @@ public class CameraEventControll : MonoBehaviour
 {
     public bool 相机控制 = true;
     public int 滚轮速度 = 1;
+    public int mb = (int)MouseButton.MiddleMouse;
 
     Camera cam;
     void Start()
@@ -31,12 +33,12 @@ public class CameraEventControll : MonoBehaviour
         if (相机控制)
         {
             //拾取位置
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonDown(mb))
             {
                 dragOrigin = Input.mousePosition;
             }
 
-            if (Input.GetMouseButton(0))
+            if (Input.GetMouseButton(mb))
             {
                 pos = cam.ScreenToViewportPoint(Input.mousePosition - dragOrigin);
                 move = new(pos.x * cam.orthographicSize * 2 * cam.aspect, pos.y * cam.orthographicSize * 2, 0);
