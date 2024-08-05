@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor.Profiling.Memory.Experimental;
 using UnityEditor.UIElements;
 using UnityEngine;
 
@@ -56,8 +57,9 @@ public class Node : MonoBehaviour
     }
 
     #region LineManager
-    public void ShowLineAnchor()
+    public void UpdateLineAnchor()
     {
+        ClearAnchor();
         List<GameObject> listLine = getAllLineGOs();
         foreach (var line in listLine)
         {
@@ -66,10 +68,23 @@ public class Node : MonoBehaviour
             {
                 for (int i = 1; i < lr.positionCount - 1; i++)
                 {
-                    GameObject anchor = Instantiate(anchorPrefab, new(lr.GetPosition(i).x, lr.GetPosition(i).y),new(), line.transform);
-                    anchor.name = $"{line.name}:{i}";
-                    Debug.Log(anchor.name);
+                    string name = $"{line.name}:{i}";
+                    //位置不对，需要使用世界位置但这里生成了本地位置
+                    GameObject anchor = Instantiate(anchorPrefab, new(lr.GetPosition(i).x, lr.GetPosition(i).y), new(), line.transform);
+                    anchor.name = name;
                 }
+            }
+        }
+    }
+
+    public void ClearAnchor()
+    {
+        List<GameObject> listLine = getAllLineGOs();
+        foreach (var line in listLine)
+        {
+            for (int i = 0; i < line.transform.childCount; i++)
+            {
+                Destroy(line.transform.GetChild(i).gameObject);
             }
         }
     }
@@ -139,7 +154,7 @@ public class Node : MonoBehaviour
             //清除多余线
             foreach (var item in getAllLineGOs())
             {
-                if ( !listLineName.Contains(item.name))
+                if (!listLineName.Contains(item.name))
                 {
                     Destroy(item);
                 }
@@ -150,7 +165,7 @@ public class Node : MonoBehaviour
     {
         foreach (var item in getAllLineGOs())
         {
-            item.GetComponent<LineRenderer>().SetPosition(0,position);
+            item.GetComponent<LineRenderer>().SetPosition(0, position);
         }
     }
 

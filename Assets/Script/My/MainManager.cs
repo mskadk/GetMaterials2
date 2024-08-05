@@ -164,7 +164,7 @@ public class MainManager : MonoBehaviour
                     ScienceDict.TryGetValue(int.Parse(name), out var sc);
                     p.GetComponent<PanelScienceEdit>().sc = sc;
                     edit = true;
-                    n.ShowLineAnchor();
+                    n.UpdateLineAnchor();
 
                     name += $"\n{n.sc.Name}";
                     Debug.Log(name);
