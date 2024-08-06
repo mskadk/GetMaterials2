@@ -1,7 +1,6 @@
 using Assets.Script.My.Excel;
+using System;
 using System.Collections.Generic;
-using Unity.Mathematics;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,30 +18,27 @@ public class MainManager : MonoBehaviour
     public GameObject Node;
     public Camera camSence;
     public GridDrawer gridDrawer;
-    #region Excel
+
+    // Excel
     ExcelManager em;
-    #endregion
 
-    #region Dictionary
-    Dictionary<int, Science> ScienceDict;
-    #endregion
+    // Dictionary
+    public Dictionary<int, Science> ScienceDict;
 
-    #region Hexagon Tilemap
-    GameObject tilemap;
+    // Hexagon Tilemap
+    public GameObject tilemap;
     Grid grid;
-    #endregion
 
-    #region UI
+    // UI
     public Dropdown dpMainPage;
     public GameObject panelNodeEditPrefab;
     public GameObject canvas;
-    #endregion
 
-    #region Command
+    // Command
     Toggle useMoveCam;
     Toggle useMoveNode;
     Toggle useEditNode;
-    #endregion
+    TipText debug;
 
 
     private void Start()
@@ -50,9 +46,63 @@ public class MainManager : MonoBehaviour
         Init();
     }
 
+    #region 初始化
+    private void Init()
+    {
+        initExcel();
+        initUI();
+        initTilemap();
+        initNode();
+    }
+
+    private void initExcel()
+    {
+        em = new();
+        ScienceDict = em.Load(WorkSpace_Excel + "Science.xlsx");
+    }
+
+    private void initUI()
+    {
+        useMoveCam = GameObject.Find("ToggleMoveCam").GetComponent<Toggle>();
+        useMoveNode = GameObject.Find("ToggleMoveNode").GetComponent<Toggle>();
+        useEditNode = GameObject.Find("ToggleEditNode").GetComponent<Toggle>();
+        debug = GameObject.Find("tiptext").GetComponent<TipText>();
+    }
+
+    private void initTilemap()
+    {
+        tilemap = GameObject.Find("Tilemap");
+        grid = GameObject.Find("Grid").GetComponent<Grid>();
+    }
+
+    private void initNode()
+    {
+        foreach (var sc in ScienceDict.Values)
+        {
+
+            GameObject o = Instantiate(Node, grid.CellToWorld(new(sc.HexGridY, sc.HexGridX, 0)), new Quaternion(), tilemap.transform);
+            o.name = sc.Id.ToString();
+            o.GetComponent<Node>().sc = sc;
+        }
+    }
+
+    #endregion
+
     private void Update()
     {
         updateMouseEvent();
+        printDict();
+    }
+
+    private void printDict()
+    {
+        if (Input.GetKeyDown(KeyCode.Slash))
+        {
+            foreach (var sc in ScienceDict.Values)
+            {
+                Debug.Log(sc.ToString());
+            }
+        }
     }
 
     #region UI，界面选择
@@ -72,8 +122,6 @@ public class MainManager : MonoBehaviour
         camSence.GetComponent<CameraEventControll>().相机控制 = useMoveCam.isOn;
     }
 
-
-
     private void OnDrawScience()
     {
         camSence.GetComponent<GridDrawer>().渲染至游戏 = true;
@@ -88,55 +136,6 @@ public class MainManager : MonoBehaviour
         tilemap.SetActive(false);
     }
 
-    //public void btnCommandClicked()
-    //{
-    //    Debug.Log($"{ifx.text},{ify.text}clicked");
-    //    testGenerateHeaxgon();
-    //}
-
-    #endregion
-
-
-    #region INIT
-    private void Init()
-    {
-        initReadExcel();
-        initUI();
-        initTechMap();
-        initScienceNode();
-    }
-
-
-    private void initReadExcel()
-    {
-        em = new();
-        ScienceDict = em.Load(WorkSpace_Excel + "Science.xlsx");
-    }
-
-    private void initUI()
-    {
-        useMoveCam = GameObject.Find("ToggleMoveCam").GetComponent<Toggle>();
-        useMoveNode = GameObject.Find("ToggleMoveNode").GetComponent<Toggle>();
-        useEditNode = GameObject.Find("ToggleEditNode").GetComponent<Toggle>();
-    }
-
-    private void initTechMap()
-    {
-        tilemap = GameObject.Find("Tilemap");
-        grid = GameObject.Find("Grid").GetComponent<Grid>();
-    }
-
-    private void initScienceNode()
-    {
-        foreach (var sc in ScienceDict.Values)
-        {
-
-            GameObject o = Instantiate(Node, grid.CellToWorld(new(sc.HexGridY, sc.HexGridX, 0)), new Quaternion(), tilemap.transform);
-            o.name = sc.Id.ToString();
-            o.GetComponent<Node>().sc = sc;
-        }
-    }
-
     #endregion
 
     #region 鼠标事件
@@ -145,7 +144,6 @@ public class MainManager : MonoBehaviour
     private GameObject nodeMove;
     private void updateMouseEvent()
     {
-
         //鼠标选择节点
         if (useEditNode.isOn && !edit && Input.GetMouseButtonDown(1))
         {
@@ -164,10 +162,10 @@ public class MainManager : MonoBehaviour
                     ScienceDict.TryGetValue(int.Parse(name), out var sc);
                     p.GetComponent<PanelScienceEdit>().sc = sc;
                     edit = true;
-                    n.UpdateLineAnchor();
+                    //n.UpdateLineAnchor();
 
                     name += $"\n{n.sc.Name}";
-                    Debug.Log(name);
+                    debug.Log(name);
                 }
             }
         }
@@ -183,20 +181,27 @@ public class MainManager : MonoBehaviour
             Vector3Int gridPosI = grid.WorldToCell(new Vector3(worldPos.x, worldPos.y, 0));
             Vector3 gridPos = grid.CellToWorld(gridPosI);
             nodeMove.transform.position = gridPos;
-            Node n = nodeMove.GetComponent<Node>();
-            n.UpdateGridPos(gridPosI);
-            foreach (var item in n.sc.After_technology)
+            if (nodeMove.tag is "Node")
             {
-                GameObject child = tilemap.transform.Find(item.ToString()).gameObject;
-                if (child)
+                Node n = nodeMove.GetComponent<Node>();
+                n.UpdateGridPos(gridPosI);
+                foreach (var item in n.sc.After_technology)
                 {
-                    child.GetComponent<Node>().UpdateLineStart(n.transform.position);
+                    GameObject child = tilemap.transform.Find(item.ToString()).gameObject;
+                    if (child)
+                    {
+                        child.GetComponent<Node>().UpdateLineStart(n.transform.position);
+                    }
+                }
+                GameObject edit = GameObject.Find($"{nodeMove.name}(Edit)");
+                if (edit)
+                {
+                    edit.GetComponent<PanelScienceEdit>().UpdatePositionTextImmediate(new(gridPosI.x, gridPosI.y));
+
                 }
             }
-            GameObject edit = GameObject.Find($"{nodeMove.name}(Edit)");
-            if (edit)
+            else if (nodeMove.tag is "Anchor")
             {
-                edit.GetComponent<PanelScienceEdit>().UpdatePositionTextImmediate(new(gridPosI.x, gridPosI.y));
 
             }
         }

@@ -7,7 +7,9 @@ using UnityEngine.UI;
 public class PanelScienceEdit : MonoBehaviour
 {
     public Science sc { get; set; }
+    Science scOld;
     public MainManager mm;
+    TipText debug;
 
     InputField i_id;
     InputField i_subtype;
@@ -30,9 +32,12 @@ public class PanelScienceEdit : MonoBehaviour
 
     InputField i_desc;
     InputField i_descAdd;
-    // Start is called before the first frame update
+
+    Button submit;
     void Start()
     {
+        debug = GameObject.Find("tiptext").GetComponent<TipText>();
+
         i_id = transform.Find("id").GetComponent<InputField>();
         i_subtype = transform.Find("subtype").GetComponent<InputField>();
         i_name = transform.Find("name").GetComponent<InputField>();
@@ -51,26 +56,14 @@ public class PanelScienceEdit : MonoBehaviour
         i_desc = transform.Find("detail").GetComponent<InputField>();
         i_descAdd = transform.Find("detail2").GetComponent<InputField>();
 
+        submit = transform.Find("btn_submit").GetComponent<Button>();
+
         mm = GameObject.Find("MainManager").GetComponent<MainManager>();
-        initEditPanel();
+        LoadScience();
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-    public void UpdatePositionTextImmediate(Vector2Int pos)
-    {
-        sc.HexGridX = pos.y;
-        sc.HexGridY = pos.x;
-        i_x.text = sc.HexGridX.ToString();
-        i_y.text = sc.HexGridY.ToString();
-
-    }
-
-    void initEditPanel()
+    #region 初始化
+    void LoadScience()
     {
         i_id.text = sc.Id.ToString();
         i_subtype.text = sc.SubType.ToString();
@@ -95,15 +88,82 @@ public class PanelScienceEdit : MonoBehaviour
         i_desc.text = sc.Detail.ToString();
         i_descAdd.text = sc.Detail_2.ToString();
 
+        scOld = sc;
+    }
+    #endregion
+
+    void Update()
+    {
+
     }
 
+    #region 内容校验
+    public void CheckId()
+    {
+        int id = int.Parse(i_id.text);
+        if (mm.ScienceDict.ContainsKey(id) || mm.tilemap.transform.Find(id.ToString()))
+        {
+            if (id == scOld.Id)
+            {
+                i_id.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
+                i_id.text = id.ToString();
+            }
+            else
+            {
+                debug.LogWarning($"{id}已经存在");
+                i_id.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.red;
+
+            }
+        }
+        else
+        {
+            i_id.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
+            i_id.text = id.ToString();
+        }
+    }
+    #endregion
+
+    #region 内容修改
+    /// <summary>
+    /// 给鼠标拖动用
+    /// </summary>
+    public void UpdatePositionTextImmediate(Vector2Int pos)
+    {
+        sc.HexGridX = pos.y;
+        sc.HexGridY = pos.x;
+        i_x.text = sc.HexGridX.ToString();
+        i_y.text = sc.HexGridY.ToString();
+
+    }
+
+    /// <summary>
+    /// 保存编辑内容到Science字典
+    /// </summary>
+    public void SavePanel()
+    {
+        Science newScience = ToScience();
+        sc = newScience;
+        LoadScience();
+        debug.Log("修改成功喽~");
+    }
+
+    #endregion
+
+    /// <summary>
+    /// 关闭
+    /// </summary>
     public void DestoryPanel()
     {
+        sc = scOld;
         mm.setEditFalse();
         Destroy(transform.gameObject);
     }
 
-    public void SubmitPanel()
+    /// <summary>
+    /// 将界面内容转为Science
+    /// </summary>
+    /// <returns>Science</returns>
+    private Science ToScience()
     {
         Science save = new(
             int.Parse(i_id.text),
@@ -132,8 +192,9 @@ public class PanelScienceEdit : MonoBehaviour
             i_prePath.text,
             i_material.text,
             float.Parse(i_time.text),
-            d_color.value +1,
+            d_color.value + 1,
             i_trigger.text
             );
+        return save;
     }
 }

@@ -40,26 +40,19 @@ public class Node : MonoBehaviour
     {
         sc.HexGridX = pos.y;
         sc.HexGridY = pos.x;
-        UpdateImmediate();
+        UpdateLine();
     }
 
     public void UpdateImmediate()
     {
-        if (sc != null)
-        {
-            UpdateNodeStyle();
-            UpdateLine();
-        }
-        else
-        {
-            Debug.LogError($"{transform.name} 节点附带的科技数据丢失了……");
-        }
+        UpdateNodeStyle();
+        UpdateLine();
     }
+
 
     #region LineManager
     public void UpdateLineAnchor()
     {
-        ClearAnchor();
         List<GameObject> listLine = getAllLineGOs();
         foreach (var line in listLine)
         {
@@ -68,10 +61,14 @@ public class Node : MonoBehaviour
             {
                 for (int i = 1; i < lr.positionCount - 1; i++)
                 {
-                    string name = $"{line.name}:{i}";
-                    //位置不对，需要使用世界位置但这里生成了本地位置
-                    GameObject anchor = Instantiate(anchorPrefab, new(lr.GetPosition(i).x, lr.GetPosition(i).y), new(), line.transform);
-                    anchor.name = name;
+                    string name = $"{i}";
+                    if (!line.transform.Find(name))
+                    {
+                        GameObject anchor = Instantiate(anchorPrefab, line.transform);
+                        anchor.transform.position = new(lr.GetPosition(i).x, lr.GetPosition(i).y);
+                        anchor.name = name;
+
+                    }
                 }
             }
         }
@@ -82,9 +79,9 @@ public class Node : MonoBehaviour
         List<GameObject> listLine = getAllLineGOs();
         foreach (var line in listLine)
         {
-            for (int i = 0; i < line.transform.childCount; i++)
+            while (line.transform.childCount > 0)
             {
-                Destroy(line.transform.GetChild(i).gameObject);
+                DestroyImmediate(line.transform.GetChild(0).gameObject);
             }
         }
     }

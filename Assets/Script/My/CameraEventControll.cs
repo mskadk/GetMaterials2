@@ -1,9 +1,5 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
-using UnityEngine.Windows;
 using Input = UnityEngine.Input;
 
 public class CameraEventControll : MonoBehaviour
