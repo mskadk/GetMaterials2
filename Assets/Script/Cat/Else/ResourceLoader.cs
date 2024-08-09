@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using UnityEngine;
+﻿using UnityEngine;
 
 
 //#if ADDRESSABLES_ENABLED
@@ -24,9 +20,9 @@ public class ResourceLoader
 
         //#if ADDRESSABLES_ENABLED
         return Load<Shader>(path);
-//#else
-//        return Shader.Find(shaderName);    
-//#endif
+        //#else
+        //        return Shader.Find(shaderName);    
+        //#endif
 
     }
 
@@ -53,7 +49,7 @@ public class ResourceLoader
         //        return null;
         //#endif
 
-        
+
     }
 
 

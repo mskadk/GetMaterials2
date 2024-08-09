@@ -1,15 +1,35 @@
+using Assets.Script.My.Extention;
+using OfficeOpenXml.FormulaParsing.Excel.Functions.Math;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
+using Debug = UnityEngine.Debug;
 
+/*
+ * 从MainManager生成的节点，附带的Science数据是来自科技字典的数据，因此拿到的Science是来自字典的浅拷贝。
+ * 对于鼠标指针移动产生的位置改变，修改节点位置时，会直接修改字典中对应的位置信息。
+ * 此时会进行判断，如果也打开了节点编辑的窗口，那么窗口中存储的备份信息，也会同步进行修改，但由于这个备份信息是从面板中读取数据生成的，因此相当于是深拷贝。
+ * 所以这里应该实现的逻辑为：
+ * 1、生成节点时传递字典中对应Science的引用
+ * 2、鼠标拖动时，会直接更新Science字典中的位置信息（同时为后继节点更新画线的起始位置，这里不需要更新路径、因为没有涉及到）
+ * 3、点击进入节点编辑模式时，将节点信息数据传入到编辑界面中，同时再从编辑界面生成一个备份Science数据scBackup
+ * 4、当打开了编辑界面的同时，拖动节点，会同时更新字典中的Science数据、scBackup中的数据，然后刷新界面显示的位置数据
+ * 5、当在编辑界面点击了退出而不是提交的时候，使用scBackup的数据对字典中的Science数据进行覆盖（相当于撤销所有改动）
+ * 6、当点击了提交按钮的时候，不做任何改动并关闭编辑界面，因为对界面的编辑相当于是对浅拷贝的编辑，也就是对生成的Science字典中的数据进行直接修改
+ * 7、正因为对字典数据直接进行修改，在输入的时候要进行严格的格式判断，如果输入的内容被判断为不合法，则不应读取非法的输入值
+ * 8、但是正因为直接对字典数据进行修改，所以说，提交按钮是没有实际作用的
+ * 9、而且需要做一个编辑撤销的功能，也就是在界面生成的时候创建一个栈，将修改过的数据都压到栈中，撤销行为发生的时候再把栈推出
+ */
 public class PanelScienceEdit : MonoBehaviour
 {
     public Science sc { get; set; }
-    Science scOld;
+    public Node node { get; set; }
     public MainManager mm;
     TipText debug;
+    Button submit;
 
     InputField i_id;
     InputField i_subtype;
@@ -32,12 +52,9 @@ public class PanelScienceEdit : MonoBehaviour
 
     InputField i_desc;
     InputField i_descAdd;
-
-    Button submit;
-    void Start()
+    private void initComponentAndScience()
     {
-        debug = GameObject.Find("tiptext").GetComponent<TipText>();
-
+        //绑定组件
         i_id = transform.Find("id").GetComponent<InputField>();
         i_subtype = transform.Find("subtype").GetComponent<InputField>();
         i_name = transform.Find("name").GetComponent<InputField>();
@@ -55,16 +72,7 @@ public class PanelScienceEdit : MonoBehaviour
         i_unbuild = transform.Find("unbuild_unlock").GetComponent<InputField>();
         i_desc = transform.Find("detail").GetComponent<InputField>();
         i_descAdd = transform.Find("detail2").GetComponent<InputField>();
-
-        submit = transform.Find("btn_submit").GetComponent<Button>();
-
-        mm = GameObject.Find("MainManager").GetComponent<MainManager>();
-        LoadScience();
-    }
-
-    #region 初始化
-    void LoadScience()
-    {
+        //获取携带的Science，并更新值
         i_id.text = sc.Id.ToString();
         i_subtype.text = sc.SubType.ToString();
         i_name.text = sc.Name;
@@ -88,7 +96,21 @@ public class PanelScienceEdit : MonoBehaviour
         i_desc.text = sc.Detail.ToString();
         i_descAdd.text = sc.Detail_2.ToString();
 
-        scOld = sc;
+        debug = GameObject.Find("tiptext").GetComponent<TipText>();
+
+        submit = transform.Find("btn_submit").GetComponent<Button>();
+
+        mm = GameObject.Find("MainManager").GetComponent<MainManager>();
+    }
+    void Start()
+    {
+        initComponentAndScience();
+        LoadScience();
+    }
+
+    #region 初始化
+    void LoadScience()
+    {
     }
     #endregion
 
@@ -97,37 +119,102 @@ public class PanelScienceEdit : MonoBehaviour
 
     }
 
-    #region 内容校验
-    public void CheckId()
+    #region 内容与UI应用
+    int oldId;
+    public void UpdateId()
     {
+        oldId = sc.Id;
         int id = int.Parse(i_id.text);
-        if (mm.ScienceDict.ContainsKey(id) || mm.tilemap.transform.Find(id.ToString()))
+        if (id == oldId)
         {
-            if (id == scOld.Id)
-            {
-                i_id.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
-                i_id.text = id.ToString();
-            }
-            else
-            {
-                debug.LogWarning($"{id}已经存在");
-                i_id.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.red;
-
-            }
+            return;
+        }
+        else if (mm.ScienceDict.ContainsKey(id))
+        {
+            debug.LogError($"{id}已经存在");
+            i_id.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.red;
         }
         else
         {
+            //更新字典内容
+            sc.Id = id;
+            mm.ScienceDict = mm.ScienceDict.ToDictionary(k => k.Key == oldId ? id : k.Key, k => k.Value);
+            //更新panel字体颜色
             i_id.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
-            i_id.text = id.ToString();
+            //更新node显示的id
+            node.transform.Find("text").GetComponent<TextMesh>().text = $"{i_id.text}\n{node.sc.Name}";
+            //更新node名字
+            node.name = id.ToString();
+            //更新自身射线的名字
+            for (int i = 0; i < node.transform.childCount; i++)
+            {
+                GameObject child = node.transform.GetChild(i).gameObject;
+                if (child.tag is "NodeLine")
+                {
+                    child.name = $"{child.name.Split("->")[0]}->{id}";
+                }
+            }
+            //TODO 更新后继节点中，前驱字段的id
+            //TODO 更新后继节点中，前驱路径字段的id
+            foreach (var idAfter in sc.After_technology)
+            {
+                mm.ScienceDict.TryGetValue(idAfter, out var scAfter);
+                if (scAfter != null)
+                {
+                    scAfter.Pre_technology = scAfter.Pre_technology.ReplacePreTech(oldId.ToString(), id.ToString());
+                    scAfter.PathNode = scAfter.PathNode.PeplacePathNode(oldId.ToString(), id.ToString());
+                }
+
+            }
+            //更新前置sc的Afternode中，自己的id
+            sc.Pre_technology.Split("|").ToList().ForEach(idpre =>
+            {
+                mm.ScienceDict.TryGetValue(int.Parse(idpre), out var scpre);
+                if (scpre != null)
+                {
+                    scpre.After_technology.Remove(oldId);
+                    scpre.After_technology.Add(id);
+                }
+            });
+            //更新panel名字
+            transform.name = $"{id}(Edit)";
+        }
+
+    }
+
+    public void UpdatePrePath()
+    {
+        if (Regex.IsMatch(i_prePath.text, "^(?:-1|(\\d+)(?:_(\\d+)_(\\d+))*(?:\\|(?:(\\d+)(?:_(\\d+)_(\\d+))*))*)$"))
+        {
+            i_prePath.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
+        }
+        else
+        {
+            i_prePath.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.red;
+            debug.LogError($"路径输入有误");
+        }
+    }
+
+    public void UpdatePre()
+    {
+        if (Regex.IsMatch(i_pre.text, "^(?:-1|(\\d+)(?:_(\\d+)_(\\d+))*(?:\\|(?:(\\d+)(?:_(\\d+)_(\\d+))*))*)$"))
+        {
+            i_pre.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
+        }
+        else
+        {
+            i_pre.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.red;
+            debug.LogError($"前置输入有误");
         }
     }
     #endregion
 
-    #region 内容修改
+
+    #region 鼠标拖动更新位置
     /// <summary>
     /// 给鼠标拖动用
     /// </summary>
-    public void UpdatePositionTextImmediate(Vector2Int pos)
+    public void UpdatePositionByDrag(Vector2Int pos)
     {
         sc.HexGridX = pos.y;
         sc.HexGridY = pos.x;
@@ -135,35 +222,33 @@ public class PanelScienceEdit : MonoBehaviour
         i_y.text = sc.HexGridY.ToString();
 
     }
+    #endregion
 
+
+
+    #region 面板按钮功能
     /// <summary>
     /// 保存编辑内容到Science字典
     /// </summary>
     public void SavePanel()
     {
-        Science newScience = ToScience();
-        sc = newScience;
-        LoadScience();
-        debug.Log("修改成功喽~");
-    }
 
-    #endregion
+
+        Destroy(transform.gameObject);
+    }
 
     /// <summary>
     /// 关闭
     /// </summary>
     public void DestoryPanel()
     {
-        sc = scOld;
-        mm.setEditFalse();
+        mm.SetEditFalse();
         Destroy(transform.gameObject);
     }
+    #endregion
 
-    /// <summary>
-    /// 将界面内容转为Science
-    /// </summary>
-    /// <returns>Science</returns>
-    private Science ToScience()
+    /// <returns>当前界面的Science,相当于深拷贝</returns>
+    private Science GetPanelScience()
     {
         Science save = new(
             int.Parse(i_id.text),
@@ -197,4 +282,5 @@ public class PanelScienceEdit : MonoBehaviour
             );
         return save;
     }
+
 }

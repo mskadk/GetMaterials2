@@ -17,7 +17,32 @@ public class Node : MonoBehaviour
     TextMesh tm;
     GameObject parent;
     Grid grid;
-    // Start 
+    private Color getColor(int i)
+    {
+        var color = i switch
+        {
+            1 => Color.red,
+            2 => new(1, .5f, 0),
+            3 => new(1, 1, 0),
+            4 => Color.green,
+            5 => new(.2f, .5f, 1),
+            _ => Color.white,
+        };
+        return color;
+    }
+    /// <returns>List(GameObject)</returns>
+    private List<GameObject> getAllLineGOs()
+    {
+        var list = new List<GameObject>();
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            if (transform.GetChild(i).tag is "NodeLine")
+            {
+                list.Add(transform.GetChild(i).gameObject);
+            }
+        }
+        return list;
+    }
     void Start()
     {
         parent = transform.parent.gameObject;
@@ -27,13 +52,14 @@ public class Node : MonoBehaviour
             sr = GetComponent<SpriteRenderer>();
             tm = transform.Find("text").GetComponent<TextMesh>();
         }
-        UpdateImmediate();
+        UpdateNodeStyle();
+        UpdateLine();
     }
-
-    // Update 
-    void Update()
+    private void UpdateNodeStyle()
     {
-
+        sr.color = getColor(sc.IconColor);
+        tm.text = $"{sc.Id}\n{sc.Name}";
+        transform.localScale = sc.IconScale * Vector3.one;
     }
 
     public void UpdateGridPos(Vector3Int pos)
@@ -43,14 +69,9 @@ public class Node : MonoBehaviour
         UpdateLine();
     }
 
-    public void UpdateImmediate()
-    {
-        UpdateNodeStyle();
-        UpdateLine();
-    }
+    #region 连接线相关
 
-
-    #region LineManager
+    #region 连接线锚点相关
     public void UpdateLineAnchor()
     {
         List<GameObject> listLine = getAllLineGOs();
@@ -85,14 +106,16 @@ public class Node : MonoBehaviour
             }
         }
     }
+    #endregion
 
     void UpdateLine()
     {
         List<Vector3Int> List前置路径 = sc.PathNode.ParesV3IList();
         List<int> List前置节点 = sc.Pre_technology.ToList();
+        //没有前置，删除所有线
         if (List前置节点 is null)
         {
-            //没有前置，删除所有线
+            
             foreach (var item in getAllLineGOs())
             {
                 Destroy(item);
@@ -102,7 +125,7 @@ public class Node : MonoBehaviour
         else
         {
             List<string> listLineName = new();
-            //生成前置字段里的线
+            //用前置字段生成线
             foreach (var 节点id in List前置节点)
             {
                 GameObject parentNode = parent.transform.Find(节点id.ToString()).gameObject;
@@ -158,7 +181,7 @@ public class Node : MonoBehaviour
             }
         }
     }
-    internal void UpdateLineStart(Vector3 position)
+    public void UpdateLineStart(Vector3 position)
     {
         foreach (var item in getAllLineGOs())
         {
@@ -166,43 +189,10 @@ public class Node : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Line Gameobjects
-    /// </summary>
-    /// <returns></returns>
-    private List<GameObject> getAllLineGOs()
-    {
-        var list = new List<GameObject>();
-        for (int i = 0; i < transform.childCount; i++)
-        {
-            if (transform.GetChild(i).tag is "NodeLine")
-            {
-                list.Add(transform.GetChild(i).gameObject);
-            }
-        }
-        return list;
-    }
+
     #endregion
 
-    private void UpdateNodeStyle()
-    {
-        sr.color = getColor(sc.IconColor);
-        tm.text = $"{sc.Id}\n{sc.Name}";
-        transform.localScale = sc.IconScale * Vector3.one;
-    }
 
-    private Color getColor(int i)
-    {
-        var color = i switch
-        {
-            1 => Color.red,
-            2 => new(1, .5f, 0),
-            3 => new(1, 1, 0),
-            4 => Color.green,
-            5 => new(.2f, .5f, 1),
-            _ => Color.white,
-        };
-        return color;
-    }
+
 
 }

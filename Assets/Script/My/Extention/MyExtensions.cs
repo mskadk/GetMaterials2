@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -62,8 +63,76 @@ namespace Assets.Script.My.Extention
             }
             return SplitedString;
         }
+        /// <summary>
+        /// 替换 前置科技 字符串中，某个科技的id
+        /// </summary>
+        /// <param name="input">Pre_Techonology 字段</param>
+        /// <param name="oldId">旧id</param>
+        /// <param name="newId">新id</param>
+        /// <returns></returns>
+        public static string ReplacePreTech(this string input, string oldId, string newId, string args = "|")
+        {
+            string result = null;
+            List<string> list = input.Split(args).ToList();
+            var i = list.IndexOf(oldId);
+            list[i] = newId;
+            for (int j = 0; j < list.Count; j++)
+            {
+                result += list[j];
+                if (j != list.Count - 1)
+                {
+                    result += args;
+                }
+            }
+            return result;
+        }
 
-
+        /// <summary>
+        /// 替换 路径 字符串中，某个科技的id
+        /// </summary>
+        /// <param name="input">PathNode 字段</param>
+        /// <param name="oldId">旧id</param>
+        /// <param name="newId">新id</param>
+        /// <returns></returns>
+        public static string PeplacePathNode(this string input, string oldId, string newId)
+        {
+            string result = null;
+            if (input == "-1")
+            {
+                return input;
+            }
+            else
+            {
+                //10_1_2_3_4|11_1_2_3_4 => 10_1_2_3_4
+                var s = input.Split("|").ToList();
+                string res = null;
+                for (int i = 0; i < s.Count; i++)
+                {
+                    var ss = s[i].Split("_");
+                    if (ss[0] == oldId)
+                    {
+                        ss[0] = newId;
+                    }
+                    for (int j = 0; j < ss.Length; j++)
+                    {
+                        res += ss[j];
+                        if (j != ss.Length - 1)
+                        {
+                            res += "_";
+                        }
+                    }
+                    result += res;
+                    res = null;
+                    if (i != s.Count -1)
+                    {
+                        result += "|";
+                    }
+                }
+            }
+            return result;
+        }
     }
+
+
 
 }

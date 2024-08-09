@@ -107,23 +107,24 @@ public class Science
     {
         string d2 = detail_2.Length > 5 ? detail_2[..5] : string.Format("{0,-5}", detail_2);
         return
-         string.Format("{0,-5}", id)                                                 + "\t" +
-         subType                                                                     + "\t" +
-         moduleId                                                                    + "\t" +
-         iconScale                                                                   + "\t" +
-         string.Format("{0,-5}", lineScale)                                          + "\t" +
-         string.Format("{0,-20}", name)                                              + "\t" +
-         detail[..5]                                                                 + "\t" +
-         d2                                                                          + "\t" +
-         string.Format("{0,-35}", building_unlock)                                   + "\t" +
-         string.Format("{0,-60}", nonBuilding_unlock)                                + "\t" +
-         $"({hexGridX}{hexGridY})"                                                   + "\t" +
-         pre_technology                                                              + "\t" +
-         pathNode                                                                    + "\t" +
-         s_Materials                                                                 + "\t" +
-         time                                                                        + "\t" +
-         iconColor                                                                   + "\t" +
-         trigger_technology;
+         $" {string.Format("{0,-5}", id)                                                 }\t"+
+         $" {subType                                                                     }\t"+
+         $" {moduleId                                                                    }\t"+
+         $" {iconScale                                                                   }\t"+
+         $" {string.Format("{0,-5}", lineScale)                                          }\t"+
+         $" {string.Format("{0,-20}", name)                                              }\t"+
+         $" {detail[..5]                                                                 }\t"+
+         $" {d2                                                                          }\t"+
+         $" {string.Format("{0,-35}", building_unlock)                                   }\t"+
+         $" {string.Format("{0,-60}", nonBuilding_unlock)                                }\t"+
+         $" {$"({hexGridX},{hexGridY})"                                                  }\t"+
+         $" {pre_technology                                                              }\t"+
+         $" {pathNode                                                                    }\t"+
+         $" {s_Materials                                                                 }\t"+
+         $" {time                                                                        }\t"+
+         $" {iconColor                                                                   }\t"+
+         $" {trigger_technology}" +
+         $"";                                                       
 
     }
 

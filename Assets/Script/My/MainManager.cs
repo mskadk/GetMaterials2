@@ -1,6 +1,6 @@
 using Assets.Script.My.Excel;
-using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -39,12 +39,6 @@ public class MainManager : MonoBehaviour
     Toggle useMoveNode;
     Toggle useEditNode;
     TipText debug;
-
-
-    private void Start()
-    {
-        Init();
-    }
 
     #region 初始化
     private void Init()
@@ -88,24 +82,69 @@ public class MainManager : MonoBehaviour
 
     #endregion
 
+    private void Start()
+    {
+        Init();
+    }
+
+    #region 射线检测
+    GameObject rayDetect()
+    {
+        GameObject ob = null;
+        Vector3 vvv = camSence.ScreenToWorldPoint(Input.mousePosition);
+        RaycastHit2D hit = Physics2D.Raycast(vvv, Vector3.forward, Mathf.Infinity);
+        if (hit)
+        {
+            ob = hit.transform.gameObject;
+        }
+        return ob;
+
+    }
+    #endregion
+
     private void Update()
     {
         updateMouseEvent();
         printDict();
     }
-
+    /// <summary>
+    /// 打印
+    /// <para>/ 打印整个科技表字典</para>
+    /// <para>. 鼠标位置Node的Science数据</para>
+    /// </summary>
     private void printDict()
     {
+        // / 打印整个科技表字典
         if (Input.GetKeyDown(KeyCode.Slash))
         {
-            foreach (var sc in ScienceDict.Values)
+            foreach (var sc in ScienceDict)
             {
-                Debug.Log(sc.ToString());
+                Debug.Log($"KEY:{sc.Key},VALUE:{sc.Value}");
+            }
+        }
+        // . 从科技字典找到鼠标指向的Node的Science数据
+        if (Input.GetKeyDown(KeyCode.Period))
+        {
+            var v = rayDetect();
+            if (v != null && v.tag is "Node")
+            {
+                if (ScienceDict.TryGetValue(v.GetComponent<Node>().sc.Id, out Science sc))
+                {
+                    Debug.Log($"来自字典：{sc}");
+                }
+                Debug.Log($"来自节点：{v.GetComponent<Node>().sc}");
+                string at = null;
+                sc.After_technology.ToList().ForEach(x=>at+=x.ToString()+"|");
+                Debug.Log($"After:{at}");
+            }
+            else
+            {
+                Debug.Log("未选中/非节点");
             }
         }
     }
 
-    #region UI，界面选择
+    #region 主界面模式选择
     public void SwitchPage()
     {
         switch (dpMainPage.value)
@@ -139,20 +178,21 @@ public class MainManager : MonoBehaviour
     #endregion
 
     #region 鼠标事件
-    bool edit = false;
-    public void setEditFalse() => edit = false;
+    private Vector3 mPosPri;
+    bool selecting = false;
+    public void SetEditFalse() => selecting = false;
     private GameObject nodeMove;
     private void updateMouseEvent()
     {
-        //鼠标选择节点
-        if (useEditNode.isOn && !edit && Input.GetMouseButtonDown(1))
+        //鼠标选择节点，实例化编辑窗口
+        if (useEditNode.isOn && !selecting && Input.GetMouseButtonDown(1))
         {
 
+
             GameObject target = rayDetect();
-            string name;
-            if (target is not null)
+            if (target)
             {
-                name = target.name;
+                string name = target.name;
                 target.TryGetComponent(out Node n);
                 if (n)
                 {
@@ -161,9 +201,9 @@ public class MainManager : MonoBehaviour
                     p.name = $"{name}(Edit)";
                     ScienceDict.TryGetValue(int.Parse(name), out var sc);
                     p.GetComponent<PanelScienceEdit>().sc = sc;
-                    edit = true;
+                    p.GetComponent<PanelScienceEdit>().node = n;
+                    selecting = true;
                     //n.UpdateLineAnchor();
-
                     name += $"\n{n.sc.Name}";
                     debug.Log(name);
                 }
@@ -173,18 +213,26 @@ public class MainManager : MonoBehaviour
         //鼠标拖动节点
         if (useMoveNode.isOn && Input.GetMouseButtonDown(0))
         {
+            mPosPri = Input.mousePosition;
             nodeMove = rayDetect();
         }
         if (nodeMove && Input.GetMouseButton(0))
         {
+            //鼠标还未移动，return
+            if (mPosPri == Input.mousePosition)
+            {
+                return;
+            }
             Vector3 worldPos = camSence.ScreenToWorldPoint(Input.mousePosition);
             Vector3Int gridPosI = grid.WorldToCell(new Vector3(worldPos.x, worldPos.y, 0));
             Vector3 gridPos = grid.CellToWorld(gridPosI);
             nodeMove.transform.position = gridPos;
+            //节点的处理逻辑
             if (nodeMove.tag is "Node")
             {
                 Node n = nodeMove.GetComponent<Node>();
                 n.UpdateGridPos(gridPosI);
+                //更新 后继点 的连线起始位置
                 foreach (var item in n.sc.After_technology)
                 {
                     GameObject child = tilemap.transform.Find(item.ToString()).gameObject;
@@ -193,13 +241,15 @@ public class MainManager : MonoBehaviour
                         child.GetComponent<Node>().UpdateLineStart(n.transform.position);
                     }
                 }
+                //如果打开了节点编辑窗口，则更新窗口中的位置信息
                 GameObject edit = GameObject.Find($"{nodeMove.name}(Edit)");
                 if (edit)
                 {
-                    edit.GetComponent<PanelScienceEdit>().UpdatePositionTextImmediate(new(gridPosI.x, gridPosI.y));
+                    edit.GetComponent<PanelScienceEdit>().UpdatePositionByDrag(new(gridPosI.x, gridPosI.y));
 
                 }
             }
+            //锚点的处理逻辑
             else if (nodeMove.tag is "Anchor")
             {
 
@@ -212,20 +262,10 @@ public class MainManager : MonoBehaviour
     }
     #endregion
 
-    #region 射线检测
-    GameObject rayDetect()
-    {
-        GameObject ob = null;
-        Vector3 vvv = camSence.ScreenToWorldPoint(Input.mousePosition);
-        RaycastHit2D hit = Physics2D.Raycast(vvv, Vector3.forward, Mathf.Infinity);
-        if (hit)
-        {
-            ob = hit.transform.gameObject;
-        }
-        return ob;
 
-    }
-    #endregion
+
+
+
 
     #region 测试_绘制一个六边形在六边形网格地图中
     //private void testGenerateHeaxgon()

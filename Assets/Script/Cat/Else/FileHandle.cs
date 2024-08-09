@@ -61,7 +61,7 @@ public class FileHandle {
             fs.Read(data, 0, data.Length);
             fs.Close();
         }
-        catch(Exception e)
+        catch(Exception)
         {
             Debug.LogError("读取失败="+file.FullName);
             //Debug.LogError(e.StackTrace);

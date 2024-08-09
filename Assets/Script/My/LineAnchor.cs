@@ -21,7 +21,7 @@ public class LineAnchor : MonoBehaviour
             int i = int.Parse(name);
             Vector3 pos = lr.GetPosition(i) + Vector3.back;
             transform.position = pos;
-
+            
         }
     }
 }
