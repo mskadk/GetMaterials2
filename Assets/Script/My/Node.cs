@@ -1,11 +1,7 @@
 using Assets.Script.My.Extention;
-using OfficeOpenXml.FormulaParsing.Excel.Functions.Math;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.Profiling.Memory.Experimental;
-using UnityEditor.UIElements;
 using UnityEngine;
 
 public class Node : MonoBehaviour
@@ -55,18 +51,31 @@ public class Node : MonoBehaviour
         UpdateNodeStyle();
         UpdateLine();
     }
-    private void UpdateNodeStyle()
-    {
-        sr.color = getColor(sc.IconColor);
-        tm.text = $"{sc.Id}\n{sc.Name}";
-        transform.localScale = sc.IconScale * Vector3.one;
-    }
-
     public void UpdateGridPos(Vector3Int pos)
     {
         sc.HexGridX = pos.y;
         sc.HexGridY = pos.x;
         UpdateLine();
+    }
+    public void UpdateNodeAppearance()
+    {
+        UpdateNodeStyle();
+        UpdateLine();
+    }
+
+    private void UpdateNodeStyle()
+    {
+        sr.color = getColor(sc.IconColor);
+        if (sc.IconScale == 0.75)
+        {
+            transform.localScale = .75f * Vector3.one;
+        }
+        else if (sc.IconScale == 1.5)
+        {
+            transform.localScale = 1.75f * Vector3.one;
+        }
+        tm.text = $"{sc.Id}\n{sc.Name}";
+        transform.localScale = sc.IconScale * Vector3.one;
     }
 
     #region 连接线相关
@@ -115,7 +124,7 @@ public class Node : MonoBehaviour
         //没有前置，删除所有线
         if (List前置节点 is null)
         {
-            
+
             foreach (var item in getAllLineGOs())
             {
                 Destroy(item);
@@ -145,7 +154,15 @@ public class Node : MonoBehaviour
                 var line = lineGO.GetComponent<LineRenderer>();
                 line.startColor = getColor(parentSc.IconColor);
                 line.endColor = getColor(this.sc.IconColor);
+                if (sc.LineScale == 8)
+                {
+                    line.startWidth = line.endWidth = .15f;
+                }
+                else if (sc.LineScale == 4)
+                {
+                    line.startWidth = line.endWidth = .05f;
 
+                }
                 if (List前置路径.Count == 0)
                 {
                     line.SetPositions(new[] {

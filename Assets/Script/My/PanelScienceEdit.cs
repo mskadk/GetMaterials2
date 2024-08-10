@@ -207,6 +207,27 @@ public class PanelScienceEdit : MonoBehaviour
             debug.LogError($"前置输入有误");
         }
     }
+
+    public void UpdateNodeColor()
+    {
+        sc.IconColor = d_color.value + 1;
+        node.UpdateNodeAppearance();
+    }
+
+    public void UpdateNodeScale()
+    {
+        switch (d_scale.value)
+        {
+            //大
+            case 0: sc.LineScale = 8; sc.IconScale = 1.5f; break;
+            //小
+            case 1: sc.LineScale = 4; sc.IconScale = .75f;; break;
+            default:
+                break;
+        }
+        node.UpdateNodeAppearance();
+    }
+
     #endregion
 
 

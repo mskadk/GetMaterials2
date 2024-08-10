@@ -1,4 +1,5 @@
 using Assets.Script.My.Excel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -12,8 +13,8 @@ public class MainManager : MonoBehaviour
         science,
         productionList,
     }
-    public const string WorkSpace_Sprite = "D:\\work\\manager\\Assets WorkSpace\\FreeWorld\\sprite\\";
-    public const string WorkSpace_Excel = "D:\\work\\manager\\策划\\项目企划\\数据表\\";
+    public string WorkSpace_Sprite = "D:\\work\\manager\\Assets WorkSpace\\FreeWorld\\sprite\\";
+    public string WorkSpace_Excel = "D:\\work\\manager\\策划\\项目企划\\数据表\\";
 
     public GameObject Node;
     public Camera camSence;
@@ -51,6 +52,12 @@ public class MainManager : MonoBehaviour
 
     private void initExcel()
     {
+        if (Environment.MachineName == "AOYE")
+        {
+            WorkSpace_Sprite = "F:\\UnityWorkSpace\\GetMaterials2 Assets Space\\sprites\\";
+            WorkSpace_Excel = "F:\\UnityWorkSpace\\GetMaterials2 Assets Space\\sheets\\";
+        }
+
         em = new();
         ScienceDict = em.Load(WorkSpace_Excel + "Science.xlsx");
     }
@@ -134,7 +141,7 @@ public class MainManager : MonoBehaviour
                 }
                 Debug.Log($"来自节点：{v.GetComponent<Node>().sc}");
                 string at = null;
-                sc.After_technology.ToList().ForEach(x=>at+=x.ToString()+"|");
+                sc.After_technology.ToList().ForEach(x => at += x.ToString() + "|");
                 Debug.Log($"After:{at}");
             }
             else
