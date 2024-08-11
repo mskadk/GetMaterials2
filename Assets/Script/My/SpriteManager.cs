@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
-using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
+﻿using UnityEngine;
 
 namespace Assets.Script.My
 {
@@ -18,14 +12,14 @@ namespace Assets.Script.My
         public static void Paint(GameObject obj, string spritName, int actionId, int frameId)
         {
             GameObject g = new("icon");
-            g.transform.position = new(0,0,0);
+            g.transform.position = new(0, 0, 0);
             g.transform.SetParent(obj.transform, false);
             g.layer = obj.layer;
             CatPlayerr rr = new(g);
-            rr.init(spritName,true,false,true);
-            rr.paintActionFrame(actionId, frameId,0,0);
+            rr.init(spritName, true, false, true);
+            rr.paintActionFrame(actionId, frameId, 0, 0);
             rr.updatePaint();
-            
+
         }
 
 

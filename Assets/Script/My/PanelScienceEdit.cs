@@ -154,8 +154,9 @@ public class PanelScienceEdit : MonoBehaviour
                     child.name = $"{child.name.Split("->")[0]}->{id}";
                 }
             }
-            //TODO 更新后继节点中，前驱字段的id
-            //TODO 更新后继节点中，前驱路径字段的id
+
+            //更新后继节点中，前驱字段的id
+            //更新后继节点中，前驱路径字段的id
             foreach (var idAfter in sc.After_technology)
             {
                 mm.ScienceDict.TryGetValue(idAfter, out var scAfter);
@@ -164,8 +165,8 @@ public class PanelScienceEdit : MonoBehaviour
                     scAfter.Pre_technology = scAfter.Pre_technology.ReplacePreTech(oldId.ToString(), id.ToString());
                     scAfter.PathNode = scAfter.PathNode.PeplacePathNode(oldId.ToString(), id.ToString());
                 }
-
             }
+
             //更新前置sc的Afternode中，自己的id
             sc.Pre_technology.Split("|").ToList().ForEach(idpre =>
             {
@@ -187,6 +188,29 @@ public class PanelScienceEdit : MonoBehaviour
         if (Regex.IsMatch(i_prePath.text, "^(?:-1|(\\d+)(?:_(\\d+)_(\\d+))*(?:\\|(?:(\\d+)(?:_(\\d+)_(\\d+))*))*)$"))
         {
             i_prePath.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
+            sc.PathNode = i_prePath.text;
+
+            //前置校验
+            List<string> preListinPath = new();
+            preListinPath.Clear();
+            sc.PathNode.Split("|").ToList().ForEach(IdandPath => {
+                preListinPath.Add(IdandPath.Split("_")[0]);
+            });
+            List<string> prePath = sc.Pre_technology.Split("|").ToList();
+            bool have = false;
+            foreach (var id in preListinPath)
+            {
+                if (prePath.Contains(id))
+                {
+                    have = true;
+                    break;
+                }
+            }
+            if (!have)
+            {
+                debug.LogWarning($"节点{sc.Id}添加了不属于前置的路径");
+            }
+            node.UpdateNodeAppearance();
         }
         else
         {
@@ -200,6 +224,30 @@ public class PanelScienceEdit : MonoBehaviour
         if (Regex.IsMatch(i_pre.text, "^(?:-1|(\\d+)(?:_(\\d+)_(\\d+))*(?:\\|(?:(\\d+)(?:_(\\d+)_(\\d+))*))*)$"))
         {
             i_pre.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
+            //更新旧的后继节点
+            string oldpre = sc.Pre_technology.ToString();
+            string newpre = i_pre.text;
+            var o = oldpre.Split("|").ToList();
+            var n = newpre.Split("|").ToList();
+            foreach (var oldsc in o)
+            {
+                mm.ScienceDict.TryGetValue(int.Parse(oldsc), out Science outSc);
+                if (outSc is not null && outSc.After_technology.Contains(sc.Id))
+                {
+                    outSc.After_technology.Remove(sc.Id);
+                }
+            }
+            foreach (var newSc in n)
+            {
+                mm.ScienceDict.TryGetValue(int.Parse(newSc), out Science outSc);
+                if (outSc is not null)
+                {
+                    outSc.After_technology.Add(sc.Id);
+
+                }
+            }
+            sc.Pre_technology = newpre;
+            node.UpdateNodeAppearance();
         }
         else
         {
@@ -221,10 +269,58 @@ public class PanelScienceEdit : MonoBehaviour
             //大
             case 0: sc.LineScale = 8; sc.IconScale = 1.5f; break;
             //小
-            case 1: sc.LineScale = 4; sc.IconScale = .75f;; break;
+            case 1: sc.LineScale = 4; sc.IconScale = .75f; ; break;
             default:
                 break;
         }
+        node.UpdateNodeAppearance();
+    }
+
+    public void UpdateIcon()
+    {
+        sc.ModuleId = int.Parse(i_icon.text);
+    }
+
+    public void UpdateTrigger()
+    {
+        sc.Trigger_technology = i_trigger.text;
+    }
+
+    public void UpdateMaterials()
+    {
+        //TODO 需求材料
+        sc.S_Materials = i_material.text;
+    }
+
+    public void UpdateTime()
+    {
+        //TODO  研究时间
+        sc.Time = float.Parse(i_time.text);
+    }
+
+    public void UpdateUnlockBuilding()
+    {
+        sc.Building_unlock = i_build.text;
+    }
+
+    public void UpdateUnlockNoBuilding()
+    {
+        sc.NonBuilding_unlock = i_unbuild.text;
+    }
+
+    public void UpdateDescribe()
+    {
+        sc.Detail = i_desc.text;
+    }
+
+    public void UpdateAdditionNote()
+    {
+        sc.Detail_2 = i_descAdd.text;
+    }
+
+    public void UpdateName()
+    {
+        sc.Name = i_name.text;
         node.UpdateNodeAppearance();
     }
 

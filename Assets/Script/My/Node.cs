@@ -57,6 +57,9 @@ public class Node : MonoBehaviour
         sc.HexGridY = pos.x;
         UpdateLine();
     }
+    /// <summary>
+    /// 根据绑定的Science值更新外观，节点样式和线样式
+    /// </summary>
     public void UpdateNodeAppearance()
     {
         UpdateNodeStyle();
