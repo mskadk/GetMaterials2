@@ -1,4 +1,5 @@
 using Assets.Script.My.Extention;
+using OfficeOpenXml.Style;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,9 @@ public class Node : MonoBehaviour
     public Science sc;
     public GameObject linesPrefab;
     public GameObject anchorPrefab;
+    public Sprite BorderSprite;
+    public Sprite SelectingSprite;
+    public Sprite OriginalSprite;
     SpriteRenderer sr;
     TextMesh tm;
     GameObject parent;
@@ -26,7 +30,7 @@ public class Node : MonoBehaviour
         };
         return color;
     }
-    /// <returns>List(GameObject)</returns>
+    /// <returns>List射线子物体</returns>
     private List<GameObject> getAllLineGOs()
     {
         var list = new List<GameObject>();
@@ -43,20 +47,65 @@ public class Node : MonoBehaviour
     {
         parent = transform.parent.gameObject;
         grid = GameObject.Find("Grid").GetComponent<Grid>();
-        if (sc != null)
-        {
-            sr = GetComponent<SpriteRenderer>();
-            tm = transform.Find("text").GetComponent<TextMesh>();
-        }
+        sr = GetComponent<SpriteRenderer>();
+        tm = transform.Find("text").GetComponent<TextMesh>();
+
         UpdateNodeStyle();
         UpdateLine();
     }
+    #region Style = 左键选中绘制边，右键选中绘制框
+
+    public void SetSelectStyle(bool select)
+    {
+        var b = transform.Find("border");
+        if (select)
+        {
+            if (!b)
+            {
+                GameObject border = new();
+                border.transform.position = transform.position;
+                border.transform.localScale = transform.localScale;
+                border.transform.SetParent(transform);
+                border.name = "border";
+                var sp = border.AddComponent<SpriteRenderer>();
+                sp.sprite = SelectingSprite;
+            }
+            else
+            {
+                b.gameObject.SetActive(true);
+                b.transform.position = transform.position;
+                b.transform.localScale = transform.localScale;
+            }
+        }
+        else
+        {
+            if (b)
+            {
+                b.gameObject.SetActive(false);
+            }
+        }
+    }
+
+    public void SetHoverStyle(bool hover)
+    {
+        if (hover)
+        {
+            sr.sprite = BorderSprite;
+        }
+        else
+        {
+            sr.sprite = OriginalSprite;
+        }
+    }
+    #endregion
+
     public void UpdateGridPos(Vector3Int pos)
     {
         sc.HexGridX = pos.y;
         sc.HexGridY = pos.x;
         UpdateLine();
     }
+
     /// <summary>
     /// 根据绑定的Science值更新外观，节点样式和线样式
     /// </summary>

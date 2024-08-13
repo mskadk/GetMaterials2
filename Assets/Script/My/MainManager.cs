@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class MainManager : MonoBehaviour
@@ -17,6 +18,7 @@ public class MainManager : MonoBehaviour
     public string WorkSpace_Excel = "D:\\work\\manager\\策划\\项目企划\\数据表\\";
 
     public GameObject Node;
+    public GameObject ghostNodePrefab;
     public Camera camSence;
     public GridDrawer gridDrawer;
 
@@ -112,6 +114,7 @@ public class MainManager : MonoBehaviour
     private void Update()
     {
         updateMouseEvent();
+        updateKeyboardEvent();
         printDict();
     }
     /// <summary>
@@ -151,7 +154,7 @@ public class MainManager : MonoBehaviour
         }
     }
 
-    #region 主界面模式选择
+    #region 主界面 & 模式选择
     public void SwitchPage()
     {
         switch (dpMainPage.value)
@@ -162,6 +165,7 @@ public class MainManager : MonoBehaviour
                 break;
         }
     }
+
 
     public void ToggleMoveCam()
     {
@@ -182,124 +186,146 @@ public class MainManager : MonoBehaviour
         tilemap.SetActive(false);
     }
 
+    public void BtnNewNode()
+    {
+        GameObject newNode = Instantiate(ghostNodePrefab);
+    }
+
     #endregion
 
-    #region 鼠标事件
-    private Vector3 mPosPri;
-    bool selecting = false;
-    public void SetEditFalse() => selecting = false;
-    private GameObject nodeMove;
+    #region 鼠标事件 && 键盘事件
+    private void updateKeyboardEvent()
+    {
+        if (!EventSystem.current.currentSelectedGameObject && panel)
+        {
+            //Esc 关闭编辑界面
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                panel.GetComponent<PanelScienceEdit>().DestoryPanel();
+            }
+
+        }
+
+    }
+
+    private Vector3 鼠标按下位置;
+    bool editing = false;
+    public void SetEditFalse() => editing = false;
+
+    private GameObject rayHitMove;
+    private GameObject rayHitEdit;
+    private GameObject panel;
     private void updateMouseEvent()
     {
-        //鼠标选择节点，实例化编辑窗口
-        if (useEditNode.isOn && !selecting && Input.GetMouseButtonDown(1))
+        //节点编辑功能
+        if (useEditNode.isOn)
         {
-
-
-            GameObject target = rayDetect();
-            if (target)
+            if (!editing && Input.GetMouseButtonDown(1))
             {
-                string name = target.name;
-                target.TryGetComponent(out Node n);
-                if (n)
+                //鼠标选择节点，实例化编辑窗口
+                if ((rayHitEdit = rayDetect()) && rayHitEdit.tag is "Node")
                 {
-                    GameObject p = Instantiate(panelNodeEditPrefab);
-                    p.transform.SetParent(canvas.transform.Find("Panel/Panel_RightContent"), false);
-                    p.name = $"{name}(Edit)";
-                    ScienceDict.TryGetValue(int.Parse(name), out var sc);
-                    p.GetComponent<PanelScienceEdit>().sc = sc;
-                    p.GetComponent<PanelScienceEdit>().node = n;
-                    selecting = true;
+                    string nodeId = rayHitEdit.name;
+                    Node n = rayHitEdit.GetComponent<Node>();
+                    //实例化Panel
+                    panel = Instantiate(panelNodeEditPrefab);
+                    panel.transform.SetParent(canvas.transform.Find("Panel/Panel_RightContent"), false);
+                    panel.name = $"{nodeId}(Edit)";
+                    //从节点获取科技信息
+                    panel.GetComponent<PanelScienceEdit>().node = n;
+                    panel.GetComponent<PanelScienceEdit>().sc = n.sc;
+                    editing = true;
+                    //node
+                    n.SetSelectStyle(true);
                     //n.UpdateLineAnchor();
-                    name += $"\n{n.sc.Name}";
-                    debug.Log(name);
+                    debug.Log($"编辑节点：{nodeId}:{n.sc.Name}");
                 }
             }
         }
-
-        //鼠标拖动节点
-        if (useMoveNode.isOn && Input.GetMouseButtonDown(0))
+        //节点移动功能
+        if (useMoveNode.isOn)
         {
-            mPosPri = Input.mousePosition;
-            nodeMove = rayDetect();
-        }
-        if (nodeMove && Input.GetMouseButton(0))
-        {
-            //鼠标还未移动，return
-            if (mPosPri == Input.mousePosition)
+            //鼠标拖动节点
+            if (Input.GetMouseButtonDown(0))
             {
-                return;
-            }
-            Vector3 worldPos = camSence.ScreenToWorldPoint(Input.mousePosition);
-            Vector3Int gridPosI = grid.WorldToCell(new Vector3(worldPos.x, worldPos.y, 0));
-            Vector3 gridPos = grid.CellToWorld(gridPosI);
-            nodeMove.transform.position = gridPos;
-            //节点的处理逻辑
-            if (nodeMove.tag is "Node")
-            {
-                Node n = nodeMove.GetComponent<Node>();
-                n.UpdateGridPos(gridPosI);
-                //更新 后继点 的连线起始位置
-                foreach (var item in n.sc.After_technology)
+                鼠标按下位置 = Input.mousePosition;
+                rayHitMove = rayDetect();
+                if (rayHitMove && rayHitMove.tag is "Node")
                 {
-                    GameObject child = tilemap.transform.Find(item.ToString()).gameObject;
-                    if (child)
+                    rayHitMove.GetComponent<Node>().SetHoverStyle(true);
+                }
+            }
+            if (rayHitMove && Input.GetMouseButton(0))
+            {
+                //鼠标还未移动，return
+                if (鼠标按下位置 == Input.mousePosition)
+                {
+                    return;
+                }
+                Vector3 worldPos = camSence.ScreenToWorldPoint(Input.mousePosition);
+                Vector3Int gridPosI = grid.WorldToCell(new Vector3(worldPos.x, worldPos.y, 0));
+                Vector3 gridPos = grid.CellToWorld(gridPosI);
+                rayHitMove.transform.position = gridPos;
+                //节点的处理逻辑
+                if (rayHitMove.tag is "Node")
+                {
+                    Node n = rayHitMove.GetComponent<Node>();
+                    n.UpdateGridPos(gridPosI);
+                    //更新 后继点 的连线起始位置
+                    foreach (var item in n.sc.After_technology)
                     {
-                        child.GetComponent<Node>().UpdateLineStart(n.transform.position);
+                        GameObject child = tilemap.transform.Find(item.ToString()).gameObject;
+                        if (child)
+                        {
+                            child.GetComponent<Node>().UpdateLineStart(n.transform.position);
+                        }
+                    }
+                    //如果打开了节点编辑窗口，则更新窗口中的位置信息
+                    GameObject editPanel = GameObject.Find($"{rayHitMove.name}(Edit)");
+                    if (editPanel)
+                    {
+                        editPanel.GetComponent<PanelScienceEdit>().UpdatePositionByDrag(new(gridPosI.x, gridPosI.y));
+
                     }
                 }
-                //如果打开了节点编辑窗口，则更新窗口中的位置信息
-                GameObject edit = GameObject.Find($"{nodeMove.name}(Edit)");
-                if (edit)
+                //线的处理逻辑
+                else if (rayHitMove.tag is "NodeLine")
                 {
-                    edit.GetComponent<PanelScienceEdit>().UpdatePositionByDrag(new(gridPosI.x, gridPosI.y));
+
+                }
+                //锚点的处理逻辑
+                else if (rayHitMove.tag is "Anchor")
+                {
 
                 }
             }
-            //锚点的处理逻辑
-            else if (nodeMove.tag is "Anchor")
+            if (Input.GetMouseButtonUp(0))
             {
-
+                if (rayHitMove && rayHitMove.tag is "Node")
+                {
+                    rayHitMove.GetComponent<Node>().SetHoverStyle(false);
+                }
+                rayHitMove = null;
             }
         }
-        if (Input.GetMouseButtonUp(0))
-        {
-            nodeMove = null;
-        }
+
+
+
     }
     #endregion
 
+    #region 外部调用
+    public void NewNode(Vector3Int pos)
+    {
+        int id = -3;
+        while (ScienceDict.ContainsKey(id)) { id--; }
+        GameObject o = Instantiate(Node, grid.CellToWorld(new(pos.x, pos.y, 0)), new Quaternion(), tilemap.transform);
+        o.name = id.ToString();
+        Science sc = new(id,1,0,.75f,4,"新科技","描述","备注","-1","-1",pos.y,pos.x,"-1","-1","-1",.01f,1,"-1");
+        o.GetComponent<Node>().sc = sc;
+        ScienceDict.Add(id, sc);
 
-
-
-
-
-    #region 测试_绘制一个六边形在六边形网格地图中
-    //private void testGenerateHeaxgon()
-    //{
-    //    GameObject o = new($"Hex({ifx.text},{ify.text})");
-    //    o.transform.SetParent(tilemap.transform);
-    //    o.transform.position = grid.CellToWorld(new(int.Parse(ify.text), int.Parse(ifx.text), 0));
-
-    //    GameObject h = new("hex");
-    //    h.transform.SetParent(o.transform);
-    //    h.transform.position = o.transform.position;
-    //    var h_sr = h.AddComponent<SpriteRenderer>();
-    //    h_sr.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Packages/com.unity.2d.sprite/Editor/ObjectMenuCreation/DefaultAssets/Textures/v2/HexagonFlatTop.png");
-
-    //    #region 显示文本生成
-    //    GameObject text = new("text");
-    //    text.transform.SetParent(o.transform);
-    //    text.transform.position = o.transform.position;
-    //    text.AddComponent<MeshRenderer>();
-    //    var tm = text.AddComponent<TextMesh>();
-    //    tm.fontSize = 200;
-    //    tm.characterSize = 0.015f;
-    //    tm.text = $"{ifx.text},{ify.text}";
-    //    tm.color = Color.black;
-    //    tm.anchor = TextAnchor.MiddleCenter;
-    //    tm.alignment = TextAlignment.Center;
-    //    #endregion
-    //}
+    }
     #endregion
+
 }

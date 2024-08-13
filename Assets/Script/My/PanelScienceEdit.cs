@@ -341,8 +341,6 @@ public class PanelScienceEdit : MonoBehaviour
     }
     #endregion
 
-
-
     #region 面板按钮功能
     /// <summary>
     /// 保存编辑内容到Science字典
@@ -360,6 +358,7 @@ public class PanelScienceEdit : MonoBehaviour
     public void DestoryPanel()
     {
         mm.SetEditFalse();
+        node.SetSelectStyle(false);
         Destroy(transform.gameObject);
     }
     #endregion
