@@ -147,7 +147,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   linesPrefab: {fileID: 1796392183635708893, guid: a117ad99512994244acd41a31e62f386, type: 3}
-  anchorPrefab: {fileID: 3415169004693108125, guid: a70c1eec6a44a594c9b64568fd06c225, type: 3}
+  anchorPrefab: {fileID: 5511491961630659273, guid: f8c66fcb47de3da4494d6d132626e44c, type: 3}
   BorderSprite: {fileID: 21300000, guid: 5ea1f944b3535cf41bf0d54ef61991a8, type: 3}
   SelectingSprite: {fileID: 21300000, guid: 8ad4036804ebf0043bdeb0e14f63ec0c, type: 3}
   OriginalSprite: {fileID: -712631045867808456, guid: 9ff47efed668d6f4e84fe056f3a2106d, type: 3}

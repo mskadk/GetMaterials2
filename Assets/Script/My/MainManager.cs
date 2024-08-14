@@ -1,4 +1,5 @@
 using Assets.Script.My.Excel;
+using Assets.Script.My.Extention;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -203,15 +204,37 @@ public class MainManager : MonoBehaviour
             {
                 panel.GetComponent<PanelScienceEdit>().DestoryPanel();
             }
+            //Delete 删除选中的节点，需要右键选中先
+            if (Input.GetKeyDown(KeyCode.Delete))
+            {
+                var sc = panel.GetComponent<PanelScienceEdit>().sc;
+                var id = sc.Id;
+                var node = tilemap.transform.Find(id.ToString());
+                //删除前节点的后继
+                foreach (var pre in sc.Pre_technology.ToList())
+                {
+                    ScienceDict.TryGetValue(pre, out var science);
+                    science.After_technology.Remove(id);
+                }
+                //删除后节点的前置字段
+                foreach (var aft in sc.After_technology)
+                {
+                    ScienceDict.TryGetValue(aft, out var science);
+                    science.Pre_technology = science.Pre_technology.RemoveIdPreNode(id.ToString());
+                    science.PathNode = science.PathNode.RemoveIdPrePath(id.ToString());
+                    tilemap.transform.Find(aft.ToString()).GetComponent<Node>().UpdateNodeAppearance();
+                }
+                //删除我
+                ScienceDict.Remove(sc.Id);
+                Destroy(node.gameObject);
+                panel.GetComponent<PanelScienceEdit>().DestoryPanel();
+            }
 
         }
 
     }
 
     private Vector3 鼠标按下位置;
-    bool editing = false;
-    public void SetEditFalse() => editing = false;
-
     private GameObject rayHitMove;
     private GameObject rayHitEdit;
     private GameObject panel;
@@ -220,8 +243,13 @@ public class MainManager : MonoBehaviour
         //节点编辑功能
         if (useEditNode.isOn)
         {
-            if (!editing && Input.GetMouseButtonDown(1))
+            if (Input.GetMouseButtonDown(1))
             {
+                if (panel && !EventSystem.current.currentSelectedGameObject)
+                {
+                    panel.GetComponent<PanelScienceEdit>().DestoryPanel();
+                }
+
                 //鼠标选择节点，实例化编辑窗口
                 if ((rayHitEdit = rayDetect()) && rayHitEdit.tag is "Node")
                 {
@@ -234,10 +262,9 @@ public class MainManager : MonoBehaviour
                     //从节点获取科技信息
                     panel.GetComponent<PanelScienceEdit>().node = n;
                     panel.GetComponent<PanelScienceEdit>().sc = n.sc;
-                    editing = true;
                     //node
                     n.SetSelectStyle(true);
-                    //n.UpdateLineAnchor();
+                    n.UpdateLineAnchor();
                     debug.Log($"编辑节点：{nodeId}:{n.sc.Name}");
                 }
             }
@@ -257,11 +284,13 @@ public class MainManager : MonoBehaviour
             }
             if (rayHitMove && Input.GetMouseButton(0))
             {
-                //鼠标还未移动，return
-                if (鼠标按下位置 == Input.mousePosition)
+                var v1 = grid.WorldToCell(camSence.ScreenToWorldPoint(鼠标按下位置));
+                var v2 = grid.WorldToCell(camSence.ScreenToWorldPoint(Input.mousePosition));
+                if (v1 == v2)
                 {
                     return;
                 }
+                鼠标按下位置 = Input.mousePosition;
                 Vector3 worldPos = camSence.ScreenToWorldPoint(Input.mousePosition);
                 Vector3Int gridPosI = grid.WorldToCell(new Vector3(worldPos.x, worldPos.y, 0));
                 Vector3 gridPos = grid.CellToWorld(gridPosI);
@@ -285,7 +314,8 @@ public class MainManager : MonoBehaviour
                     if (editPanel)
                     {
                         editPanel.GetComponent<PanelScienceEdit>().UpdatePositionByDrag(new(gridPosI.x, gridPosI.y));
-
+                        n.ClearAnchor();
+                        n.UpdateLineAnchor();
                     }
                 }
                 //线的处理逻辑
@@ -296,7 +326,30 @@ public class MainManager : MonoBehaviour
                 //锚点的处理逻辑
                 else if (rayHitMove.tag is "Anchor")
                 {
-
+                    int lrIndex = int.Parse(rayHitMove.name);
+                    LineRenderer lr = rayHitMove.GetComponentInParent<LineRenderer>();
+                    //更新锚点位置
+                    Vector2 anchorMoveTo = new(gridPos.x, gridPos.y);
+                    Vector3 lineIndexAt = new(anchorMoveTo.x, anchorMoveTo.y, 1);
+                    rayHitMove.transform.position = anchorMoveTo;
+                    lr.SetPosition(lrIndex, lineIndexAt);
+                    //更新字典中的路径位置
+                    string nodeFrom = lr.gameObject.name.Split("->")[0];
+                    string nodeTo = lr.gameObject.name.Split("->")[1];
+                    ScienceDict.TryGetValue(int.Parse(nodeTo), out var sc);
+                    int c = lr.positionCount;
+                    string newpos = null;
+                    for (int i = 1; i < c-1; i++)
+                    {
+                        if (newpos is not null)
+                        {
+                            newpos += "_";
+                        }
+                        newpos += $"{grid.WorldToCell(lr.GetPosition(i)).y}_{grid.WorldToCell(lr.GetPosition(i)).x}"; 
+                    }
+                    sc.PathNode = sc.PathNode.UpdatePathNodeById(nodeFrom, newpos);
+                    //更新编辑界面中，路径字段显示的文字
+                    panel.GetComponent<PanelScienceEdit>().UpdatePrePath(sc.PathNode);
                 }
             }
             if (Input.GetMouseButtonUp(0))
@@ -321,7 +374,7 @@ public class MainManager : MonoBehaviour
         while (ScienceDict.ContainsKey(id)) { id--; }
         GameObject o = Instantiate(Node, grid.CellToWorld(new(pos.x, pos.y, 0)), new Quaternion(), tilemap.transform);
         o.name = id.ToString();
-        Science sc = new(id,1,0,.75f,4,"新科技","描述","备注","-1","-1",pos.y,pos.x,"-1","-1","-1",.01f,1,"-1");
+        Science sc = new(id, 1, 0, .75f, 4, "新科技", "描述", "备注", "-1", "-1", pos.y, pos.x, "-1", "-1", "-1", .01f, 1, "-1");
         o.GetComponent<Node>().sc = sc;
         ScienceDict.Add(id, sc);
 

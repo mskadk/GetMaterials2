@@ -185,7 +185,7 @@ public class PanelScienceEdit : MonoBehaviour
 
     public void UpdatePrePath()
     {
-        if (Regex.IsMatch(i_prePath.text, "^(?:-1|(\\d+)(?:_(\\d+)_(\\d+))*(?:\\|(?:(\\d+)(?:_(\\d+)_(\\d+))*))*)$"))
+        if (Regex.IsMatch(i_prePath.text, "^-1$|((?!-1)(-?\\d+))(_-?\\d+){2,}((_-?\\d+){2})*$"))
         {
             i_prePath.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
             sc.PathNode = i_prePath.text;
@@ -211,12 +211,19 @@ public class PanelScienceEdit : MonoBehaviour
                 debug.LogWarning($"节点{sc.Id}添加了不属于前置的路径");
             }
             node.UpdateNodeAppearance();
+            node.ClearAnchor();
+            node.UpdateLineAnchor();
         }
         else
         {
             i_prePath.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.red;
             debug.LogError($"路径输入有误");
         }
+    }
+
+    public void UpdatePrePath(string path)
+    {
+        i_prePath.text = path;
     }
 
     public void UpdatePre()
@@ -357,7 +364,7 @@ public class PanelScienceEdit : MonoBehaviour
     /// </summary>
     public void DestoryPanel()
     {
-        mm.SetEditFalse();
+        node.ClearAnchor();
         node.SetSelectStyle(false);
         Destroy(transform.gameObject);
     }

@@ -73,8 +73,6 @@ public class Node : MonoBehaviour
             else
             {
                 b.gameObject.SetActive(true);
-                b.transform.position = transform.position;
-                b.transform.localScale = transform.localScale;
             }
         }
         else
@@ -149,6 +147,7 @@ public class Node : MonoBehaviour
                         GameObject anchor = Instantiate(anchorPrefab, line.transform);
                         anchor.transform.position = new(lr.GetPosition(i).x, lr.GetPosition(i).y);
                         anchor.name = name;
+                        anchor.transform.Find("text").GetComponent<TextMesh>().text = name;
 
                     }
                 }

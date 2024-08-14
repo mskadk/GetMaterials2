@@ -1,5 +1,4 @@
-﻿using OfficeOpenXml.FormulaParsing.Excel.Functions.Text;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -123,10 +122,97 @@ namespace Assets.Script.My.Extention
                     }
                     result += res;
                     res = null;
-                    if (i != s.Count -1)
+                    if (i != s.Count - 1)
                     {
                         result += "|";
                     }
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 从竖线、横线分隔的路径列表中剔除目标id的整条数据
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public static string RemoveIdPrePath(this string input, string target)
+        {
+            if (input == "-1") { return input; }
+            List<string> result = null;
+            List<string> paths = input.Split("|").ToList();
+            foreach (var path in paths)
+            {
+                if (path.Split("_")[0] != target)
+                {
+                    result.Add(path);
+                }
+            }
+            return ToString(result);
+        }
+
+        /// <summary>
+        /// 从竖线分隔的id列表中剔除目标id
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="removeID"></param>
+        /// <returns></returns>
+        public static string RemoveIdPreNode(this string input, string target)
+        {
+            var l = input.Split("|").ToList();
+            l.Remove(target);
+            return ToString(l);
+        }
+
+        /// <summary>
+        /// 将List<string>以符号组成字符串
+        /// </summary>
+        /// <param name="input">输入内容</param>
+        /// <param name="args">分隔符号</param>
+        /// <returns></returns>
+        public static string ToString(this List<string> input, string args = "|")
+        {
+            if (input is null)
+            {
+                return "-1";
+            }
+            string result = null;
+            for (int i = 0; i < input.Count; i++)
+            {
+                result += input[i].ToString();
+                if (i != input.Count - 1)
+                {
+                    result += args;
+                }
+            }
+            return result is null ? "-1" : result;
+        }
+
+        /// <summary>
+        /// 更新前置路径中，某个id的路径字段
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="id"></param>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public static string UpdatePathNodeById(this string input, string id, string newPath)
+        {
+            string result = null;
+            var paths = input.Split("|").ToList();
+            foreach (var path in paths)
+            {
+                if (result is not null)
+                {
+                    result += "|";
+                }
+                if (path.Split("_")[0] == id)
+                {
+                    result += $"{id}_{newPath}";
+                }
+                else
+                {
+                    result += path;
                 }
             }
             return result;
