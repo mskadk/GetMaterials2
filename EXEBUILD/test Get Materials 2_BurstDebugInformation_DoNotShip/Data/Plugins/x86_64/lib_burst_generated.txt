@@ -1,0 +1,122 @@
+Library: D:\GetMaterials2\Temp\BurstOutput\Data\Plugins\x86_64\lib_burst_generated
+--platform=Windows
+--backend=burst-llvm-16
+--target=X64_SSE2
+--global-safety-checks-setting=Off
+--meta-data-generation=False
+--dump=Function
+--float-precision=Standard
+--target-framework=NetFramework
+--assembly-defines=Assembly-CSharp;
+--assembly-defines=EPPlus;
+--assembly-defines=I18N;
+--assembly-defines=I18N.West;
+--assembly-defines=Mono.Security;
+--assembly-defines=mscorlib;
+--assembly-defines=netstandard;
+--assembly-defines=System.ComponentModel.Composition;
+--assembly-defines=System.Configuration;
+--assembly-defines=System.Core;
+--assembly-defines=System.Data.DataSetExtensions;
+--assembly-defines=System.Data;
+--assembly-defines=System;
+--assembly-defines=System.Drawing;
+--assembly-defines=System.EnterpriseServices;
+--assembly-defines=System.IO.Compression;
+--assembly-defines=System.IO.Compression.FileSystem;
+--assembly-defines=System.Net.Http;
+--assembly-defines=System.Numerics;
+--assembly-defines=System.Runtime;
+--assembly-defines=System.Runtime.Serialization;
+--assembly-defines=System.Security;
+--assembly-defines=System.ServiceModel.Internals;
+--assembly-defines=System.Transactions;
+--assembly-defines=System.Xml;
+--assembly-defines=System.Xml.Linq;
+--assembly-defines=Unity.2D.Common.Runtime;
+--assembly-defines=Unity.2D.SpriteShape.Runtime;
+--assembly-defines=Unity.2D.Tilemap.Extras;
+--assembly-defines=Unity.Addressables;
+--assembly-defines=Unity.Burst;
+--assembly-defines=Unity.Burst.Unsafe;
+--assembly-defines=Unity.InternalAPIEngineBridge.001;
+--assembly-defines=Unity.Mathematics;
+--assembly-defines=Unity.ResourceManager;
+--assembly-defines=Unity.ScriptableBuildPipeline;
+--assembly-defines=Unity.TextMeshPro;
+--assembly-defines=UnityEngine;
+--linker-options=PdbAltPath="test Get Materials 2_Data/Plugins/x86_64/lib_burst_generated.pdb"
+--generate-link-xml=Temp\burst.link.xml
+--temp-folder=D:\GetMaterials2\Temp\Burst
+--debug=Full
+--key-folder=C:/Program Files/Unity/Hub/Editor/2023.2.15f1c1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport
+--decode-folder=D:\GetMaterials2\Library\Burst
+--output=D:\GetMaterials2\Temp\BurstOutput\Data\Plugins\x86_64\lib_burst_generated
+--pdb-search-paths=Temp/ManagedSymbols/
+
+--method=Unity.Burst.BurstCompiler+BurstCompilerHelper, Unity.Burst, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null::IsBurstEnabled()--8c2be93e18276203cbd918daa2748a10
+--method=UnityEngine.U2D.SpriteShapeGenerator, Unity.2D.SpriteShape.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null::UTessellator(UnityEngine.U2D.SpriteShapeSegment&, UnityEngine.SpriteShapeModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null|System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|Unity.Mathematics.float2*, Unity.Mathematics, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|System.UInt16*, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|System.Int32&, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|System.Byte*, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|System.Int32&, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|Unity.Collections.Allocator, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)--061acaf8bf970e2528896e65f9c91f2c
+--method=Unity.Burst.Intrinsics.X86, Unity.Burst, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null::DoSetCSRTrampoline(System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089)--da352d92cabf024fc9986011d52a4537
+--method=Unity.Jobs.IJobExtensions+JobStruct`1[[UnityEngine.U2D.SpriteShapeGenerator, Unity.2D.SpriteShape.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]], UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null::Execute(UnityEngine.U2D.SpriteShapeGenerator&, Unity.2D.SpriteShape.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null|System.IntPtr, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|System.IntPtr, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|Unity.Jobs.LowLevel.Unsafe.JobRanges&, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null|System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089)--a185c62eba2497c95197140e5282b27a
+--method=Unity.Burst.Intrinsics.X86, Unity.Burst, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null::DoGetCSRTrampoline()--89425a97f3f500fa810ad03f0c382542
+--platform=Windows
+--backend=burst-llvm-16
+--target=AVX2
+--global-safety-checks-setting=Off
+--meta-data-generation=False
+--dump=Function
+--float-precision=Standard
+--target-framework=NetFramework
+--assembly-defines=Assembly-CSharp;
+--assembly-defines=EPPlus;
+--assembly-defines=I18N;
+--assembly-defines=I18N.West;
+--assembly-defines=Mono.Security;
+--assembly-defines=mscorlib;
+--assembly-defines=netstandard;
+--assembly-defines=System.ComponentModel.Composition;
+--assembly-defines=System.Configuration;
+--assembly-defines=System.Core;
+--assembly-defines=System.Data.DataSetExtensions;
+--assembly-defines=System.Data;
+--assembly-defines=System;
+--assembly-defines=System.Drawing;
+--assembly-defines=System.EnterpriseServices;
+--assembly-defines=System.IO.Compression;
+--assembly-defines=System.IO.Compression.FileSystem;
+--assembly-defines=System.Net.Http;
+--assembly-defines=System.Numerics;
+--assembly-defines=System.Runtime;
+--assembly-defines=System.Runtime.Serialization;
+--assembly-defines=System.Security;
+--assembly-defines=System.ServiceModel.Internals;
+--assembly-defines=System.Transactions;
+--assembly-defines=System.Xml;
+--assembly-defines=System.Xml.Linq;
+--assembly-defines=Unity.2D.Common.Runtime;
+--assembly-defines=Unity.2D.SpriteShape.Runtime;
+--assembly-defines=Unity.2D.Tilemap.Extras;
+--assembly-defines=Unity.Addressables;
+--assembly-defines=Unity.Burst;
+--assembly-defines=Unity.Burst.Unsafe;
+--assembly-defines=Unity.InternalAPIEngineBridge.001;
+--assembly-defines=Unity.Mathematics;
+--assembly-defines=Unity.ResourceManager;
+--assembly-defines=Unity.ScriptableBuildPipeline;
+--assembly-defines=Unity.TextMeshPro;
+--assembly-defines=UnityEngine;
+--linker-options=PdbAltPath="test Get Materials 2_Data/Plugins/x86_64/lib_burst_generated.pdb"
+--generate-link-xml=Temp\burst.link.xml
+--temp-folder=D:\GetMaterials2\Temp\Burst
+--debug=Full
+--key-folder=C:/Program Files/Unity/Hub/Editor/2023.2.15f1c1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport
+--decode-folder=D:\GetMaterials2\Library\Burst
+--output=D:\GetMaterials2\Temp\BurstOutput\Data\Plugins\x86_64\lib_burst_generated
+--pdb-search-paths=Temp/ManagedSymbols/
+
+--method=Unity.Burst.BurstCompiler+BurstCompilerHelper, Unity.Burst, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null::IsBurstEnabled()--8c2be93e18276203cbd918daa2748a10
+--method=UnityEngine.U2D.SpriteShapeGenerator, Unity.2D.SpriteShape.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null::UTessellator(UnityEngine.U2D.SpriteShapeSegment&, UnityEngine.SpriteShapeModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null|System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|Unity.Mathematics.float2*, Unity.Mathematics, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|System.UInt16*, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|System.Int32&, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|System.Byte*, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|System.Int32&, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|Unity.Collections.Allocator, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)--061acaf8bf970e2528896e65f9c91f2c
+--method=Unity.Burst.Intrinsics.X86, Unity.Burst, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null::DoSetCSRTrampoline(System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089)--da352d92cabf024fc9986011d52a4537
+--method=Unity.Jobs.IJobExtensions+JobStruct`1[[UnityEngine.U2D.SpriteShapeGenerator, Unity.2D.SpriteShape.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]], UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null::Execute(UnityEngine.U2D.SpriteShapeGenerator&, Unity.2D.SpriteShape.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null|System.IntPtr, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|System.IntPtr, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089|Unity.Jobs.LowLevel.Unsafe.JobRanges&, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null|System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089)--a185c62eba2497c95197140e5282b27a
+--method=Unity.Burst.Intrinsics.X86, Unity.Burst, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null::DoGetCSRTrampoline()--89425a97f3f500fa810ad03f0c382542
+

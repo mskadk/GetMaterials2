@@ -8,7 +8,7 @@ using UnityEngine.AddressableAssets;
 public class ResourceLoader
 {
 
-    public static string addressResRoot = "Assets/AddressResources/";
+    public static string addressResRoot = "Assets/Resources/";
 
 
     public static Shader LoadShader(string path, string shaderName)
@@ -28,26 +28,29 @@ public class ResourceLoader
 
     public static T Load<T>(string path) where T : UnityEngine.Object
     {
-
-#if UNITY_EDITOR
         string url = addressResRoot + path;
-        return UnityEditor.AssetDatabase.LoadAssetAtPath<T>(url);
-#endif
+        return Resources.Load<T>(url);
 
 
-        //#if ADDRESSABLES_ENABLED
-        string key = "Assets/AddressResources/" + path;
-        key = key.Replace("\\", "/");
-        Debug.Log("key=" + key);
-        var op = Addressables.LoadAssetAsync<T>(key);
+//#if UNITY_EDITOR
+//        string url = addressResRoot + path;
+//        return UnityEditor.AssetDatabase.LoadAssetAtPath<T>(url);
+//#endif
 
 
-        T go = op.WaitForCompletion();
+        //        //#if ADDRESSABLES_ENABLED
+        //        string key = "Assets/AddressResources/" + path;
+        //        key = key.Replace("\\", "/");
+        //        Debug.Log("key=" + key);
+        //        var op = Addressables.LoadAssetAsync<T>(key);
 
-        return go;
-        //#else
-        //        return null;
-        //#endif
+
+        //        T go = op.WaitForCompletion();
+
+        //        return go;
+        //        //#else
+        //        //        return null;
+        //        //#endif
 
 
     }
