@@ -24,9 +24,8 @@ public class GhostNode : MonoBehaviour
         if (!EventSystem.current.currentSelectedGameObject && Input.GetMouseButtonDown(0))
         {
             mm.NewNode(pos);
-            Destroy(gameObject);
         }
-        if (!EventSystem.current.currentSelectedGameObject && Input.GetKeyDown(KeyCode.Escape))
+        if (!EventSystem.current.currentSelectedGameObject && (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1)))
         {
             Destroy(gameObject);
         }

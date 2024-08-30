@@ -6,9 +6,13 @@ namespace Assets.Script.My
     public static class SpriteManager
     {
         /// <summary>
-        /// 使用SpriteManager创建一个Sprite图集
+        /// 生成一个Gameobject
         /// </summary>
-        /// <param obj="spriteName">sprite文件的名字</param>
+        /// <param name="obj">生成给谁</param>
+        /// <param name="spritName">sprite的名字</param>
+        /// <param name="actionId">actionId</param>
+        /// <param name="frameId">frameId</param>
+        /// <returns></returns>
         public static GameObject Paint(GameObject obj, string spritName, int actionId, int frameId)
         {
             GameObject g = new("fw_icon");

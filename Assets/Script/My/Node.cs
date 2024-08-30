@@ -118,8 +118,9 @@ public class Node : MonoBehaviour
 
     private void UpdateNodeStyle()
     {
-        //大图颜色
+        //节点颜色
         sr.color = getColor(sc.IconColor);
+        //节点尺寸
         if (sc.IconScale == 0.75)
         {
             transform.localScale = .75f * Vector3.one;
@@ -176,11 +177,16 @@ public class Node : MonoBehaviour
     public void ClearAnchor()
     {
         List<GameObject> listLine = getAllLineGOs();
+        List<GameObject> del = new();
         foreach (var line in listLine)
         {
-            while (line.transform.childCount > 0)
+            for (int i = 0; i < line.transform.childCount; i++)
             {
-                DestroyImmediate(line.transform.GetChild(0).gameObject);
+                del.Add(line.transform.GetChild(i).gameObject);
+            }
+            foreach (var item in del)
+            {
+                DestroyImmediate(item);
             }
         }
     }
@@ -210,6 +216,7 @@ public class Node : MonoBehaviour
                 Science parentSc = parentNode.GetComponent<Node>().sc;
                 string lineName = $"{parentSc.Id}->{this.sc.Id}";
                 listLineName.Add(lineName);
+                //找到线或创建线
                 GameObject lineGO;
                 if (transform.Find(lineName))
                 {
@@ -221,17 +228,7 @@ public class Node : MonoBehaviour
                     lineGO.name = lineName;
                 }
                 var line = lineGO.GetComponent<LineRenderer>();
-                line.startColor = getColor(parentSc.IconColor);
-                line.endColor = getColor(this.sc.IconColor);
-                if (sc.LineScale == 8)
-                {
-                    line.startWidth = line.endWidth = .15f;
-                }
-                else if (sc.LineScale == 4)
-                {
-                    line.startWidth = line.endWidth = .05f;
-
-                }
+                line.positionCount = List前置路径.Count + 2;
                 if (List前置路径.Count == 0)
                 {
                     line.SetPositions(new[] {
@@ -255,6 +252,18 @@ public class Node : MonoBehaviour
                     positions.Add(transform.position + Vector3.forward);
                     line.positionCount = positions.Count;
                     line.SetPositions(positions.ToArray());
+                }
+                //更新线的外观样式
+                line.startColor = getColor(parentSc.IconColor);
+                line.endColor = getColor(this.sc.IconColor);
+                if (sc.LineScale == 8)
+                {
+                    line.startWidth = line.endWidth = .15f;
+                }
+                else if (sc.LineScale == 4)
+                {
+                    line.startWidth = line.endWidth = .05f;
+
                 }
             }
             //清除多余线

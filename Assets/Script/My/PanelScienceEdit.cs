@@ -28,6 +28,8 @@ public class PanelScienceEdit : MonoBehaviour
     public Science sc { get; set; }
     public Node node { get; set; }
     public MainManager mm;
+    public GameObject content;
+    public GameObject TTITPrefab;
     TipText debug;
     Button submit;
 
@@ -52,6 +54,8 @@ public class PanelScienceEdit : MonoBehaviour
 
     InputField i_desc;
     InputField i_descAdd;
+
+
     private void initComponentAndScience()
     {
         //绑定组件
@@ -101,6 +105,8 @@ public class PanelScienceEdit : MonoBehaviour
         submit = transform.Find("btn_submit").GetComponent<Button>();
 
         mm = GameObject.Find("MainManager").GetComponent<MainManager>();
+
+        updateTTIContent();
     }
     void Start()
     {
@@ -132,6 +138,11 @@ public class PanelScienceEdit : MonoBehaviour
         else if (mm.ScienceDict.ContainsKey(id))
         {
             debug.LogError($"{id}已经存在");
+            i_id.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.red;
+        }
+        else if (i_id.text == "-1")
+        {
+            debug.LogError($"{id}不能是id");
             i_id.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.red;
         }
         else
@@ -185,31 +196,37 @@ public class PanelScienceEdit : MonoBehaviour
 
     public void UpdatePrePath()
     {
-        if (Regex.IsMatch(i_prePath.text, "^-1$|((?!-1)(-?\\d+))(_-?\\d+){2,}((_-?\\d+){2})*$"))
+        i_prePath.text = i_prePath.text.Replace("——", "_");
+        if (Regex.IsMatch(i_prePath.text, "^(-1)$|((?!-1)(-?\\d+))(_-?\\d+){2,}((_-?\\d+){2})*$"))
         {
             i_prePath.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
             sc.PathNode = i_prePath.text;
-
-            //前置校验
-            List<string> preListinPath = new();
-            preListinPath.Clear();
-            sc.PathNode.Split("|").ToList().ForEach(IdandPath => {
-                preListinPath.Add(IdandPath.Split("_")[0]);
-            });
-            List<string> prePath = sc.Pre_technology.Split("|").ToList();
-            bool have = false;
-            foreach (var id in preListinPath)
+            if (sc.PathNode != "-1")
             {
-                if (prePath.Contains(id))
+                //前置校验
+                List<string> preListinPath = new();
+                preListinPath.Clear();
+                sc.PathNode.Split("|").ToList().ForEach(IdandPath =>
                 {
-                    have = true;
-                    break;
+                    preListinPath.Add(IdandPath.Split("_")[0]);
+                });
+                List<string> prePath = sc.Pre_technology.Split("|").ToList();
+                //判断是否输入了不存在的id
+                bool have = false;
+                foreach (var id in preListinPath)
+                {
+                    if (prePath.Contains(id))
+                    {
+                        have = true;
+                        break;
+                    }
+                }
+                if (!have)
+                {
+                    debug.LogWarning($"节点{sc.Id}添加了不属于前置的路径");
                 }
             }
-            if (!have)
-            {
-                debug.LogWarning($"节点{sc.Id}添加了不属于前置的路径");
-            }
+
             node.UpdateNodeAppearance();
             node.ClearAnchor();
             node.UpdateLineAnchor();
@@ -228,7 +245,7 @@ public class PanelScienceEdit : MonoBehaviour
 
     public void UpdatePre()
     {
-        if (Regex.IsMatch(i_pre.text, "^(?:-1|(\\d+)(?:_(\\d+)_(\\d+))*(?:\\|(?:(\\d+)(?:_(\\d+)_(\\d+))*))*)$"))
+        if (Regex.IsMatch(i_pre.text, "^(?:-*[0-9]*|(\\d+)(?:_(\\d+)_(\\d+))*(?:\\|(?:(\\d+)(?:_(\\d+)_(\\d+))*))*)$"))
         {
             i_pre.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
             //更新旧的后继节点
@@ -236,6 +253,16 @@ public class PanelScienceEdit : MonoBehaviour
             string newpre = i_pre.text;
             var o = oldpre.Split("|").ToList();
             var n = newpre.Split("|").ToList();
+            //输入内容校验
+            foreach (var item in n)
+            {
+                if (item != "-1" && !mm.ScienceDict.ContainsKey(int.Parse(item)))
+                {
+                    debug.LogError($"当前所有节点中不存在一个id为{item}的节点。");
+                    return;
+                }
+            }
+
             foreach (var oldsc in o)
             {
                 mm.ScienceDict.TryGetValue(int.Parse(oldsc), out Science outSc);
@@ -259,7 +286,7 @@ public class PanelScienceEdit : MonoBehaviour
         else
         {
             i_pre.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.red;
-            debug.LogError($"前置输入有误");
+            debug.LogError($"前置输入格式有误");
         }
     }
 
@@ -267,6 +294,11 @@ public class PanelScienceEdit : MonoBehaviour
     {
         sc.IconColor = d_color.value + 1;
         node.UpdateNodeAppearance();
+        var t = GameObject.Find("Tilemap");
+        foreach (var item in sc.After_technology)
+        {
+            t.transform.Find(item.ToString()).GetComponent<Node>().UpdateNodeAppearance();
+        }
     }
 
     public void UpdateNodeScale()
@@ -308,12 +340,65 @@ public class PanelScienceEdit : MonoBehaviour
 
     public void UpdateUnlockBuilding()
     {
+        mm.UpdateTTIShow(sc.Building_unlock, i_build.text);
         sc.Building_unlock = i_build.text;
+        updateTTIContent();
     }
 
     public void UpdateUnlockNoBuilding()
     {
+        mm.UpdateTTIShow(sc.NonBuilding_unlock, i_unbuild.text);
         sc.NonBuilding_unlock = i_unbuild.text;
+        updateTTIContent();
+    }
+
+    private void updateTTIContent()
+    {
+        //清空content原有的内容
+        if (content.transform.childCount != 0)
+        {
+            List<GameObject> list = new();
+            for (int i = 0; i < content.transform.childCount; i++)
+            {
+                list.Add(content.transform.GetChild(i).gameObject);
+            }
+            foreach (var item in list)
+            {
+                DestroyImmediate(item.gameObject);
+            }
+        }
+        //为sc中有的解锁项进行显示
+        foreach (var id in sc.Building_unlock.ToList())
+        {
+            mm.TechTreeItemDict.TryGetValue(id, out var tti);
+            if (tti != null)
+            {
+                if (!content.transform.Find(tti.Id.ToString()))
+                {
+                    GameObject o = Instantiate(tti.GO, content.transform);
+                }
+            }
+        }
+        foreach (var id in sc.NonBuilding_unlock.ToList())
+        {
+            mm.TechTreeItemDict.TryGetValue(id, out var tti);
+            if (tti != null)
+            {
+                if (!content.transform.Find(tti.Id.ToString()))
+                {
+                    GameObject o = Instantiate(tti.GO, content.transform);
+                }
+            }
+        }
+        //如果有解锁项，则显示
+        if (content.transform.childCount != 0)
+        {
+            transform.Find("sv_TTI").gameObject.SetActive(true);
+        }
+        else
+        {
+            transform.Find("sv_TTI").gameObject.SetActive(false);
+        }
     }
 
     public void UpdateDescribe()
@@ -365,6 +450,7 @@ public class PanelScienceEdit : MonoBehaviour
     /// </summary>
     public void DestoryPanel()
     {
+        mm.ScEditing = false;
         node.ClearAnchor();
         node.SetSelectStyle(false);
         Destroy(transform.gameObject);

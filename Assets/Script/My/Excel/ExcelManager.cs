@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using static Assets.Script.My.Extention.MyExtensions;
 
 namespace Assets.Script.My.Excel
@@ -14,8 +15,12 @@ namespace Assets.Script.My.Excel
         FileInfo fileInfo;
         ExcelPackage excelPackage;
         ExcelWorksheet worksheet;
+        List<string> TypeRow = new();
+        List<string> NameRow = new();
 
         Dictionary<int, Science> ScienceDict;
+        Dictionary<int, TechTreeItem> TechTreeItemDict;
+
         private enum Scc : int//Sciencs Col
         {
             ID = 1,
@@ -43,52 +48,49 @@ namespace Assets.Script.My.Excel
 
         }
 
-        public string Save(string path, string source)
+        public string SaveScience(string path, string source, Dictionary<int, Science> dict)
         {
+            ScienceDict = dict;
             //创建保存档
             string saveName = "Science";
             string suffix = ".xlsx";
             FileInfo saveFI = new FileInfo(path + saveName + $"({DateTime.Now:yyyy-MM-dd_HH.mm.ss})" + suffix);
             ExcelPackage saveEP = new(saveFI);
+            if (saveEP.Workbook.Worksheets.Count > 0)
+            {
+                saveEP.Workbook.Worksheets.Delete(1);
+            }
             saveEP.Workbook.Worksheets.Add("Sheet1");
             ExcelWorksheet saveEW = saveEP.Workbook.Worksheets[1];
 
-            //创建读取档
-            fileInfo = new FileInfo(source);
-            excelPackage = new ExcelPackage(fileInfo);
-            worksheet = excelPackage.Workbook.Worksheets[1];
-            int startRow = worksheet.Dimension.Start.Row;
-            int endRow = worksheet.Dimension.Rows;
             //保存表头
-            for (int i = 1; i <= 2; i++)
+            for (int j = 1; j <= 18; j++)
             {
-                for (int j = startRow; j <= endRow; j++)
-                {
-                    saveEW.Cells[i, j].Value = worksheet.Cells[i, j].Value;
-                }
+                saveEW.Cells[1, j].Value = TypeRow[j - 1];
+                saveEW.Cells[2, j].Value = NameRow[j - 1];
             }
             //保存字典内容
             int row = 3;
             foreach (var sc in ScienceDict.Values)
-            {                                                                                                  ;
-                saveEW.Cells[row, (int)Scc.ID]                         .Value =  sc.Id                         ;
-                saveEW.Cells[row, (int)Scc.SubType]                    .Value =  sc.SubType                    ;
-                saveEW.Cells[row, (int)Scc.ModuleId]                   .Value =  sc.ModuleId                   ;
-                saveEW.Cells[row, (int)Scc.IconScale]                  .Value =  sc.IconScale                  ;
-                saveEW.Cells[row, (int)Scc.LineScale]                  .Value =  sc.LineScale                  ;
-                saveEW.Cells[row, (int)Scc.Name]                       .Value =  sc.Name                       ;
-                saveEW.Cells[row, (int)Scc.Detail]                     .Value =  sc.Detail                     ;
-                saveEW.Cells[row, (int)Scc.Detail_2]                   .Value =  sc.Detail_2                   ;
-                saveEW.Cells[row, (int)Scc.Building_unlock]            .Value =  sc.Building_unlock            ;
-                saveEW.Cells[row, (int)Scc.NonBuilding_unlock]         .Value =  sc.NonBuilding_unlock         ;
-                saveEW.Cells[row, (int)Scc.HexGridX]                   .Value =  sc.HexGridX                   ;
-                saveEW.Cells[row, (int)Scc.HexGridY]                   .Value =  sc.HexGridY                   ;
-                saveEW.Cells[row, (int)Scc.Pre_technology]             .Value =  sc.Pre_technology             ;
-                saveEW.Cells[row, (int)Scc.PathNode]                   .Value =  sc.PathNode                   ;
-                saveEW.Cells[row, (int)Scc.S_Materials]                .Value =  sc.S_Materials                ;
-                saveEW.Cells[row, (int)Scc.Time]                       .Value =  sc.Time                       ;
-                saveEW.Cells[row, (int)Scc.IconColor]                  .Value =  sc.IconColor                  ;
-                saveEW.Cells[row, (int)Scc.Trigger_technology]         .Value = sc.Trigger_technology          ;
+            {
+                saveEW.Cells[row, (int)Scc.ID].Value = sc.Id;
+                saveEW.Cells[row, (int)Scc.SubType].Value = sc.SubType;
+                saveEW.Cells[row, (int)Scc.ModuleId].Value = sc.ModuleId;
+                saveEW.Cells[row, (int)Scc.IconScale].Value = sc.IconScale;
+                saveEW.Cells[row, (int)Scc.LineScale].Value = sc.LineScale;
+                saveEW.Cells[row, (int)Scc.Name].Value = sc.Name;
+                saveEW.Cells[row, (int)Scc.Detail].Value = sc.Detail;
+                saveEW.Cells[row, (int)Scc.Detail_2].Value = sc.Detail_2;
+                saveEW.Cells[row, (int)Scc.Building_unlock].Value = sc.Building_unlock;
+                saveEW.Cells[row, (int)Scc.NonBuilding_unlock].Value = sc.NonBuilding_unlock;
+                saveEW.Cells[row, (int)Scc.HexGridX].Value = sc.HexGridX;
+                saveEW.Cells[row, (int)Scc.HexGridY].Value = sc.HexGridY;
+                saveEW.Cells[row, (int)Scc.Pre_technology].Value = sc.Pre_technology;
+                saveEW.Cells[row, (int)Scc.PathNode].Value = sc.PathNode;
+                saveEW.Cells[row, (int)Scc.S_Materials].Value = sc.S_Materials;
+                saveEW.Cells[row, (int)Scc.Time].Value = sc.Time;
+                saveEW.Cells[row, (int)Scc.IconColor].Value = sc.IconColor;
+                saveEW.Cells[row, (int)Scc.Trigger_technology].Value = sc.Trigger_technology;
                 row++;
             }
             //设置保存样式
@@ -100,18 +102,22 @@ namespace Assets.Script.My.Excel
             return saveFI.FullName;
         }
 
-        /// <summary>
-        /// 读取科技表，组成科技字典
-        /// <para>自动为节点创建后继列表</para>
-        /// </summary>
-        /// <param name="FilePath">表名字</param>
-        public Dictionary<int, Science> Load(string FilePath)
+        public Dictionary<int, Science> LoadScience(string FilePath)
         {
             fileInfo = new FileInfo(FilePath);
             excelPackage = new ExcelPackage(fileInfo);
             worksheet = excelPackage.Workbook.Worksheets[1];
             int startRow = worksheet.Dimension.Start.Row;
             int endRow = worksheet.Dimension.Rows;
+            //建立科技表的表头字段，用作保存时使用
+            TypeRow.Clear();
+            NameRow.Clear();
+            for (int i = 1; i <= 18; i++)
+            {
+                TypeRow.Add(worksheet.Cells[1, i].GetValue<string>());
+                NameRow.Add(worksheet.Cells[2, i].GetValue<string>());
+            }
+
             //为科技表建立字典，索引为科技的ID
             ScienceDict = new Dictionary<int, Science>();
             Dictionary<int, List<int>> AfterDict = new();
@@ -157,6 +163,26 @@ namespace Assets.Script.My.Excel
                 }
             }
             return ScienceDict;
+        }
+
+        public Dictionary<int, TechTreeItem> LoadTechTreeitem(string FilePath)
+        {
+            fileInfo = new FileInfo(FilePath);
+            excelPackage = new ExcelPackage(fileInfo);
+            worksheet = excelPackage.Workbook.Worksheets[1];
+            int startRow = worksheet.Dimension.Start.Row;
+            int endRow = worksheet.Dimension.Rows;
+            TechTreeItemDict = new Dictionary<int, TechTreeItem>();
+            for (int i = startRow + SKIP_ROW; i <= endRow; i++)
+            {
+                TechTreeItem item = new(
+                    worksheet.Cells[i,1].GetValue<int>(),
+                    worksheet.Cells[i,3].GetValue<string>(),
+                    worksheet.Cells[i,4].GetValue<string>()
+                    );
+                TechTreeItemDict.Add(item.Id,item);
+            }
+            return TechTreeItemDict;
         }
     }
 }

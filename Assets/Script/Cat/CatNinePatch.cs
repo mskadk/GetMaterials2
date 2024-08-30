@@ -17,7 +17,7 @@ public class CatNinePatch
     public static  int BOTTOM_CENTER = 7;
     public static  int BOTTOM_RIGHT = 8;
 
-    static private  Color tempColor = new Color();
+    //static private  Color tempColor = new Color();
 
     private Texture texture;
     private int bottomLeft = -1, bottomCenter = -1, bottomRight = -1;

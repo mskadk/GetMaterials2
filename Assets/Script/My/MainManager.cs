@@ -1,5 +1,6 @@
 using Assets.Script.My.Excel;
 using Assets.Script.My.Extention;
+using OfficeOpenXml.FormulaParsing.Utilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,6 +27,7 @@ public class MainManager : MonoBehaviour
 
     public GameObject Node;
     public GameObject ghostNodePrefab;
+    public GameObject techTreeItemTextPrefab;
     public Camera camSence;
     public GridDrawer gridDrawer;
 
@@ -34,6 +36,7 @@ public class MainManager : MonoBehaviour
 
     // Dictionary
     public Dictionary<int, Science> ScienceDict;
+    public Dictionary<int, TechTreeItem> TechTreeItemDict;
 
     // Hexagon Tilemap
     public GameObject tilemap;
@@ -43,11 +46,15 @@ public class MainManager : MonoBehaviour
     public Dropdown dpMainPage;
     public GameObject panelNodeEditPrefab;
     public GameObject canvas;
+    public ScrollRect scrollViewTechTreeItem;
+    GameObject content;
 
     // Command
     Toggle useMoveCam;
     Toggle useMoveNode;
     Toggle useEditNode;
+    Toggle toggleTTI;
+    Toggle toggleTTIFilter;
     TipText debug;
 
     #region 初始化
@@ -56,6 +63,7 @@ public class MainManager : MonoBehaviour
         initExcel();
         initUI();
         initTilemap();
+        initTTI();
         initNode();
     }
 
@@ -68,7 +76,10 @@ public class MainManager : MonoBehaviour
         }
 
         em = new();
-        ScienceDict = em.Load(WorkSpace_Excel + "Science.xlsx");
+        ScienceDict = em.LoadScience(WorkSpace_Excel + "Science.xlsx");
+        TechTreeItemDict = em.LoadTechTreeitem(WorkSpace_Excel + "G_TechTreeItem.xlsx");
+
+
     }
 
     private void initUI()
@@ -76,6 +87,10 @@ public class MainManager : MonoBehaviour
         useMoveCam = GameObject.Find("ToggleMoveCam").GetComponent<Toggle>();
         useMoveNode = GameObject.Find("ToggleMoveNode").GetComponent<Toggle>();
         useEditNode = GameObject.Find("ToggleEditNode").GetComponent<Toggle>();
+        toggleTTI = GameObject.Find("ToggleTTI").GetComponent<Toggle>();
+        toggleTTIFilter = GameObject.Find("ToggleTTIFilter").GetComponent<Toggle>();
+        scrollViewTechTreeItem = GameObject.Find("ScrollViewTechTreeItem").GetComponent<ScrollRect>();
+        content = scrollViewTechTreeItem.transform.Find("Viewport/Content").gameObject;
         debug = GameObject.Find("tiptext").GetComponent<TipText>();
     }
 
@@ -83,6 +98,21 @@ public class MainManager : MonoBehaviour
     {
         tilemap = GameObject.Find("Tilemap");
         grid = GameObject.Find("Grid").GetComponent<Grid>();
+    }
+
+    private void initTTI()
+    {
+        foreach (var tti in TechTreeItemDict)
+        {
+            GameObject o = Instantiate(techTreeItemTextPrefab, content.transform);
+            o.name = tti.Key.ToString();
+            TechTreeItemText ttit = o.GetComponent<TechTreeItemText>();
+            tti.Value.GO = o;
+            ttit.t_id.text = tti.Key.ToString();
+            ttit.t_name.text = tti.Value.Name;
+            ttit.t_desc.text = tti.Value.Desc;
+            ttit.t_times.text = 0.ToString();
+        }
     }
 
     private void initNode()
@@ -93,6 +123,9 @@ public class MainManager : MonoBehaviour
             GameObject o = Instantiate(Node, grid.CellToWorld(new(sc.HexGridY, sc.HexGridX, 0)), new Quaternion(), tilemap.transform);
             o.name = sc.Id.ToString();
             o.GetComponent<Node>().sc = sc;
+            UpdateTTIShow("", sc.Building_unlock);
+            UpdateTTIShow("", sc.NonBuilding_unlock);
+
         }
     }
 
@@ -109,7 +142,7 @@ public class MainManager : MonoBehaviour
         string fullname = null;
         await Task.Run(() =>
         {
-            fullname = em.Save(WorkSpace_Saveto, WorkSpace_Excel + "Science.xlsx");
+            fullname = em.SaveScience(WorkSpace_Saveto, WorkSpace_Excel + "Science.xlsx", ScienceDict);
         });
         sw.Stop();
         debug.Log($"成功导出：{fullname}，用时：{sw.ElapsedMilliseconds}毫秒");
@@ -117,7 +150,6 @@ public class MainManager : MonoBehaviour
         tx.text = "导出到桌面";
         btncomp.interactable = true;
     }
-
 
     #endregion
 
@@ -145,15 +177,10 @@ public class MainManager : MonoBehaviour
     {
         updateMouseEvent();
         updateKeyboardEvent();
-        printDict();
+        debugPrintDict();
     }
 
-    /// <summary>
-    /// 打印
-    /// <para>/ 打印整个科技表字典</para>
-    /// <para>. 鼠标位置Node的Science数据</para>
-    /// </summary>
-    private void printDict()
+    private void debugPrintDict()
     {
         // / 打印整个科技表字典
         if (Input.GetKeyDown(KeyCode.Slash))
@@ -197,7 +224,6 @@ public class MainManager : MonoBehaviour
         }
     }
 
-
     public void ToggleMoveCam()
     {
         camSence.GetComponent<CameraEventControll>().相机控制 = useMoveCam.isOn;
@@ -220,6 +246,97 @@ public class MainManager : MonoBehaviour
     public void BtnNewNode()
     {
         GameObject newNode = Instantiate(ghostNodePrefab);
+        debug.Log("添加节点中……");
+    }
+
+    public void ToggleTTI()
+    {
+        scrollViewTechTreeItem.gameObject.SetActive(toggleTTI.isOn);
+        toggleTTIFilter.gameObject.SetActive(toggleTTI.isOn);
+
+    }
+
+    public void ToggleTTIFilter()
+    {
+        foreach (var ttit in TechTreeItemDict)
+        {
+            if (ttit.Value.GO.GetComponent<TechTreeItemText>().t_times.text == "1")
+            {
+                ttit.Value.GO.SetActive(toggleTTIFilter.isOn);
+            }
+        }
+    }
+
+    public void UpdateTTIShow(string oldStr = "", string newStr = "")
+    {
+        var oldList = oldStr.ToList();
+        var newList = newStr.ToList();
+        string newNotFound = null;
+        foreach (var item in oldList)
+        {
+            Transform t = content.transform.Find(item.ToString());
+            if (t)
+            {
+                var ttit = t.GetComponent<TechTreeItemText>();
+                int times_i = int.Parse(ttit.t_times.text);
+                times_i--;
+                if (times_i > 1)
+                {
+                    ttit.t_times.color = Color.red;
+                    ttit.t_id.color = Color.red;
+                    ttit.t_name.color = Color.red;
+                    debug.LogError($"{t.name}解锁项被重复解锁");
+                }
+                else if (times_i == 1)
+                {
+                    ttit.t_times.color = new Color(.2f,.6f,.2f);
+                    ttit.t_id.color = new Color(.2f, .6f, .2f);
+                    ttit.t_name.color = new Color(.2f, .6f, .2f);
+                }
+                else if (times_i < 1)
+                {
+                    ttit.t_times.color = Color.black;
+                    ttit.t_id.color = Color.black;
+                    ttit.t_name.color = Color.black;
+                }
+                ttit.t_times.text = times_i.ToString();
+            }
+        }
+
+        foreach (var item in newList)
+        {
+            Transform t = content.transform.Find(item.ToString());
+            if (t)
+            {
+                var ttit = t.GetComponent<TechTreeItemText>();
+                int times_i = int.Parse(ttit.t_times.text);
+                times_i++;
+                if (times_i > 1)
+                {
+                    ttit.t_times.color = Color.red;
+                    ttit.t_id.color = Color.red;
+                    ttit.t_name.color = Color.red;
+                    debug.LogError($"{t.name}解锁项被重复解锁");
+                }
+                else if (times_i == 1)
+                {
+                    ttit.t_times.color = new Color(.2f, .6f, .2f);
+                    ttit.t_id.color = new Color(.2f, .6f, .2f);
+                    ttit.t_name.color = new Color(.2f, .6f, .2f);
+                }
+                ttit.t_times.text = times_i.ToString();
+            }
+            else
+            {
+                newNotFound += newNotFound + " " + item.ToString();
+            }
+        }
+        if (newNotFound is not null)
+        {
+            debug.LogError($"{newNotFound} 是不存在的科技解锁项。");
+        }
+
+
     }
 
     #endregion
@@ -240,6 +357,9 @@ public class MainManager : MonoBehaviour
                 var sc = panel.GetComponent<PanelScienceEdit>().sc;
                 var id = sc.Id;
                 var node = tilemap.transform.Find(id.ToString());
+                //清除科技解锁项的标记
+                UpdateTTIShow(sc.Building_unlock, "");
+                UpdateTTIShow(sc.NonBuilding_unlock, "");
                 //删除前节点的后继
                 foreach (var pre in sc.Pre_technology.ToList())
                 {
@@ -268,6 +388,10 @@ public class MainManager : MonoBehaviour
     private GameObject rayHitMove;
     private GameObject rayHitEdit;
     private GameObject panel;
+    //暂未使用
+    private bool scEditing = false;
+    public bool ScEditing { get => scEditing; set => scEditing = value; }
+
     private void updateMouseEvent()
     {
         //节点编辑功能
@@ -284,6 +408,7 @@ public class MainManager : MonoBehaviour
                 //鼠标选择节点，实例化编辑窗口
                 if ((rayHitEdit = rayDetect()) && rayHitEdit.tag is "Node")
                 {
+                    scEditing = true;
                     string nodeId = rayHitEdit.name;
                     Node n = rayHitEdit.GetComponent<Node>();
                     //实例化Panel
@@ -392,13 +517,10 @@ public class MainManager : MonoBehaviour
                 rayHitMove = null;
             }
         }
-
-
-
     }
     #endregion
 
-    #region 外部调用
+    #region 外部调用,创建新的节点
     public void NewNode(Vector3Int pos)
     {
         int id = -3;
@@ -410,6 +532,7 @@ public class MainManager : MonoBehaviour
         ScienceDict.Add(id, sc);
 
     }
+
     #endregion
 
 }

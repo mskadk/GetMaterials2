@@ -105,7 +105,6 @@ public class Science
 
     public override string ToString()
     {
-        string d2 = detail_2.Length > 5 ? detail_2[..5] : string.Format("{0,-5}", detail_2);
         return
          $" {string.Format("{0,-5}", id)                                                 }\t"+
          $" {subType                                                                     }\t"+
@@ -113,8 +112,8 @@ public class Science
          $" {iconScale                                                                   }\t"+
          $" {string.Format("{0,-5}", lineScale)                                          }\t"+
          $" {string.Format("{0,-20}", name)                                              }\t"+
-         $" {detail[..5]                                                                 }\t"+
-         $" {d2                                                                          }\t"+
+         $" {string.Format("{0,-5}", detail)}\t"+
+         $" {string.Format("{0,-5}", detail_2)}\t"+
          $" {string.Format("{0,-35}", building_unlock)                                   }\t"+
          $" {string.Format("{0,-60}", nonBuilding_unlock)                                }\t"+
          $" {$"({hexGridX},{hexGridY})"                                                  }\t"+

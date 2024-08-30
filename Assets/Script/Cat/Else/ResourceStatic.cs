@@ -42,8 +42,8 @@ public class ResourceStatic
     {
         if (shader_Stand == null)
         {
-            shader_Stand = ResourceLoader.LoadShader(MyStatic.shaderRoot + "ZFairy_Common/FairyShader_Base.shader", "ZFairy/Base");
-            //shader_Stand = Shader.Find("ZFairy/Base");
+            shader_Stand = ResourceLoader.LoadShader(MyStatic.shaderRoot + "FairyShader_Base", "ZFairy/Base");
+            //shader_Stand = ResourceLoader.LoadShader(MyStatic.shaderRoot + "ZFairy_Common/FairyShader_Base.shader", "ZFairy/Base");
             /*
 #if Enable_URP_2D
             shader_Stand = Shader.Find("Universal Render Pipeline/2D/Spine/Sprite");
@@ -97,7 +97,8 @@ public class ResourceStatic
             shader_URP_2D_LIT = Shader.Find("Universal Render Pipeline/2D/Sprite-Lit-Default");
 #else
             //shader_URP_2D_LIT = Shader.Find("ZFairy/Base");
-            shader_URP_2D_LIT = ResourceLoader.LoadShader(MyStatic.shaderRoot + "ZFairy_Common/FairyShader_Base.shader", "ZFairy/Base");
+            //shader_URP_2D_LIT = ResourceLoader.LoadShader(MyStatic.shaderRoot + "ZFairy_Common/FairyShader_Base.shader", "ZFairy/Base");
+            shader_URP_2D_LIT = Shader.Find("ZFairy/Base");
 #endif
 
         }

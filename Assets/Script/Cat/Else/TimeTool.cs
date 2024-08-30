@@ -322,6 +322,7 @@ public class TimeTool
         return buffer.ToString();
     }
 
+    [Obsolete]
     public static DateTime mmToDateTime(long mm)
     {
         DateTime dtStart = TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1));

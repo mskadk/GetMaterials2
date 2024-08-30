@@ -1,1 +1,1 @@
-{"root":[{"assemblyName":"Unity.2D.SpriteShape.Runtime","nameSpace":"","className":"$BurstDirectCallInitializer","methodName":"Initialize","loadTypes":2,"isUnityClass":true},{"assemblyName":"Unity.ResourceManager","nameSpace":"UnityEngine.ResourceManagement.ResourceProviders","className":"AssetBundleProvider","methodName":"Init","loadTypes":4,"isUnityClass":true}]}
+{"root":[{"assemblyName":"Unity.2D.SpriteShape.Runtime","nameSpace":"","className":"$BurstDirectCallInitializer","methodName":"Initialize","loadTypes":2,"isUnityClass":true}]}

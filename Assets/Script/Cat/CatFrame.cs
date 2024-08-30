@@ -306,7 +306,7 @@ public class CatFrame
                         {
                             m.ninePatch.getPatch().resetPatch(w, w, h, h);
                         }
-                        catch (Exception e)
+                        catch (Exception)
                         {
                             //							e.printStackTrace();
                             CatNinePatch np = new CatNinePatch(m.textureRegion, w, w, h, h);
@@ -339,7 +339,7 @@ public class CatFrame
                         {
                             m.ninePatch.getPatch().resetPatch(w, w, h, h);
                         }
-                        catch (Exception e)
+                        catch (Exception)
                         {
                             //							e.printStackTrace();
                             CatNinePatch np = new CatNinePatch(m.textureRegion, w, w, h, h);
@@ -371,7 +371,7 @@ public class CatFrame
                     {
                         m.ninePatch.getPatch().resetPatch(w, w, h, h);
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         //						e.printStackTrace();
                         CatNinePatch np = new CatNinePatch(m.textureRegion, w, w, h, h);

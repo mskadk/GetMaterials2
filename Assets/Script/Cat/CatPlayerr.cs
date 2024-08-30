@@ -250,7 +250,12 @@ public class CatPlayerr
         }
     }
 
-
+    /// <summary>
+    /// 补充 .bin后缀
+    /// </summary>
+    /// <param name="path"></param>
+    /// <param name="shader"></param>
+    /// <returns></returns>
     public static string getKey(string path, Shader shader)
     {
         if (!path.EndsWith(".bin"))
@@ -292,8 +297,8 @@ public class CatPlayerr
     //}
 
 
-    private bool isKeepLastFrame = false;
-    private bool keepLastFrame = false;
+    //private bool isKeepLastFrame = false;
+    //private bool keepLastFrame = false;
 
     ////正向动作播放
     //public void setAction(int action, int loopCount, bool _keepLastFrame = false)
@@ -376,7 +381,7 @@ public class CatPlayerr
     //    }
     //}
 
-    private bool updateCurrentFrameID = false;
+    //private bool updateCurrentFrameID = false;
 
     #region 正序播放
 

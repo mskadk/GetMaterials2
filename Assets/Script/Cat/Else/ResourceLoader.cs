@@ -2,27 +2,29 @@
 
 
 //#if ADDRESSABLES_ENABLED
-using UnityEngine.AddressableAssets;
+//using UnityEngine.AddressableAssets;
 //#endif
 
 public class ResourceLoader
 {
 
-    public static string addressResRoot = "Assets/Resources/";
+    public static string addressResRoot = "Assets/Resource";
 
 
     public static Shader LoadShader(string path, string shaderName)
     {
+        //return Load<Shader>(path);
+        return Resources.Load<Shader>(path);
 
-#if UNITY_EDITOR
-        return UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(addressResRoot + path);
-#endif
-
-        //#if ADDRESSABLES_ENABLED
-        return Load<Shader>(path);
-        //#else
-        //        return Shader.Find(shaderName);    
+        //#if UNITY_EDITOR
+        //        return UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(addressResRoot + path);
         //#endif
+
+        //        //#if ADDRESSABLES_ENABLED
+        //        return Load<Shader>(path);
+        //        //#else
+        //        //        return Shader.Find(shaderName);    
+        //        //#endif
 
     }
 
