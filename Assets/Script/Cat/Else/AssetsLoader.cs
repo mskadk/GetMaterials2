@@ -13,8 +13,6 @@ using Assets.Script.My;
 
 public class AssetsLoader
 {
-
-
     public static JavaReader getAsset(string filePath)
     {
         JavaReader jr = null;
@@ -23,8 +21,6 @@ public class AssetsLoader
 
         return jr;
     }
-
-
 
     public static JavaReader getStreamingAssetsData(string filePath)
     {
@@ -69,142 +65,6 @@ public class AssetsLoader
         jr.setBinaryReader(new BinaryReader(ms));
         return jr;
     }
-
-    public static AudioClip loadClip(string filename)
-    {
-
-        string externalURL = MyStatic.AssetsRoot + filename;
-
-        string url = externalURL;
-
-        if (!MyStatic.useStreamingAssets && File.Exists(externalURL))
-        {
-
-        }
-        else
-        {
-            url = Application.streamingAssetsPath + "/" + filename;
-        }
-
-
-        /*if(fileInfo.Length > 1*1024*1024)
-        {
-            return loadAudioClipWithDownloader(url);
-        }
-        else*/
-        {
-            return loadAudioClipInRequest(url);
-        }
-    }
-
-    public static AudioClip loadAudioClipWithDownloader(string url)
-    {
-        using (UnityWebRequest www = UnityWebRequest.Get(url))
-        {
-            DownloadHandlerAudioClip downloadHandler = new DownloadHandlerAudioClip(url, AudioType.UNKNOWN);
-            downloadHandler.streamAudio = true; //该代码并无作用 unity的bug   bug跟踪 https://forum.unity.com/threads/downloadhandleraudioclip-streamaudio-is-ignored.699908/
-
-            www.downloadHandler = downloadHandler;
-            www.SendWebRequest();
-
-            while (!www.isDone)
-            {
-
-            }
-
-            if (www.result != UnityWebRequest.Result.Success)
-            {
-                Debug.Log(www.error);
-            }
-            else
-            {
-                AudioClip audioClip = downloadHandler.audioClip;
-                return audioClip;
-            }
-        }
-        return null;
-    }
-
-    public static AudioClip loadAudioClipInRequest(string url)
-    {
-        UnityWebRequest request = null;
-
-        //string externalURL = MyStatic.AssetsRoot + filename;
-
-        //if (!MyStatic.useStreamingAssets && File.Exists(externalURL))
-        //{
-        //    request = UnityWebRequestMultimedia.GetAudioClip(externalURL, AudioType.UNKNOWN);
-        //}
-        //else
-        //{
-        //    string url = Application.streamingAssetsPath + "/" + filename;
-        //    request = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.UNKNOWN);
-        //}
-#if UNITY_IOS
-        if (!url.StartsWith("file://"))
-        {
-            url = "file://" + url;
-        }
-#endif
-        request = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.UNKNOWN);
-
-        if (request != null)
-        {
-            request.timeout = 10 * 1000;
-            request.SendWebRequest();
-            while (request.result == UnityWebRequest.Result.InProgress)
-            {
-                //Debug.LogError("error");
-            }
-
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                AudioClip audioClip = DownloadHandlerAudioClip.GetContent(request);
-
-                return audioClip;
-            }
-        }
-
-
-        return null;
-    }
-
-
-    //public static byte[] loadBytesInRequest(string filename)
-    //{
-    //    UnityWebRequest request = null;
-
-
-    //    string externalURL = MyStatic.AssetsRoot + filename;
-
-    //    if (!MyStatic.useStreamingAssets && File.Exists(externalURL))
-    //    {
-    //        request = UnityWebRequest.Get(externalURL);
-    //    }
-    //    else
-    //    {
-    //        string url = Application.streamingAssetsPath + "/" + filename;
-    //        request = UnityWebRequest.Get(url);
-    //    }
-
-    //    if(request != null)
-    //    {
-    //        request.timeout = 10 * 1000;
-    //        request.SendWebRequest();
-    //        while (request.result == UnityWebRequest.Result.InProgress)
-    //        {
-
-    //        }
-
-    //        if (request.result == UnityWebRequest.Result.Success)
-    //        {
-    //            byte[] byteArray = request.downloadHandler.data;
-    //            return byteArray;
-    //        }
-    //    }
-
-    //    return null;
-    //}
 
 }
 

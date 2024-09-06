@@ -9,7 +9,7 @@ namespace Assets.Script.My
     public class MyStatic
     {
         //D:\\work\\manager\\Assets WorkSpace\\FreeWorld
-        public static string AssetsRoot = "My_AssetsRoot";
+        //public static string AssetsRoot = "My_AssetsRoot";
         public static string spriteRoot = "sprite/";
         public static string spriteHRoot = "my_spriteHRoot";
         public static string shaderRoot = "Shader/";

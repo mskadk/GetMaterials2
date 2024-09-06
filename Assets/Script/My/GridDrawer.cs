@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class GridDrawer : MonoBehaviour
 {
@@ -10,8 +11,8 @@ public class GridDrawer : MonoBehaviour
     private float camLocalRight;
     private float camLocalBottom;
 
-    private Material lineMaterial;
-
+    public Material lineMaterial;
+    [Range(0.2f, 5)]
     public float scale = 1f;
     public Color lineColor = Color.gray;
     private float hex_H;
@@ -20,6 +21,7 @@ public class GridDrawer : MonoBehaviour
     public bool 调试信息 = false;
     public bool 渲染至游戏 = true;
     public bool 渲染至场景 = true;
+
 
     void Start()
     {
@@ -48,29 +50,6 @@ public class GridDrawer : MonoBehaviour
         camLocalRight = cam.orthographicSize * cam.aspect;
     }
 
-    string oldlog = null;
-    string newlog = null;
-    IEnumerator debugSize()
-    {
-        while (true)
-        {
-            newlog = $"cam.orthographicSize:{cam.orthographicSize}\n" +
-               //$"cam.pixel:{cam.pixelWidth},{cam.pixelHeight}\n" +
-               //$"cam.scaledPixel:{cam.scaledPixelWidth},{cam.scaledPixelHeight}\n" +
-               //$"cam.pixelRect.center:{cam.pixelRect.center}\n" +
-               //$"cam.pixelRect:{cam.pixelRect}\n" +
-               $"cam.aspect:{cam.aspect} \n+" +
-               $"cam.position:{cam.transform.position}\n" +
-               $"cam.sizeConner:{camLocalTop},{camLocalRight},{camLocalBottom},{camLocalLeft}";
-            if (oldlog is not null && !newlog.Equals(oldlog))
-            {
-                Debug.Log(newlog);
-            }
-            oldlog = string.Copy(newlog);
-            yield return new WaitForSeconds(1);
-        }
-
-    }
 
     #region 渲染网格开关
     //绘制在场景
@@ -82,7 +61,7 @@ public class GridDrawer : MonoBehaviour
         GL.PopMatrix();
     }
     //绘制在游戏，和场景先后顺序不能反
-    private void OnPostRender()
+    private void OnRenderObject()
     {
         if (cam == null || !渲染至游戏) return;
         GL.PushMatrix();
@@ -151,6 +130,31 @@ public class GridDrawer : MonoBehaviour
         }
     }
 
+    #region Debug
+
+    string oldlog = null;
+    string newlog = null;
+    IEnumerator debugSize()
+    {
+        while (true)
+        {
+            newlog = $"cam.orthographicSize:{cam.orthographicSize}\n" +
+               //$"cam.pixel:{cam.pixelWidth},{cam.pixelHeight}\n" +
+               //$"cam.scaledPixel:{cam.scaledPixelWidth},{cam.scaledPixelHeight}\n" +
+               //$"cam.pixelRect.center:{cam.pixelRect.center}\n" +
+               //$"cam.pixelRect:{cam.pixelRect}\n" +
+               $"cam.aspect:{cam.aspect} \n+" +
+               $"cam.position:{cam.transform.position}\n" +
+               $"cam.sizeConner:{camLocalTop},{camLocalRight},{camLocalBottom},{camLocalLeft}";
+            if (oldlog is not null && !newlog.Equals(oldlog))
+            {
+                Debug.Log(newlog);
+            }
+            oldlog = string.Copy(newlog);
+            yield return new WaitForSeconds(1);
+        }
+
+    }
     private void showPositionHex(GameObject o, float posx, float posy)
     {
         GameObject text = new($"({posx},{posy})");
@@ -165,5 +169,6 @@ public class GridDrawer : MonoBehaviour
         tm.anchor = TextAnchor.MiddleCenter;
         tm.alignment = TextAlignment.Center;
     }
+    #endregion
 
 }
