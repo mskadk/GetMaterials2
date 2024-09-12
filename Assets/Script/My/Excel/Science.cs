@@ -1,4 +1,5 @@
 using Assets.Script.My.Extention;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -125,6 +126,11 @@ public class Science
          $" {trigger_technology}" +
          $"";                                                       
 
+    }
+
+    internal string ParseString()
+    {
+        return $"{id}\t{subType}\t{moduleId}\t{iconScale}\t{lineScale}\t{name}\t{detail}\t{detail_2}\t{building_unlock}\t{nonBuilding_unlock}\t{hexGridX}\t{hexGridY}\t{pre_technology}\t{pathNode}\t{s_Materials}\t{time}\t{IconColor}\t{trigger_technology}";
     }
 
 

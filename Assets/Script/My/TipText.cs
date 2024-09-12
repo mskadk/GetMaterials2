@@ -1,13 +1,11 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class TipText : MonoBehaviour
 {
     Text t;
-    Coroutine c;
-    void Start()
+    void Awake()
     {
         t = GetComponent<Text>();
     }
@@ -29,12 +27,6 @@ public class TipText : MonoBehaviour
         t.color = Color.red;
         log(str);
     }
-
-
-
-
-
-
 
     private void log(string str)
     {
