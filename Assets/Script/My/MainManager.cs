@@ -449,17 +449,14 @@ public class MainManager : MonoBehaviour
 
     }
 
-    private Vector3 鼠标按下位置;
+    private Vector3 鼠标按下位置_屏幕;
     private GameObject rayHitMove;
     private GameObject rayHitEdit;
     private GameObject panel;
-    //暂未使用
-    private bool scEditing = false;
-    public bool ScEditing { get => scEditing; set => scEditing = value; }
-
+    List<GameObject> listSelect = new();
     private void updateMouseEvent()
     {
-        //节点编辑功能
+        #region 节点编辑功能
         if (useEditNode && useEditNode.isOn)
         {
             if (Input.GetMouseButtonDown(1))
@@ -473,7 +470,6 @@ public class MainManager : MonoBehaviour
                 //鼠标选择节点，实例化编辑窗口
                 if ((rayHitEdit = rayDetect()) && rayHitEdit.tag is "Node")
                 {
-                    scEditing = true;
                     string nodeId = rayHitEdit.name;
                     Node n = rayHitEdit.GetComponent<Node>();
                     //实例化Panel
@@ -490,13 +486,15 @@ public class MainManager : MonoBehaviour
                 }
             }
         }
-        //节点移动功能
+
+        #endregion
+
+        #region 节点移动
         if (useEditNode && useMoveNode.isOn)
         {
-            //鼠标拖动节点
             if (Input.GetMouseButtonDown(0))
             {
-                鼠标按下位置 = Input.mousePosition;
+                鼠标按下位置_屏幕 = Input.mousePosition;
                 rayHitMove = rayDetect();
                 if (rayHitMove && rayHitMove.tag is "Node")
                 {
@@ -505,15 +503,16 @@ public class MainManager : MonoBehaviour
             }
             if (rayHitMove && Input.GetMouseButton(0))
             {
-                var v1 = grid.WorldToCell(camSence.ScreenToWorldPoint(鼠标按下位置));
+                var v1 = grid.WorldToCell(camSence.ScreenToWorldPoint(鼠标按下位置_屏幕));
                 var v2 = grid.WorldToCell(camSence.ScreenToWorldPoint(Input.mousePosition));
+                //未移动出一个网格，不算移动节点
                 if (v1 == v2)
                 {
                     return;
                 }
-                鼠标按下位置 = Input.mousePosition;
-                Vector3 worldPos = camSence.ScreenToWorldPoint(Input.mousePosition);
-                Vector3Int gridPosI = grid.WorldToCell(new Vector3(worldPos.x, worldPos.y, 0));
+                鼠标按下位置_屏幕 = Input.mousePosition;
+                Vector3 鼠标_世界位置 = camSence.ScreenToWorldPoint(Input.mousePosition);
+                Vector3Int gridPosI = grid.WorldToCell(new Vector3(鼠标_世界位置.x, 鼠标_世界位置.y, 0));
                 Vector3 gridPos = grid.CellToWorld(gridPosI);
                 rayHitMove.transform.position = gridPos;
                 //节点的处理逻辑
@@ -539,7 +538,7 @@ public class MainManager : MonoBehaviour
                         n.UpdateLineAnchor();
                     }
                 }
-                //线的处理逻辑
+                //线的处理逻辑 未处理
                 else if (rayHitMove.tag is "NodeLine")
                 {
 
@@ -582,6 +581,7 @@ public class MainManager : MonoBehaviour
                 rayHitMove = null;
             }
         }
+        #endregion
     }
     #endregion
 

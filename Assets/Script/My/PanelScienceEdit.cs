@@ -450,7 +450,6 @@ public class PanelScienceEdit : MonoBehaviour
     /// </summary>
     public void DestoryPanel()
     {
-        mm.ScEditing = false;
         node.ClearAnchor();
         node.SetSelectStyle(false);
         Destroy(transform.gameObject);
