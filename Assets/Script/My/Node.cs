@@ -195,7 +195,8 @@ public class Node : MonoBehaviour
         List<Vector3Int> List前置路径 = sc.PathNode.ParesV3IList();
         List<int> List前置节点 = sc.Pre_technology.ToList();
         //没有前置，删除所有线
-        if (List前置节点 is null)
+        //2025-8-22 排除-2，表示排除pda解锁的科技，这些科技没有前置所以不需要绘制前置线路
+        if (List前置节点 is null || List前置节点.Contains(-2))
         {
 
             foreach (var item in getAllLineGOs())

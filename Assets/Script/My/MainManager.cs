@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -317,7 +318,7 @@ public class MainManager : MonoBehaviour
                 }
                 else if (times_i == 1)
                 {
-                    ttit.t_times.color = new Color(.2f,.6f,.2f);
+                    ttit.t_times.color = new Color(.2f, .6f, .2f);
                     ttit.t_id.color = new Color(.2f, .6f, .2f);
                     ttit.t_name.color = new Color(.2f, .6f, .2f);
                 }
@@ -372,6 +373,12 @@ public class MainManager : MonoBehaviour
     #endregion
 
     #region 保存与导出
+    public void ReloadSheets()
+    {
+        #if UNITY_EDITOR
+            EditorUtility.DisplayDialog("重载", "进行了重载(但是还没有实现所以现在没有变化（)", "好");
+        #endif
+    }
     public async void SaveScience()
     {
         //按钮UI暂时禁用
@@ -451,7 +458,7 @@ public class MainManager : MonoBehaviour
 
     private Vector3 鼠标按下位置_屏幕;
     private GameObject rayHitMove;
-    private GameObject rayHitEdit;
+    private GameObject rayHitNode;
     private GameObject panel;
     List<GameObject> listSelect = new();
     private void updateMouseEvent()
@@ -461,6 +468,11 @@ public class MainManager : MonoBehaviour
         {
             if (Input.GetMouseButtonDown(1))
             {
+                //点到UI，不进行处理
+                if (EventSystem.current.IsPointerOverGameObject())
+                {
+                    return;
+                }
                 //右键点空，关闭面板
                 if (panel && !EventSystem.current.currentSelectedGameObject)
                 {
@@ -468,10 +480,10 @@ public class MainManager : MonoBehaviour
                 }
 
                 //鼠标选择节点，实例化编辑窗口
-                if ((rayHitEdit = rayDetect()) && rayHitEdit.tag is "Node")
+                if ((rayHitNode = rayDetect()) && rayHitNode.tag is "Node")
                 {
-                    string nodeId = rayHitEdit.name;
-                    Node n = rayHitEdit.GetComponent<Node>();
+                    string nodeId = rayHitNode.name;
+                    Node n = rayHitNode.GetComponent<Node>();
                     //实例化Panel
                     panel = Instantiate(panelNodeEditPrefab);
                     panel.transform.SetParent(canvas.transform.Find("Panel/Panel_RightContent"), false);
@@ -498,15 +510,16 @@ public class MainManager : MonoBehaviour
                 rayHitMove = rayDetect();
                 if (rayHitMove && rayHitMove.tag is "Node")
                 {
+                    //左键点击时切换sprite
                     rayHitMove.GetComponent<Node>().SetHoverStyle(true);
                 }
             }
             if (rayHitMove && Input.GetMouseButton(0))
             {
-                var v1 = grid.WorldToCell(camSence.ScreenToWorldPoint(鼠标按下位置_屏幕));
-                var v2 = grid.WorldToCell(camSence.ScreenToWorldPoint(Input.mousePosition));
+                var 点击时 = grid.WorldToCell(camSence.ScreenToWorldPoint(鼠标按下位置_屏幕));
+                var 按住时 = grid.WorldToCell(camSence.ScreenToWorldPoint(Input.mousePosition));
                 //未移动出一个网格，不算移动节点
-                if (v1 == v2)
+                if (点击时 == 按住时)
                 {
                     return;
                 }
@@ -524,7 +537,7 @@ public class MainManager : MonoBehaviour
                     foreach (var item in n.sc.After_technology)
                     {
                         GameObject child = tilemap.transform.Find(item.ToString()).gameObject;
-                        if (child )
+                        if (child)
                         {
                             child.GetComponent<Node>().UpdateNodeAppearance();
                         }
