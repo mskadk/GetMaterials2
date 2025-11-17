@@ -69,10 +69,16 @@ public class MainManager : MonoBehaviour
 
     private void initExcel()
     {
-        if (Environment.MachineName == "AOYE")
+        if (Environment.MachineName == "AOYE")//私人电脑
         {
             WorkSpace_Sprite = "F:\\UnityWorkSpace\\GetMaterials2 Assets Space\\sprites\\";
             WorkSpace_Excel = "F:\\UnityWorkSpace\\GetMaterials2 Assets Space\\sheets\\";
+        }
+        else if (Environment.MachineName == "DESKTOP-0418DES")
+        {
+            WorkSpace_Sprite = "E:\\Project\\StarHome\\Assets WorkSpace\\FreeWorld\\sprite\\";
+            WorkSpace_Excel = "E:\\Project\\StarHome\\策划\\项目企划\\数据表\\";
+            WorkSpace_Saveto = "C:\\Users\\CatStudio2018\\Desktop\\";
         }
 
         em = new();

@@ -1,5 +1,6 @@
 using Assets.Script.My;
 using Assets.Script.My.Extention;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -137,6 +138,11 @@ public class Node : MonoBehaviour
         if (del)
         {
             Destroy(del.gameObject);
+        }
+        if (false || Environment.MachineName == "DESKTOP-0418DES")
+        {
+            Debug.LogWarning("Ìø¹ýÍ¼±í»æÖÆ");
+            return;
         }
         GameObject g = SpriteManager.Paint(gameObject, "Icon_Technology", 0, sc.ModuleId);
         g.transform.localScale = Vector3.one * .01f;
