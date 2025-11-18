@@ -30,7 +30,7 @@ public class Node : MonoBehaviour
         var list = new List<GameObject>();
         for (int i = 0; i < transform.childCount; i++)
         {
-            if (transform.GetChild(i).tag is "NodeLine")
+            if (transform.GetChild(i).tag is Constants.Tags.NodeLine)
             {
                 list.Add(transform.GetChild(i).gameObject);
             }
@@ -39,10 +39,10 @@ public class Node : MonoBehaviour
     }
     void Start()
     {
-        config = GameObject.Find("MainManager").GetComponent<MainManager>().config;
+        config = GameObject.Find(Constants.GameObjectNames.MainManager).GetComponent<MainManager>().config;
 
         parent = transform.parent.gameObject;
-        grid = GameObject.Find("Grid").GetComponent<Grid>();
+        grid = GameObject.Find(Constants.GameObjectNames.Grid).GetComponent<Grid>();
         sr = GetComponent<SpriteRenderer>();
         tmUp = transform.Find("text_up").GetComponent<TextMesh>();
         tmDown = transform.Find("text_down").GetComponent<TextMesh>();
@@ -115,13 +115,13 @@ public class Node : MonoBehaviour
         //节点颜色
         sr.color = getColor(sc.IconColor);
         //节点尺寸
-        if (sc.IconScale == 0.75)
+        if (sc.IconScale == Constants.NodeScale.Small)
         {
-            transform.localScale = .75f * Vector3.one;
+            transform.localScale = Constants.NodeScale.Small * Vector3.one;
         }
-        else if (sc.IconScale == 1.5)
+        else if (sc.IconScale == Constants.NodeScale.Large)
         {
-            transform.localScale = 1.75f * Vector3.one;
+            transform.localScale = (Constants.NodeScale.Large + 0.25f) * Vector3.one;
         }
         //显示的id和名字
         tmUp.text = $"{sc.Id}";

@@ -76,35 +76,35 @@ public class MainManager : MonoBehaviour
     private void initExcel()
     {
         em = new();
-        ScienceDict = em.LoadScience(config.excelPath + "Science.xlsx");
-        TechTreeItemDict = em.LoadTechTreeitem(config.excelPath + "G_TechTreeItem.xlsx");
+        ScienceDict = em.LoadScience(config.excelPath + Constants.FileNames.ScienceExcel);
+        TechTreeItemDict = em.LoadTechTreeitem(config.excelPath + Constants.FileNames.TechTreeItem);
 
 
     }
 
     private void initUI()
     {
-        useMoveCam = GameObject.Find("ToggleMoveCam").GetComponent<Toggle>();
-        useMoveNode = GameObject.Find("ToggleMoveNode").GetComponent<Toggle>();
-        useEditNode = GameObject.Find("ToggleEditNode").GetComponent<Toggle>();
-        toggleTTI = GameObject.Find("ToggleTTI").GetComponent<Toggle>();
-        toggleTTIFilter = GameObject.Find("ToggleTTIFilter").GetComponent<Toggle>();
-        scrollViewTechTreeItem = GameObject.Find("ScrollViewTechTreeItem").GetComponent<ScrollRect>();
-        content = scrollViewTechTreeItem.transform.Find("Viewport/Content").gameObject;
-        debug = GameObject.Find("tiptext").GetComponent<TipText>();
-        IfFilterFrom = GameObject.Find("IfFilterFrom").GetComponent<InputField>();
-        IfFilterTo = GameObject.Find("IfFilterTo").GetComponent<InputField>();
-        BtnFilterClear = GameObject.Find("BtnFilterClear").GetComponent<Button>();
-        BtnClipBoard = GameObject.Find("ButtonClipBoard").GetComponent<Button>();
-        NewNodeColorSlider = GameObject.Find("NewNodeColorSlider").GetComponent<Slider>();
+        useMoveCam = GameObject.Find(Constants.GameObjectNames.ToggleMoveCam).GetComponent<Toggle>();
+        useMoveNode = GameObject.Find(Constants.GameObjectNames.ToggleMoveNode).GetComponent<Toggle>();
+        useEditNode = GameObject.Find(Constants.GameObjectNames.ToggleEditNode).GetComponent<Toggle>();
+        toggleTTI = GameObject.Find(Constants.GameObjectNames.ToggleTTI).GetComponent<Toggle>();
+        toggleTTIFilter = GameObject.Find(Constants.GameObjectNames.ToggleTTIFilter).GetComponent<Toggle>();
+        scrollViewTechTreeItem = GameObject.Find(Constants.GameObjectNames.ScrollViewTechTreeItem).GetComponent<ScrollRect>();
+        content = scrollViewTechTreeItem.transform.Find(Constants.UIPath.ScrollViewContent).gameObject;
+        debug = GameObject.Find(Constants.GameObjectNames.TipText).GetComponent<TipText>();
+        IfFilterFrom = GameObject.Find(Constants.GameObjectNames.IfFilterFrom).GetComponent<InputField>();
+        IfFilterTo = GameObject.Find(Constants.GameObjectNames.IfFilterTo).GetComponent<InputField>();
+        BtnFilterClear = GameObject.Find(Constants.GameObjectNames.BtnFilterClear).GetComponent<Button>();
+        BtnClipBoard = GameObject.Find(Constants.GameObjectNames.ButtonClipBoard).GetComponent<Button>();
+        NewNodeColorSlider = GameObject.Find(Constants.GameObjectNames.NewNodeColorSlider).GetComponent<Slider>();
         //初始化时调用一次，调整滑条颜色
         NewNodeColorControll();
     }
 
     private void initTilemap()
     {
-        tilemap = GameObject.Find("Tilemap");
-        grid = GameObject.Find("Grid").GetComponent<Grid>();
+        tilemap = GameObject.Find(Constants.GameObjectNames.Tilemap);
+        grid = GameObject.Find(Constants.GameObjectNames.Grid).GetComponent<Grid>();
     }
 
     private void initTTI()
@@ -182,7 +182,7 @@ public class MainManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Period))
         {
             var v = rayDetect();
-            if (v != null && v.tag is "Node")
+            if (v != null && v.tag is Constants.Tags.Node)
             {
                 if (ScienceDict.TryGetValue(v.GetComponent<Node>().sc.Id, out Science sc))
                 {
@@ -406,7 +406,7 @@ public class MainManager : MonoBehaviour
     public async void SaveScience()
     {
         //按钮UI暂时禁用
-        GameObject btn = GameObject.Find("ButtonExport");
+        GameObject btn = GameObject.Find(Constants.GameObjectNames.ButtonExport);
         Button btncomp = btn.GetComponent<Button>();
         Text tx = btn.GetComponentInChildren<Text>();
         tx.text = "保存中……";
@@ -418,7 +418,7 @@ public class MainManager : MonoBehaviour
         {
             // 把 WorkSpace_Saveto 改成 config.savePath
             fullname = em.SaveScience(config.savePath,
-                                       config.excelPath + "Science.xlsx",
+                                       config.excelPath + Constants.FileNames.ScienceExcel,
                                        ScienceDict);
         });
         sw.Stop();
@@ -507,13 +507,13 @@ public class MainManager : MonoBehaviour
                 }
 
                 //鼠标选择节点，实例化编辑窗口
-                if ((rayHitNode = rayDetect()) && rayHitNode.tag is "Node")
+                if ((rayHitNode = rayDetect()) && rayHitNode.tag is Constants.Tags.Node)
                 {
                     string nodeId = rayHitNode.name;
                     Node n = rayHitNode.GetComponent<Node>();
                     //实例化Panel
                     panel = Instantiate(panelNodeEditPrefab);
-                    panel.transform.SetParent(canvas.transform.Find("Panel/Panel_RightContent"), false);
+                    panel.transform.SetParent(canvas.transform.Find(Constants.UIPath.PanelRightContent), false);
                     panel.name = $"{nodeId}(Edit)";
                     //从节点获取科技信息
                     panel.GetComponent<PanelScienceEdit>().node = n;
@@ -535,7 +535,7 @@ public class MainManager : MonoBehaviour
             {
                 鼠标按下位置_屏幕 = Input.mousePosition;
                 rayHitMove = rayDetect();
-                if (rayHitMove && rayHitMove.tag is "Node")
+                if (rayHitMove && rayHitMove.tag is Constants.Tags.Node)
                 {
                     //左键点击时切换sprite
                     rayHitMove.GetComponent<Node>().SetHoverStyle(true);
@@ -556,7 +556,7 @@ public class MainManager : MonoBehaviour
                 Vector3 gridPos = grid.CellToWorld(gridPosI);
                 rayHitMove.transform.position = gridPos;
                 //节点的处理逻辑
-                if (rayHitMove.tag is "Node")
+                if (rayHitMove.tag is Constants.Tags.Node)
                 {
                     Node n = rayHitMove.GetComponent<Node>();
                     n.UpdateGridPos(gridPosI);
@@ -579,12 +579,12 @@ public class MainManager : MonoBehaviour
                     }
                 }
                 //线的处理逻辑 未处理
-                else if (rayHitMove.tag is "NodeLine")
+                else if (rayHitMove.tag is Constants.Tags.NodeLine)
                 {
 
                 }
                 //锚点的处理逻辑
-                else if (rayHitMove.tag is "Anchor")
+                else if (rayHitMove.tag is Constants.Tags.Anchor)
                 {
                     int lrIndex = int.Parse(rayHitMove.name);
                     LineRenderer lr = rayHitMove.GetComponentInParent<LineRenderer>();
@@ -614,7 +614,7 @@ public class MainManager : MonoBehaviour
             }
             if (Input.GetMouseButtonUp(0))
             {
-                if (rayHitMove && rayHitMove.tag is "Node")
+                if (rayHitMove && rayHitMove.tag is Constants.Tags.Node)
                 {
                     rayHitMove.GetComponent<Node>().SetHoverStyle(false);
                 }

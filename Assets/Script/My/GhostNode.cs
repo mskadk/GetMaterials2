@@ -11,9 +11,9 @@ public class GhostNode : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        cam = GameObject.Find("CameraSence").GetComponent<Camera>();
-        grid = GameObject.Find("Grid").GetComponent<Grid>();
-        mm = GameObject.Find("MainManager").GetComponent<MainManager>();
+        cam = GameObject.Find(Constants.GameObjectNames.CameraSence).GetComponent<Camera>();
+        grid = GameObject.Find(Constants.GameObjectNames.Grid).GetComponent<Grid>();
+        mm = GameObject.Find(Constants.GameObjectNames.MainManager).GetComponent<MainManager>();
     }
 
     // Update is called once per frame

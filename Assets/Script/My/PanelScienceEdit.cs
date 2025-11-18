@@ -198,7 +198,7 @@ public class PanelScienceEdit : MonoBehaviour
     {
         i_prePath.text = i_prePath.text.Replace("——", "_");
         //i_prePath.text = i_prePath.text.Replace("--", "-");
-        if (Regex.IsMatch(i_prePath.text, "^(-1)$|((?!-1)(-?\\d+))(_-?\\d+){2,}((_-?\\d+){2})*$"))
+        if (Regex.IsMatch(i_prePath.text, Constants.RegexPatterns.PathNode))
         {
             i_prePath.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
             sc.PathNode = i_prePath.text;
@@ -246,7 +246,7 @@ public class PanelScienceEdit : MonoBehaviour
 
     public void UpdatePre()
     {
-        if (Regex.IsMatch(i_pre.text, "^(?:-*[0-9]*|(\\d+)(?:_(\\d+)_(\\d+))*(?:\\|(?:(\\d+)(?:_(\\d+)_(\\d+))*))*)$"))
+        if (Regex.IsMatch(i_pre.text, Constants.RegexPatterns.PreTechnology))
         {
             i_pre.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
             //更新旧的后继节点
