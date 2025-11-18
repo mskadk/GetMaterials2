@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26bd992e190f140428af96c591f8d7d9, type: 3}
+  m_Name: EditorConfig
+  m_EditorClassIdentifier: 
+  spritePath: D:\work\manager\Assets WorkSpace\FreeWorld\sprite\
+  excelPath: "D:\\work\\manager\\\u7B56\u5212\\\u9879\u76EE\u4F01\u5212\\\u6570\u636E\u8868\\"
+  savePath: C:\Users\Administrator\Desktop\
+  colorRed: {r: 1, g: 0, b: 0, a: 1}
+  colorOrange: {r: 1, g: 0.5, b: 0, a: 1}
+  colorYellow: {r: 1, g: 1, b: 0, a: 1}
+  colorGreen: {r: 0, g: 1, b: 0, a: 1}
+  colorBlue: {r: 0.2, g: 0.5, b: 1, a: 1}
+  colorWhite: {r: 1, g: 1, b: 1, a: 1}
+  nodePrefab: {fileID: 8987857040390006947, guid: 1f05a0cea3d639849a8d14ede664e2ef, type: 3}
+  ghostNodePrefab: {fileID: 2121890046620320992, guid: e3081ca3cd9973e40a24d0a0625533ca, type: 3}
+  editPanelPrefab: {fileID: 8565263650277911581, guid: e5407036a28192e4489d84ef98b3b096, type: 3}

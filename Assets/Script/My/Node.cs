@@ -18,18 +18,11 @@ public class Node : MonoBehaviour
     TextMesh tmDown;
     GameObject parent;
     Grid grid;
+
+    private EditorConfig config;
     private Color getColor(int i)
     {
-        var color = i switch
-        {
-            1 => Color.red,
-            2 => new(1, .5f, 0),
-            3 => new(1, 1, 0),
-            4 => Color.green,
-            5 => new(.2f, .5f, 1),
-            _ => Color.white,
-        };
-        return color;
+        return config.GetColor(i);
     }
     /// <returns>List射线子物体</returns>
     private List<GameObject> getAllLineGOs()
@@ -46,6 +39,8 @@ public class Node : MonoBehaviour
     }
     void Start()
     {
+        config = GameObject.Find("MainManager").GetComponent<MainManager>().config;
+
         parent = transform.parent.gameObject;
         grid = GameObject.Find("Grid").GetComponent<Grid>();
         sr = GetComponent<SpriteRenderer>();

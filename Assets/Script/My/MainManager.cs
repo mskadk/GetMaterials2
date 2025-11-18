@@ -18,9 +18,9 @@ public class MainManager : MonoBehaviour
         science,
         productionList,
     }
-    public string WorkSpace_Sprite = "D:\\work\\manager\\Assets WorkSpace\\FreeWorld\\sprite\\";
-    public string WorkSpace_Excel = "D:\\work\\manager\\策划\\项目企划\\数据表\\";
-    public string WorkSpace_Saveto = "C:\\Users\\Administrator\\Desktop\\";
+    
+    [Header("=== 配置文件 ===")]
+    public EditorConfig config;
 
     public GameObject Node;
     public GameObject ghostNodePrefab;
@@ -75,21 +75,9 @@ public class MainManager : MonoBehaviour
 
     private void initExcel()
     {
-        if (Environment.MachineName == "AOYE")//私人电脑
-        {
-            WorkSpace_Sprite = "F:\\UnityWorkSpace\\GetMaterials2 Assets Space\\sprites\\";
-            WorkSpace_Excel = "F:\\UnityWorkSpace\\GetMaterials2 Assets Space\\sheets\\";
-        }
-        else if (Environment.MachineName == "DESKTOP-0418DES")
-        {
-            WorkSpace_Sprite = "E:\\Project\\StarHome\\Assets WorkSpace\\FreeWorld\\sprite\\";
-            WorkSpace_Excel = "E:\\Project\\StarHome\\策划\\项目企划\\数据表\\";
-            WorkSpace_Saveto = "C:\\Users\\CatStudio2018\\Desktop\\";
-        }
-
         em = new();
-        ScienceDict = em.LoadScience(WorkSpace_Excel + "Science.xlsx");
-        TechTreeItemDict = em.LoadTechTreeitem(WorkSpace_Excel + "G_TechTreeItem.xlsx");
+        ScienceDict = em.LoadScience(config.excelPath + "Science.xlsx");
+        TechTreeItemDict = em.LoadTechTreeitem(config.excelPath + "G_TechTreeItem.xlsx");
 
 
     }
@@ -255,18 +243,10 @@ public class MainManager : MonoBehaviour
     public void NewNodeColorControll()
     {
         NewNodeColorInt = (int)NewNodeColorSlider.value;
-        NewNodeColor = NewNodeColorInt switch
-        {
-            1 => Color.red,
-            2 => new(1, .5f, 0),
-            3 => new(1, 1, 0),
-            4 => Color.green,
-            5 => new(.2f, .5f, 1),
-            _ => Color.white,
-        };
-        /*
-         * 为滑条修改颜色，但是不知道这里会不会产生内存泄漏呀
-         */
+
+        // 改用配置文件的颜色
+        NewNodeColor = config.GetColor(NewNodeColorInt);
+
         ColorBlock v = new()
         {
             colorMultiplier = 1,
@@ -274,9 +254,8 @@ public class MainManager : MonoBehaviour
             pressedColor = NewNodeColor,
             selectedColor = NewNodeColor,
             highlightedColor = NewNodeColor,
-            
         };
-        
+
         NewNodeColorSlider.colors = v;
 
     }
@@ -437,7 +416,10 @@ public class MainManager : MonoBehaviour
         string fullname = null;
         await Task.Run(() =>
         {
-            fullname = em.SaveScience(WorkSpace_Saveto, WorkSpace_Excel + "Science.xlsx", ScienceDict);
+            // 把 WorkSpace_Saveto 改成 config.savePath
+            fullname = em.SaveScience(config.savePath,
+                                       config.excelPath + "Science.xlsx",
+                                       ScienceDict);
         });
         sw.Stop();
         debug.Log($"成功导出：{fullname}，用时：{sw.ElapsedMilliseconds}毫秒");

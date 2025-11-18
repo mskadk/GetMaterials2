@@ -621,9 +621,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 971d4f3e243aff14e9a18897daf3c8cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  WorkSpace_Sprite: D:\work\manager\Assets WorkSpace\FreeWorld\sprite\
-  WorkSpace_Excel: "D:\\work\\manager\\\u7B56\u5212\\\u9879\u76EE\u4F01\u5212\\\u6570\u636E\u8868\\"
-  WorkSpace_Saveto: C:\Users\Administrator\Desktop\
+  config: {fileID: 11400000, guid: 9ac78b9e71702fb4cbbe41844b7b5543, type: 2}
   Node: {fileID: 8987857040390006947, guid: 1f05a0cea3d639849a8d14ede664e2ef, type: 3}
   ghostNodePrefab: {fileID: 2121890046620320992, guid: e3081ca3cd9973e40a24d0a0625533ca, type: 3}
   techTreeItemTextPrefab: {fileID: 5935321847630660708, guid: 72bd029732355b545907e7db3d3bf014, type: 3}
@@ -6481,7 +6479,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1174753}
   m_HandleRect: {fileID: 1174752}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -6727,7 +6725,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1576684052}
   m_HandleRect: {fileID: 1576684051}
   m_Direction: 0
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
