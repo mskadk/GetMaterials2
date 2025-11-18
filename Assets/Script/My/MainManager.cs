@@ -11,6 +11,7 @@ using UnityEngine.UI;
 
 public class MainManager : MonoBehaviour
 {
+    
     enum Mode
     {
         none,
@@ -48,6 +49,7 @@ public class MainManager : MonoBehaviour
     InputField IfFilterTo;
     Button BtnFilterClear;
     Button BtnClipBoard;
+    Slider NewNodeColorSlider;
 
     // Command
     Toggle useMoveCam;
@@ -56,6 +58,10 @@ public class MainManager : MonoBehaviour
     Toggle toggleTTI;
     Toggle toggleTTIFilter;
     TipText debug;
+
+    // 其他变量
+    Color NewNodeColor;
+    int NewNodeColorInt;
 
     #region 初始化
     private void Init()
@@ -102,6 +108,9 @@ public class MainManager : MonoBehaviour
         IfFilterTo = GameObject.Find("IfFilterTo").GetComponent<InputField>();
         BtnFilterClear = GameObject.Find("BtnFilterClear").GetComponent<Button>();
         BtnClipBoard = GameObject.Find("ButtonClipBoard").GetComponent<Button>();
+        NewNodeColorSlider = GameObject.Find("NewNodeColorSlider").GetComponent<Slider>();
+        //初始化时调用一次，调整滑条颜色
+        NewNodeColorControll();
     }
 
     private void initTilemap()
@@ -240,6 +249,36 @@ public class MainManager : MonoBehaviour
     {
         GameObject newNode = Instantiate(ghostNodePrefab);
         debug.Log("添加节点中……");
+    }
+
+    // 滑条修改新节点的颜色
+    public void NewNodeColorControll()
+    {
+        NewNodeColorInt = (int)NewNodeColorSlider.value;
+        NewNodeColor = NewNodeColorInt switch
+        {
+            1 => Color.red,
+            2 => new(1, .5f, 0),
+            3 => new(1, 1, 0),
+            4 => Color.green,
+            5 => new(.2f, .5f, 1),
+            _ => Color.white,
+        };
+        /*
+         * 为滑条修改颜色，但是不知道这里会不会产生内存泄漏呀
+         */
+        ColorBlock v = new()
+        {
+            colorMultiplier = 1,
+            normalColor = NewNodeColor,
+            pressedColor = NewNodeColor,
+            selectedColor = NewNodeColor,
+            highlightedColor = NewNodeColor,
+            
+        };
+        
+        NewNodeColorSlider.colors = v;
+
     }
 
     #region 科技解锁项筛选
@@ -604,14 +643,14 @@ public class MainManager : MonoBehaviour
     }
     #endregion
 
-    #region 外部调用,创建新的节点
+    #region 外部调用,利用幽灵节点的左键点击创建新的节点
     public void NewNode(Vector3Int pos)
     {
         int id = -3;
         while (ScienceDict.ContainsKey(id)) { id--; }
         GameObject o = Instantiate(Node, grid.CellToWorld(new(pos.x, pos.y, 0)), new Quaternion(), tilemap.transform);
         o.name = id.ToString();
-        Science sc = new(id, 1, 0, .75f, 4, "新科技", "描述", "备注", "-1", "-1", pos.y, pos.x, "-1", "-1", "-1", .01f, 1, "-1");
+        Science sc = new(id, 1, 0, .75f, 4, "新科技", "描述", "备注", "-1", "-1", pos.y, pos.x, "-1", "-1", "-1", .01f, NewNodeColorInt, "-1");
         o.GetComponent<Node>().sc = sc;
         ScienceDict.Add(id, sc);
 

@@ -197,6 +197,7 @@ public class PanelScienceEdit : MonoBehaviour
     public void UpdatePrePath()
     {
         i_prePath.text = i_prePath.text.Replace("¡ª¡ª", "_");
+        //i_prePath.text = i_prePath.text.Replace("--", "-");
         if (Regex.IsMatch(i_prePath.text, "^(-1)$|((?!-1)(-?\\d+))(_-?\\d+){2,}((_-?\\d+){2})*$"))
         {
             i_prePath.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
