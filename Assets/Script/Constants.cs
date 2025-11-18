@@ -109,11 +109,12 @@ public static class Constants
     public static class RegexPatterns
     {
         // 前置科技格式: -1 或 数字|数字|...
-        public const string PreTechnology = @"^(-1|\d+(\|\d+)*)$";
+        public const string PreTechnology = @"^\(-1\)|(?!-1\b)(?!-2\b)-?\d+(?:\|(?!-1\b)(?!-2\b)-?\d+)*$";
         // 旧的是："^(?:-*[0-9]*|(\\d+)(?:_(\\d+)_(\\d+))*(?:\\|(?:(\\d+)(?:_(\\d+)_(\\d+))*))*)$"
+        // 这个疑似是不包含负数：@"^(-1|\d+(\|\d+)*)$"
 
         // 路径节点格式: -1 或 id_y_x_y_x|id_y_x
-        public const string PathNode = @"^(-1)$|((?!-1)(-?\d+))(_-?\d+){2,}((_-?\d+){2})*$";
+        public const string PathNode = @"^(?:(?!-1\b)(?!-2\b)-?\d+(?:_-?\d+_-?\d+)+)(?:\|(?!-1\b)(?!-2\b)-?\d+(?:_-?\d+_-?\d+)+)*|-1$";
         // 旧的是："^(-1)$|((?!-1)(-?\\d+))(_-?\\d+){2,}((_-?\\d+){2})*$"
     }
 

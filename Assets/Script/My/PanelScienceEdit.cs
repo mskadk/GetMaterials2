@@ -341,14 +341,14 @@ public class PanelScienceEdit : MonoBehaviour
 
     public void UpdateUnlockBuilding()
     {
-        mm.UpdateTTIShow(sc.Building_unlock, i_build.text);
+        EventCenter.Instance.TriggerTechTreeItemUpdate(sc.Building_unlock, i_build.text);
         sc.Building_unlock = i_build.text;
         updateTTIContent();
     }
 
     public void UpdateUnlockNoBuilding()
     {
-        mm.UpdateTTIShow(sc.NonBuilding_unlock, i_unbuild.text);
+        EventCenter.Instance.TriggerTechTreeItemUpdate(sc.NonBuilding_unlock, i_unbuild.text);
         sc.NonBuilding_unlock = i_unbuild.text;
         updateTTIContent();
     }

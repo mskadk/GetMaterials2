@@ -54,10 +54,33 @@ public class MainManager : MonoBehaviour
             Debug.LogError("UI 引用验证失败！请在 Inspector 中检查 UIReferences 组件");
             return;
         }
+
+        // 订阅事件
+        SubscribeEvents();
         initExcel();
         initUI();
+        //initTilemap(); // 删除的功能
         initTTI();
         initNode();
+
+        // 数据加载完成
+        EventCenter.Instance.TriggerDataLoaded();
+    }
+
+    /// <summary>
+    /// 订阅事件
+    /// </summary>
+    private void SubscribeEvents()
+    {
+        EventCenter.Instance.OnTechTreeItemUpdate += UpdateTTIShow;
+    }
+    private void OnDestroy()
+    {
+        // 取消订阅
+        if (EventCenter.Instance != null)
+        {
+            EventCenter.Instance.OnTechTreeItemUpdate -= UpdateTTIShow;
+        }
     }
 
     private void initExcel()
@@ -103,8 +126,10 @@ public class MainManager : MonoBehaviour
                 ui.tilemap.transform);
             o.name = sc.Id.ToString();
             o.GetComponent<Node>().sc = sc;
-            UpdateTTIShow("", sc.Building_unlock);
-            UpdateTTIShow("", sc.NonBuilding_unlock);
+
+            // 使用事件更新科技树项
+            EventCenter.Instance.TriggerTechTreeItemUpdate("", sc.Building_unlock);
+            EventCenter.Instance.TriggerTechTreeItemUpdate("", sc.NonBuilding_unlock);
 
         }
     }
@@ -209,7 +234,7 @@ public class MainManager : MonoBehaviour
     public void BtnNewNode()
     {
         GameObject newNode = Instantiate(ui.ghostNodePrefab);
-        ui.tipText.Log("添加节点中……");
+        EventCenter.Instance.TriggerLogMessage("添加节点中……");
     }
 
     // 滑条修改新节点的颜色
@@ -298,6 +323,7 @@ public class MainManager : MonoBehaviour
         var oldList = oldStr.ToList();
         var newList = newStr.ToList();
         string newNotFound = null;
+
         foreach (var item in oldList)
         {
             Transform t = content.transform.Find(item.ToString());
@@ -308,22 +334,22 @@ public class MainManager : MonoBehaviour
                 times_i--;
                 if (times_i > 1)
                 {
-                    ttit.t_times.color = Color.red;
-                    ttit.t_id.color = Color.red;
-                    ttit.t_name.color = Color.red;
-                    ui.tipText.LogError($"{t.name}解锁项——重复引用！");
+                    ttit.t_times.color = Constants.Colors.RedDuplicate;
+                    ttit.t_id.color = Constants.Colors.RedDuplicate;
+                    ttit.t_name.color = Constants.Colors.RedDuplicate;
+                    EventCenter.Instance.TriggerLogError($"{t.name}解锁项——重复引用！");
                 }
                 else if (times_i == 1)
                 {
-                    ttit.t_times.color = new Color(.2f, .6f, .2f);
-                    ttit.t_id.color = new Color(.2f, .6f, .2f);
-                    ttit.t_name.color = new Color(.2f, .6f, .2f);
+                    ttit.t_times.color = Constants.Colors.GreenUsed;
+                    ttit.t_id.color = Constants.Colors.GreenUsed;
+                    ttit.t_name.color = Constants.Colors.GreenUsed;
                 }
                 else if (times_i < 1)
                 {
-                    ttit.t_times.color = Color.black;
-                    ttit.t_id.color = Color.black;
-                    ttit.t_name.color = Color.black;
+                    ttit.t_times.color = Constants.Colors.BlackNormal;
+                    ttit.t_id.color = Constants.Colors.BlackNormal;
+                    ttit.t_name.color = Constants.Colors.BlackNormal;
                 }
                 ttit.t_times.text = times_i.ToString();
             }
@@ -337,18 +363,19 @@ public class MainManager : MonoBehaviour
                 var ttit = t.GetComponent<TechTreeItemText>();
                 int times_i = int.Parse(ttit.t_times.text);
                 times_i++;
+
                 if (times_i > 1)
                 {
-                    ttit.t_times.color = Color.red;
-                    ttit.t_id.color = Color.red;
-                    ttit.t_name.color = Color.red;
-                    ui.tipText.LogError($"{t.name}解锁项被重复解锁");
+                    ttit.t_times.color = Constants.Colors.RedDuplicate;
+                    ttit.t_id.color = Constants.Colors.RedDuplicate;
+                    ttit.t_name.color = Constants.Colors.RedDuplicate;
+                    EventCenter.Instance.TriggerLogError($"{t.name}解锁项被重复解锁（TechTreeItem：id 重复引用）");
                 }
                 else if (times_i == 1)
                 {
-                    ttit.t_times.color = new Color(.2f, .6f, .2f);
-                    ttit.t_id.color = new Color(.2f, .6f, .2f);
-                    ttit.t_name.color = new Color(.2f, .6f, .2f);
+                    ttit.t_times.color = Constants.Colors.GreenUsed;
+                    ttit.t_id.color = Constants.Colors.GreenUsed;
+                    ttit.t_name.color = Constants.Colors.GreenUsed;
                 }
                 ttit.t_times.text = times_i.ToString();
             }
@@ -359,7 +386,7 @@ public class MainManager : MonoBehaviour
         }
         if (newNotFound is not null)
         {
-            ui.tipText.LogError($"{newNotFound} 是不存在的科技解锁项。");
+            EventCenter.Instance.TriggerLogError($"{newNotFound} 是不存在的科技解锁项。");
         }
 
 
@@ -387,6 +414,9 @@ public class MainManager : MonoBehaviour
         tx.text = "导出中……";
         btncomp.interactable = false;
 
+        // 触发保存开始事件
+        EventCenter.Instance.TriggerDataSaveStarted();
+
         //使用Task和计时进行保存
         System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
         string fullname = null;
@@ -398,7 +428,8 @@ public class MainManager : MonoBehaviour
                                        ScienceDict);
         });
         sw.Stop();
-        ui.tipText.Log($"成功导出：{fullname}，用时：{sw.ElapsedMilliseconds}毫秒");
+        EventCenter.Instance.TriggerLogMessage($"成功导出：{fullname}，用时：{sw.ElapsedMilliseconds}毫秒");
+        EventCenter.Instance.TriggerDataSaveCompleted(fullname);
         //解禁UI
         tx.text = "导出到桌面";
         btncomp.interactable = true;
@@ -432,16 +463,16 @@ public class MainManager : MonoBehaviour
                 var sc = panel.GetComponent<PanelScienceEdit>().sc;
                 var id = sc.Id;
                 var node = ui.tilemap.transform.Find(id.ToString());
-                //清除科技解锁项的标记
-                UpdateTTIShow(sc.Building_unlock, "");
-                UpdateTTIShow(sc.NonBuilding_unlock, "");
-                //删除前节点的后继
+                // 使用事件更新科技树项，清除科技解锁项的标记
+                EventCenter.Instance.TriggerTechTreeItemUpdate(sc.Building_unlock, "");
+                EventCenter.Instance.TriggerTechTreeItemUpdate(sc.NonBuilding_unlock, "");
+                // 删除前节点的后继
                 foreach (var pre in sc.Pre_technology.ToList())
                 {
                     ScienceDict.TryGetValue(pre, out var science);
                     science.After_technology.Remove(id);
                 }
-                //删除后节点的前置字段
+                // 删除后节点的前置字段
                 foreach (var aft in sc.After_technology)
                 {
                     ScienceDict.TryGetValue(aft, out var science);
@@ -453,6 +484,9 @@ public class MainManager : MonoBehaviour
                 ScienceDict.Remove(sc.Id);
                 Destroy(node.gameObject);
                 panel.GetComponent<PanelScienceEdit>().DestoryPanel();
+
+                // 触发删除事件
+                EventCenter.Instance.TriggerNodeDeleted(id);
             }
 
         }
@@ -492,7 +526,8 @@ public class MainManager : MonoBehaviour
                     //node
                     n.SetSelectStyle(true);
                     n.UpdateLineAnchor();
-                    ui.tipText.Log($"编辑节点：{nodeId}:{n.sc.Name}");
+                    EventCenter.Instance.TriggerNodeSelected(n);
+                    EventCenter.Instance.TriggerLogMessage($"编辑节点：{nodeId}:{n.sc.Name}");
                 }
             }
         }
@@ -601,6 +636,7 @@ public class MainManager : MonoBehaviour
     {
         int id = Constants.SpecialIds.NewNodeStartId;
         while (ScienceDict.ContainsKey(id)) { id--; }
+
         GameObject o = Instantiate(ui.nodePrefab,
             ui.grid.CellToWorld(new(pos.x, pos.y, 0)),
             new Quaternion(), ui.tilemap.transform);
@@ -609,7 +645,8 @@ public class MainManager : MonoBehaviour
             pos.y, pos.x, "-1", "-1", "-1", .01f, NewNodeColorInt, "-1");
         o.GetComponent<Node>().sc = sc;
         ScienceDict.Add(id, sc);
-
+        // 触发节点创建事件
+        EventCenter.Instance.TriggerNodeCreated(o.GetComponent<Node>());
     }
 
     #endregion
