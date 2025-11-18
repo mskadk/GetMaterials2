@@ -453,6 +453,15 @@ public class PanelScienceEdit : MonoBehaviour
     {
         node.ClearAnchor();
         node.SetSelectStyle(false);
+
+        // 通知InputManager清除面板引用
+        var inputManager = GameObject.Find(Constants.GameObjectNames.MainManager)
+            ?.GetComponent<InputManager>();
+        if (inputManager != null)
+        {
+            inputManager.SetCurrentEditPanel(null);
+        }
+
         Destroy(transform.gameObject);
     }
     #endregion

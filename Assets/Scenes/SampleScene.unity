@@ -6716,7 +6716,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1576684051}
   m_Direction: 0
   m_Value: 1
-  m_Size: 0.99999994
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -7399,7 +7399,7 @@ MonoBehaviour:
   tipText: {fileID: 302372456}
   dpMainPage: {fileID: 1502700580}
   canvas: {fileID: 2120133452}
-  tilemap: {fileID: 1606730383}
+  tilemap: {fileID: 384059297}
   grid: {fileID: 1606730385}
   camSence: {fileID: 2055877773}
   nodePrefab: {fileID: 8987857040390006947, guid: 1f05a0cea3d639849a8d14ede664e2ef, type: 3}

@@ -21,8 +21,11 @@ public class MainManager : MonoBehaviour
 
     [Header("=== 配置文件 ===")]
     public EditorConfig config;
-    // 新增：UI 引用（自动获取，无需手动赋值）
+    // UI 引用（自动获取，无需手动赋值）
     private UIReferences ui;
+
+    // 新增：输入管理器
+    private InputManager inputManager;
 
     // 保留这些，因为需要在运行时创建
     private GameObject content;
@@ -35,12 +38,6 @@ public class MainManager : MonoBehaviour
     // 其他运行时变量
     Color NewNodeColor;
     int NewNodeColorInt;
-    // 用于方法：updateMouseEvent()的
-    private GameObject panel;
-    List<GameObject> listSelect = new();
-    private Vector3 鼠标按下位置_屏幕;
-    private GameObject rayHitMove;
-    private GameObject rayHitNode;
 
     #region 初始化
     private void Init()
@@ -57,6 +54,11 @@ public class MainManager : MonoBehaviour
 
         // 订阅事件
         SubscribeEvents();
+
+        // 初始化输入管理器
+        inputManager = gameObject.AddComponent<InputManager>();
+        inputManager.Initialize(this);
+
         initExcel();
         initUI();
         //initTilemap(); // 删除的功能
@@ -89,7 +91,7 @@ public class MainManager : MonoBehaviour
         ScienceDict = em.LoadScience(config.excelPath + Constants.FileNames.ScienceExcel);
         TechTreeItemDict = em.LoadTechTreeitem(config.excelPath + Constants.FileNames.TechTreeItem);
 
-
+        // 保持不变，但字典已改为属性，带有private set
     }
 
     private void initUI()
@@ -143,62 +145,10 @@ public class MainManager : MonoBehaviour
         Init();
     }
 
-    #region 射线检测
-    GameObject rayDetect()
-    {
-        GameObject ob = null;
-        Vector3 vvv = ui.camSence.ScreenToWorldPoint(Input.mousePosition);
-        RaycastHit2D hit = Physics2D.Raycast(vvv, Vector3.forward, Mathf.Infinity);
-        if (hit)
-        {
-            ob = hit.transform.gameObject;
-        }
-        return ob;
-
-    }
-    #endregion
-
     private void Update()
     {
-        updateMouseEvent();
-        updateKeyboardEvent();
-        debugPrintDict();
+        // 输入处理已移到 InputManager，这里不需要任何代码
     }
-
-    #region Debug
-    private void debugPrintDict()
-    {
-        // / 打印整个科技表字典
-        if (Input.GetKeyDown(KeyCode.Slash))
-        {
-            foreach (var sc in ScienceDict)
-            {
-                Debug.Log($"KEY:{sc.Key},VALUE:{sc.Value}");
-            }
-        }
-        // . 从科技字典找到鼠标指向的ui.nodePrefab的Science数据
-        if (Input.GetKeyDown(KeyCode.Period))
-        {
-            var v = rayDetect();
-            if (v != null && v.tag is Constants.Tags.Node)
-            {
-                if (ScienceDict.TryGetValue(v.GetComponent<Node>().sc.Id, out Science sc))
-                {
-                    Debug.Log($"来自字典：{sc}");
-                }
-                Debug.Log($"来自节点：{v.GetComponent<Node>().sc}");
-                string at = null;
-                sc.After_technology.ToList().ForEach(x => at += x.ToString() + "|");
-                Debug.Log($"After:{at}");
-            }
-            else
-            {
-                Debug.Log("未选中/非节点");
-            }
-        }
-    }
-
-    #endregion
 
     #region 主界面 & 模式选择
     public void SwitchPage()
@@ -444,190 +394,6 @@ public class MainManager : MonoBehaviour
             outs += "\n";
         }
         GUIUtility.systemCopyBuffer = outs;
-    }
-    #endregion
-
-    #region 鼠标事件 && 键盘事件
-    private void updateKeyboardEvent()
-    {
-        if (!EventSystem.current.currentSelectedGameObject && panel)
-        {
-            //Esc 关闭编辑界面，功能与鼠标右键点空一样
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                panel.GetComponent<PanelScienceEdit>().DestoryPanel();
-            }
-            //Delete 删除选中的节点，需要右键选中先
-            if (Input.GetKeyDown(KeyCode.Delete))
-            {
-                var sc = panel.GetComponent<PanelScienceEdit>().sc;
-                var id = sc.Id;
-                var node = ui.tilemap.transform.Find(id.ToString());
-                // 使用事件更新科技树项，清除科技解锁项的标记
-                EventCenter.Instance.TriggerTechTreeItemUpdate(sc.Building_unlock, "");
-                EventCenter.Instance.TriggerTechTreeItemUpdate(sc.NonBuilding_unlock, "");
-                // 删除前节点的后继
-                foreach (var pre in sc.Pre_technology.ToList())
-                {
-                    ScienceDict.TryGetValue(pre, out var science);
-                    science.After_technology.Remove(id);
-                }
-                // 删除后节点的前置字段
-                foreach (var aft in sc.After_technology)
-                {
-                    ScienceDict.TryGetValue(aft, out var science);
-                    science.Pre_technology = science.Pre_technology.RemoveIdPreNode(id.ToString());
-                    science.PathNode = science.PathNode.RemoveIdPrePath(id.ToString());
-                    ui.tilemap.transform.Find(aft.ToString()).GetComponent<Node>().UpdateNodeAppearance();
-                }
-                //删除我
-                ScienceDict.Remove(sc.Id);
-                Destroy(node.gameObject);
-                panel.GetComponent<PanelScienceEdit>().DestoryPanel();
-
-                // 触发删除事件
-                EventCenter.Instance.TriggerNodeDeleted(id);
-            }
-
-        }
-
-    }
-
-    private void updateMouseEvent()
-    {
-        #region 节点编辑功能
-        if (ui.toggleEditNode && ui.toggleEditNode.isOn)
-        {
-            if (Input.GetMouseButtonDown(1))
-            {
-                //点到UI，不进行处理
-                if (EventSystem.current.IsPointerOverGameObject())
-                {
-                    return;
-                }
-                //右键点空，关闭面板
-                if (panel && !EventSystem.current.currentSelectedGameObject)
-                {
-                    panel.GetComponent<PanelScienceEdit>().DestoryPanel();
-                }
-
-                //鼠标选择节点，实例化编辑窗口
-                if ((rayHitNode = rayDetect()) && rayHitNode.tag is Constants.Tags.Node)
-                {
-                    string nodeId = rayHitNode.name;
-                    Node n = rayHitNode.GetComponent<Node>();
-                    //实例化Panel
-                    panel = Instantiate(ui.panelNodeEditPrefab);
-                    panel.transform.SetParent(ui.canvas.transform.Find(Constants.UIPath.PanelRightContent), false);
-                    panel.name = $"{nodeId}(Edit)";
-                    //从节点获取科技信息
-                    panel.GetComponent<PanelScienceEdit>().node = n;
-                    panel.GetComponent<PanelScienceEdit>().sc = n.sc;
-                    //node
-                    n.SetSelectStyle(true);
-                    n.UpdateLineAnchor();
-                    EventCenter.Instance.TriggerNodeSelected(n);
-                    EventCenter.Instance.TriggerLogMessage($"编辑节点：{nodeId}:{n.sc.Name}");
-                }
-            }
-        }
-
-        #endregion
-
-        #region 节点移动
-        if (ui.toggleEditNode && ui.toggleMoveNode.isOn)
-        {
-            if (Input.GetMouseButtonDown(0))
-            {
-                鼠标按下位置_屏幕 = Input.mousePosition;
-                rayHitMove = rayDetect();
-                if (rayHitMove && rayHitMove.tag is Constants.Tags.Node)
-                {
-                    //左键点击时切换sprite
-                    rayHitMove.GetComponent<Node>().SetHoverStyle(true);
-                }
-            }
-            if (rayHitMove && Input.GetMouseButton(0))
-            {
-                var 点击时 = ui.grid.WorldToCell(ui.camSence.ScreenToWorldPoint(鼠标按下位置_屏幕));
-                var 按住时 = ui.grid.WorldToCell(ui.camSence.ScreenToWorldPoint(Input.mousePosition));
-                //未移动出一个网格，不算移动节点
-                if (点击时 == 按住时)
-                {
-                    return;
-                }
-                鼠标按下位置_屏幕 = Input.mousePosition;
-                Vector3 鼠标_世界位置 = ui.camSence.ScreenToWorldPoint(Input.mousePosition);
-                Vector3Int gridPosI = ui.grid.WorldToCell(new Vector3(鼠标_世界位置.x, 鼠标_世界位置.y, 0));
-                Vector3 gridPos = ui.grid.CellToWorld(gridPosI);
-                rayHitMove.transform.position = gridPos;
-                //节点的处理逻辑
-                if (rayHitMove.tag is Constants.Tags.Node)
-                {
-                    Node n = rayHitMove.GetComponent<Node>();
-                    n.UpdateGridPos(gridPosI);
-                    //更新 后继点 的连线起始位置
-                    foreach (var item in n.sc.After_technology)
-                    {
-                        GameObject child = ui.tilemap.transform.Find(item.ToString()).gameObject;
-                        if (child)
-                        {
-                            child.GetComponent<Node>().UpdateNodeAppearance();
-                        }
-                    }
-                    //如果打开了节点编辑窗口，则更新窗口中的位置信息
-                    GameObject editPanel = GameObject.Find($"{rayHitMove.name}(Edit)");
-                    if (editPanel)
-                    {
-                        editPanel.GetComponent<PanelScienceEdit>().UpdatePositionByDrag(new(gridPosI.x, gridPosI.y));
-                        n.ClearAnchor();
-                        n.UpdateLineAnchor();
-                    }
-                }
-                //线的处理逻辑 未处理
-                else if (rayHitMove.tag is Constants.Tags.NodeLine)
-                {
-
-                }
-                //锚点的处理逻辑
-                else if (rayHitMove.tag is Constants.Tags.Anchor)
-                {
-                    int lrIndex = int.Parse(rayHitMove.name);
-                    LineRenderer lr = rayHitMove.GetComponentInParent<LineRenderer>();
-                    //更新锚点位置
-                    Vector2 anchorMoveTo = new(gridPos.x, gridPos.y);
-                    Vector3 lineIndexAt = new(anchorMoveTo.x, anchorMoveTo.y, 1);
-                    rayHitMove.transform.position = anchorMoveTo;
-                    lr.SetPosition(lrIndex, lineIndexAt);
-                    //更新字典中的路径位置
-                    string nodeFrom = lr.gameObject.name.Split("->")[0];
-                    string nodeTo = lr.gameObject.name.Split("->")[1];
-                    ScienceDict.TryGetValue(int.Parse(nodeTo), out var sc);
-                    int c = lr.positionCount;
-                    string newpos = null;
-                    for (int i = 1; i < c - 1; i++)
-                    {
-                        if (newpos is not null)
-                        {
-                            newpos += "_";
-                        }
-                        newpos += $"{ui.grid.WorldToCell(lr.GetPosition(i)).y}_{ui.grid.WorldToCell(lr.GetPosition(i)).x}";
-                    }
-                    sc.PathNode = sc.PathNode.UpdatePathNodeById(nodeFrom, newpos);
-                    //更新编辑界面中，路径字段显示的文字
-                    panel.GetComponent<PanelScienceEdit>().UpdatePrePath(sc.PathNode);
-                }
-            }
-            if (Input.GetMouseButtonUp(0))
-            {
-                if (rayHitMove && rayHitMove.tag is Constants.Tags.Node)
-                {
-                    rayHitMove.GetComponent<Node>().SetHoverStyle(false);
-                }
-                rayHitMove = null;
-            }
-        }
-        #endregion
     }
     #endregion
 

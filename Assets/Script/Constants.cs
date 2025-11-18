@@ -22,6 +22,7 @@ public static class Constants
     {
         // 主要管理器
         public const string MainManager = "MainManager";
+        public const string InputManager = "InputManager";
         public const string CameraSence = "CameraSence";
         public const string Grid = "Grid";
         public const string Tilemap = "Tilemap";
