@@ -39,10 +39,12 @@ public class Node : MonoBehaviour
     }
     void Start()
     {
+        var ui = UIReferences.Instance;
+
         config = GameObject.Find(Constants.GameObjectNames.MainManager).GetComponent<MainManager>().config;
 
         parent = transform.parent.gameObject;
-        grid = GameObject.Find(Constants.GameObjectNames.Grid).GetComponent<Grid>();
+        grid = ui.grid;
         sr = GetComponent<SpriteRenderer>();
         tmUp = transform.Find("text_up").GetComponent<TextMesh>();
         tmDown = transform.Find("text_down").GetComponent<TextMesh>();

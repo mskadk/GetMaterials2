@@ -18,57 +18,44 @@ public class MainManager : MonoBehaviour
         science,
         productionList,
     }
-    
+
     [Header("=== 配置文件 ===")]
     public EditorConfig config;
+    // 新增：UI 引用（自动获取，无需手动赋值）
+    private UIReferences ui;
 
-    public GameObject Node;
-    public GameObject ghostNodePrefab;
-    public GameObject techTreeItemTextPrefab;
-    public Camera camSence;
-    public GridDrawer gridDrawer;
+    // 保留这些，因为需要在运行时创建
+    private GameObject content;
 
     // Excel
     ExcelManager em;
-
     // Dictionary
     public Dictionary<int, Science> ScienceDict;
     public Dictionary<int, TechTreeItem> TechTreeItemDict;
-
-    // Hexagon Tilemap
-    public GameObject tilemap;
-    Grid grid;
-
-    // UI
-    public Dropdown dpMainPage;
-    public GameObject panelNodeEditPrefab;
-    public GameObject canvas;
-    public ScrollRect scrollViewTechTreeItem;
-    GameObject content;
-    InputField IfFilterFrom;
-    InputField IfFilterTo;
-    Button BtnFilterClear;
-    Button BtnClipBoard;
-    Slider NewNodeColorSlider;
-
-    // Command
-    Toggle useMoveCam;
-    Toggle useMoveNode;
-    Toggle useEditNode;
-    Toggle toggleTTI;
-    Toggle toggleTTIFilter;
-    TipText debug;
-
-    // 其他变量
+    // 其他运行时变量
     Color NewNodeColor;
     int NewNodeColorInt;
+    // 用于方法：updateMouseEvent()的
+    private GameObject panel;
+    List<GameObject> listSelect = new();
+    private Vector3 鼠标按下位置_屏幕;
+    private GameObject rayHitMove;
+    private GameObject rayHitNode;
 
     #region 初始化
     private void Init()
     {
+        // 首先获取 UI 引用
+        ui = UIReferences.Instance;
+
+        // 验证引用
+        if (!ui.ValidateReferences())
+        {
+            Debug.LogError("UI 引用验证失败！请在 Inspector 中检查 UIReferences 组件");
+            return;
+        }
         initExcel();
         initUI();
-        initTilemap();
         initTTI();
         initNode();
     }
@@ -84,34 +71,17 @@ public class MainManager : MonoBehaviour
 
     private void initUI()
     {
-        useMoveCam = GameObject.Find(Constants.GameObjectNames.ToggleMoveCam).GetComponent<Toggle>();
-        useMoveNode = GameObject.Find(Constants.GameObjectNames.ToggleMoveNode).GetComponent<Toggle>();
-        useEditNode = GameObject.Find(Constants.GameObjectNames.ToggleEditNode).GetComponent<Toggle>();
-        toggleTTI = GameObject.Find(Constants.GameObjectNames.ToggleTTI).GetComponent<Toggle>();
-        toggleTTIFilter = GameObject.Find(Constants.GameObjectNames.ToggleTTIFilter).GetComponent<Toggle>();
-        scrollViewTechTreeItem = GameObject.Find(Constants.GameObjectNames.ScrollViewTechTreeItem).GetComponent<ScrollRect>();
-        content = scrollViewTechTreeItem.transform.Find(Constants.UIPath.ScrollViewContent).gameObject;
-        debug = GameObject.Find(Constants.GameObjectNames.TipText).GetComponent<TipText>();
-        IfFilterFrom = GameObject.Find(Constants.GameObjectNames.IfFilterFrom).GetComponent<InputField>();
-        IfFilterTo = GameObject.Find(Constants.GameObjectNames.IfFilterTo).GetComponent<InputField>();
-        BtnFilterClear = GameObject.Find(Constants.GameObjectNames.BtnFilterClear).GetComponent<Button>();
-        BtnClipBoard = GameObject.Find(Constants.GameObjectNames.ButtonClipBoard).GetComponent<Button>();
-        NewNodeColorSlider = GameObject.Find(Constants.GameObjectNames.NewNodeColorSlider).GetComponent<Slider>();
+        // 不再使用 GameObject.Find，直接从 UIReferences 获取，其他的初始化工作也由UIR代管了，棒！
+        content = ui.scrollViewTechTreeItem.transform.Find(Constants.UIPath.ScrollViewContent).gameObject;
         //初始化时调用一次，调整滑条颜色
         NewNodeColorControll();
-    }
-
-    private void initTilemap()
-    {
-        tilemap = GameObject.Find(Constants.GameObjectNames.Tilemap);
-        grid = GameObject.Find(Constants.GameObjectNames.Grid).GetComponent<Grid>();
     }
 
     private void initTTI()
     {
         foreach (var tti in TechTreeItemDict)
         {
-            GameObject o = Instantiate(techTreeItemTextPrefab, content.transform);
+            GameObject o = Instantiate(ui.techTreeItemTextPrefab, content.transform);
             o.name = tti.Key.ToString();
             TechTreeItemText ttit = o.GetComponent<TechTreeItemText>();
             tti.Value.GO = o;
@@ -127,7 +97,10 @@ public class MainManager : MonoBehaviour
         foreach (var sc in ScienceDict.Values)
         {
 
-            GameObject o = Instantiate(Node, grid.CellToWorld(new(sc.HexGridY, sc.HexGridX, 0)), new Quaternion(), tilemap.transform);
+            GameObject o = Instantiate(ui.nodePrefab,
+                ui.grid.CellToWorld(new(sc.HexGridY, sc.HexGridX, 0)),
+                new Quaternion(),
+                ui.tilemap.transform);
             o.name = sc.Id.ToString();
             o.GetComponent<Node>().sc = sc;
             UpdateTTIShow("", sc.Building_unlock);
@@ -149,7 +122,7 @@ public class MainManager : MonoBehaviour
     GameObject rayDetect()
     {
         GameObject ob = null;
-        Vector3 vvv = camSence.ScreenToWorldPoint(Input.mousePosition);
+        Vector3 vvv = ui.camSence.ScreenToWorldPoint(Input.mousePosition);
         RaycastHit2D hit = Physics2D.Raycast(vvv, Vector3.forward, Mathf.Infinity);
         if (hit)
         {
@@ -178,7 +151,7 @@ public class MainManager : MonoBehaviour
                 Debug.Log($"KEY:{sc.Key},VALUE:{sc.Value}");
             }
         }
-        // . 从科技字典找到鼠标指向的Node的Science数据
+        // . 从科技字典找到鼠标指向的ui.nodePrefab的Science数据
         if (Input.GetKeyDown(KeyCode.Period))
         {
             var v = rayDetect();
@@ -205,7 +178,7 @@ public class MainManager : MonoBehaviour
     #region 主界面 & 模式选择
     public void SwitchPage()
     {
-        switch (dpMainPage.value)
+        switch (ui.dpMainPage.value)
         {
             case (int)Mode.science: OnDrawScience(); break;
             case (int)Mode.productionList: OffDrawScience(); break;
@@ -216,33 +189,33 @@ public class MainManager : MonoBehaviour
 
     public void ToggleMoveCam()
     {
-        camSence.GetComponent<CameraEventControll>().相机控制 = useMoveCam.isOn;
+        ui.camSence.GetComponent<CameraEventControll>().相机控制 = ui.toggleMoveCam.isOn;
     }
 
     private void OnDrawScience()
     {
-        camSence.GetComponent<GridDrawer>().渲染至游戏 = true;
-        camSence.GetComponent<CameraEventControll>().相机控制 = true;
-        tilemap.SetActive(true);
+        ui.camSence.GetComponent<GridDrawer>().渲染至游戏 = true;
+        ui.camSence.GetComponent<CameraEventControll>().相机控制 = true;
+        ui.tilemap.SetActive(true);
     }
 
     private void OffDrawScience()
     {
-        camSence.GetComponent<GridDrawer>().渲染至游戏 = false;
-        camSence.GetComponent<CameraEventControll>().相机控制 = false;
-        tilemap.SetActive(false);
+        ui.camSence.GetComponent<GridDrawer>().渲染至游戏 = false;
+        ui.camSence.GetComponent<CameraEventControll>().相机控制 = false;
+        ui.tilemap.SetActive(false);
     }
 
     public void BtnNewNode()
     {
-        GameObject newNode = Instantiate(ghostNodePrefab);
-        debug.Log("添加节点中……");
+        GameObject newNode = Instantiate(ui.ghostNodePrefab);
+        ui.tipText.Log("添加节点中……");
     }
 
     // 滑条修改新节点的颜色
     public void NewNodeColorControll()
     {
-        NewNodeColorInt = (int)NewNodeColorSlider.value;
+        NewNodeColorInt = (int)ui.newNodeColorSlider.value;
 
         // 改用配置文件的颜色
         NewNodeColor = config.GetColor(NewNodeColorInt);
@@ -256,30 +229,30 @@ public class MainManager : MonoBehaviour
             highlightedColor = NewNodeColor,
         };
 
-        NewNodeColorSlider.colors = v;
+        ui.newNodeColorSlider.colors = v;
 
     }
 
     #region 科技解锁项筛选
     public void ToggleTTI()
     {
-        scrollViewTechTreeItem.gameObject.SetActive(toggleTTI.isOn);
-        toggleTTIFilter.gameObject.SetActive(toggleTTI.isOn);
-        IfFilterFrom.gameObject.SetActive(toggleTTI.isOn);
-        IfFilterTo.gameObject.SetActive(toggleTTI.isOn);
-        BtnFilterClear.gameObject.SetActive(toggleTTI.isOn);
+        ui.scrollViewTechTreeItem.gameObject.SetActive(ui.toggleTTI.isOn);
+        ui.toggleTTIFilter.gameObject.SetActive(ui.toggleTTI.isOn);
+        ui.ifFilterFrom.gameObject.SetActive(ui.toggleTTI.isOn);
+        ui.ifFilterTo.gameObject.SetActive(ui.toggleTTI.isOn);
+        ui.btnFilterClear.gameObject.SetActive(ui.toggleTTI.isOn);
     }
 
     int min = 0;
     int max = 100000;
     public void UpdateTTIFilterMin()
     {
-        min = int.Parse(IfFilterFrom.text);
+        min = int.Parse(ui.ifFilterFrom.text);
         updateFilter();
     }
     public void UpdateTTIFilterMax()
     {
-        max = int.Parse(IfFilterTo.text);
+        max = int.Parse(ui.ifFilterTo.text);
         updateFilter();
     }
     private void updateFilter()
@@ -300,9 +273,9 @@ public class MainManager : MonoBehaviour
     }
     public void ClearFilter()
     {
-        IfFilterFrom.text = "0";
+        ui.ifFilterFrom.text = "0";
         min = 0;
-        IfFilterTo.text = "100000";
+        ui.ifFilterTo.text = "100000";
         max = 100000;
         updateFilter();
     }
@@ -315,7 +288,7 @@ public class MainManager : MonoBehaviour
         {
             if (ttit.Value.GO.GetComponent<TechTreeItemText>().t_times.text == "1")
             {
-                ttit.Value.GO.SetActive(toggleTTIFilter.isOn);
+                ttit.Value.GO.SetActive(ui.toggleTTIFilter.isOn);
             }
         }
     }
@@ -338,7 +311,7 @@ public class MainManager : MonoBehaviour
                     ttit.t_times.color = Color.red;
                     ttit.t_id.color = Color.red;
                     ttit.t_name.color = Color.red;
-                    debug.LogError($"{t.name}解锁项被重复解锁");
+                    ui.tipText.LogError($"{t.name}解锁项——重复引用！");
                 }
                 else if (times_i == 1)
                 {
@@ -369,7 +342,7 @@ public class MainManager : MonoBehaviour
                     ttit.t_times.color = Color.red;
                     ttit.t_id.color = Color.red;
                     ttit.t_name.color = Color.red;
-                    debug.LogError($"{t.name}解锁项被重复解锁");
+                    ui.tipText.LogError($"{t.name}解锁项被重复解锁");
                 }
                 else if (times_i == 1)
                 {
@@ -386,7 +359,7 @@ public class MainManager : MonoBehaviour
         }
         if (newNotFound is not null)
         {
-            debug.LogError($"{newNotFound} 是不存在的科技解锁项。");
+            ui.tipText.LogError($"{newNotFound} 是不存在的科技解锁项。");
         }
 
 
@@ -406,11 +379,14 @@ public class MainManager : MonoBehaviour
     public async void SaveScience()
     {
         //按钮UI暂时禁用
-        GameObject btn = GameObject.Find(Constants.GameObjectNames.ButtonExport);
+        //GameObject btn = GameObject.Find(Constants.GameObjectNames.ButtonExport);
+        // 改为：
+        GameObject btn = ui.btnExport.gameObject;
         Button btncomp = btn.GetComponent<Button>();
         Text tx = btn.GetComponentInChildren<Text>();
-        tx.text = "保存中……";
+        tx.text = "导出中……";
         btncomp.interactable = false;
+
         //使用Task和计时进行保存
         System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
         string fullname = null;
@@ -422,7 +398,7 @@ public class MainManager : MonoBehaviour
                                        ScienceDict);
         });
         sw.Stop();
-        debug.Log($"成功导出：{fullname}，用时：{sw.ElapsedMilliseconds}毫秒");
+        ui.tipText.Log($"成功导出：{fullname}，用时：{sw.ElapsedMilliseconds}毫秒");
         //解禁UI
         tx.text = "导出到桌面";
         btncomp.interactable = true;
@@ -455,7 +431,7 @@ public class MainManager : MonoBehaviour
             {
                 var sc = panel.GetComponent<PanelScienceEdit>().sc;
                 var id = sc.Id;
-                var node = tilemap.transform.Find(id.ToString());
+                var node = ui.tilemap.transform.Find(id.ToString());
                 //清除科技解锁项的标记
                 UpdateTTIShow(sc.Building_unlock, "");
                 UpdateTTIShow(sc.NonBuilding_unlock, "");
@@ -471,7 +447,7 @@ public class MainManager : MonoBehaviour
                     ScienceDict.TryGetValue(aft, out var science);
                     science.Pre_technology = science.Pre_technology.RemoveIdPreNode(id.ToString());
                     science.PathNode = science.PathNode.RemoveIdPrePath(id.ToString());
-                    tilemap.transform.Find(aft.ToString()).GetComponent<Node>().UpdateNodeAppearance();
+                    ui.tilemap.transform.Find(aft.ToString()).GetComponent<Node>().UpdateNodeAppearance();
                 }
                 //删除我
                 ScienceDict.Remove(sc.Id);
@@ -483,15 +459,10 @@ public class MainManager : MonoBehaviour
 
     }
 
-    private Vector3 鼠标按下位置_屏幕;
-    private GameObject rayHitMove;
-    private GameObject rayHitNode;
-    private GameObject panel;
-    List<GameObject> listSelect = new();
     private void updateMouseEvent()
     {
         #region 节点编辑功能
-        if (useEditNode && useEditNode.isOn)
+        if (ui.toggleEditNode && ui.toggleEditNode.isOn)
         {
             if (Input.GetMouseButtonDown(1))
             {
@@ -512,8 +483,8 @@ public class MainManager : MonoBehaviour
                     string nodeId = rayHitNode.name;
                     Node n = rayHitNode.GetComponent<Node>();
                     //实例化Panel
-                    panel = Instantiate(panelNodeEditPrefab);
-                    panel.transform.SetParent(canvas.transform.Find(Constants.UIPath.PanelRightContent), false);
+                    panel = Instantiate(ui.panelNodeEditPrefab);
+                    panel.transform.SetParent(ui.canvas.transform.Find(Constants.UIPath.PanelRightContent), false);
                     panel.name = $"{nodeId}(Edit)";
                     //从节点获取科技信息
                     panel.GetComponent<PanelScienceEdit>().node = n;
@@ -521,7 +492,7 @@ public class MainManager : MonoBehaviour
                     //node
                     n.SetSelectStyle(true);
                     n.UpdateLineAnchor();
-                    debug.Log($"编辑节点：{nodeId}:{n.sc.Name}");
+                    ui.tipText.Log($"编辑节点：{nodeId}:{n.sc.Name}");
                 }
             }
         }
@@ -529,7 +500,7 @@ public class MainManager : MonoBehaviour
         #endregion
 
         #region 节点移动
-        if (useEditNode && useMoveNode.isOn)
+        if (ui.toggleEditNode && ui.toggleMoveNode.isOn)
         {
             if (Input.GetMouseButtonDown(0))
             {
@@ -543,17 +514,17 @@ public class MainManager : MonoBehaviour
             }
             if (rayHitMove && Input.GetMouseButton(0))
             {
-                var 点击时 = grid.WorldToCell(camSence.ScreenToWorldPoint(鼠标按下位置_屏幕));
-                var 按住时 = grid.WorldToCell(camSence.ScreenToWorldPoint(Input.mousePosition));
+                var 点击时 = ui.grid.WorldToCell(ui.camSence.ScreenToWorldPoint(鼠标按下位置_屏幕));
+                var 按住时 = ui.grid.WorldToCell(ui.camSence.ScreenToWorldPoint(Input.mousePosition));
                 //未移动出一个网格，不算移动节点
                 if (点击时 == 按住时)
                 {
                     return;
                 }
                 鼠标按下位置_屏幕 = Input.mousePosition;
-                Vector3 鼠标_世界位置 = camSence.ScreenToWorldPoint(Input.mousePosition);
-                Vector3Int gridPosI = grid.WorldToCell(new Vector3(鼠标_世界位置.x, 鼠标_世界位置.y, 0));
-                Vector3 gridPos = grid.CellToWorld(gridPosI);
+                Vector3 鼠标_世界位置 = ui.camSence.ScreenToWorldPoint(Input.mousePosition);
+                Vector3Int gridPosI = ui.grid.WorldToCell(new Vector3(鼠标_世界位置.x, 鼠标_世界位置.y, 0));
+                Vector3 gridPos = ui.grid.CellToWorld(gridPosI);
                 rayHitMove.transform.position = gridPos;
                 //节点的处理逻辑
                 if (rayHitMove.tag is Constants.Tags.Node)
@@ -563,7 +534,7 @@ public class MainManager : MonoBehaviour
                     //更新 后继点 的连线起始位置
                     foreach (var item in n.sc.After_technology)
                     {
-                        GameObject child = tilemap.transform.Find(item.ToString()).gameObject;
+                        GameObject child = ui.tilemap.transform.Find(item.ToString()).gameObject;
                         if (child)
                         {
                             child.GetComponent<Node>().UpdateNodeAppearance();
@@ -605,7 +576,7 @@ public class MainManager : MonoBehaviour
                         {
                             newpos += "_";
                         }
-                        newpos += $"{grid.WorldToCell(lr.GetPosition(i)).y}_{grid.WorldToCell(lr.GetPosition(i)).x}";
+                        newpos += $"{ui.grid.WorldToCell(lr.GetPosition(i)).y}_{ui.grid.WorldToCell(lr.GetPosition(i)).x}";
                     }
                     sc.PathNode = sc.PathNode.UpdatePathNodeById(nodeFrom, newpos);
                     //更新编辑界面中，路径字段显示的文字
@@ -628,11 +599,14 @@ public class MainManager : MonoBehaviour
     #region 外部调用,利用幽灵节点的左键点击创建新的节点
     public void NewNode(Vector3Int pos)
     {
-        int id = -3;
+        int id = Constants.SpecialIds.NewNodeStartId;
         while (ScienceDict.ContainsKey(id)) { id--; }
-        GameObject o = Instantiate(Node, grid.CellToWorld(new(pos.x, pos.y, 0)), new Quaternion(), tilemap.transform);
+        GameObject o = Instantiate(ui.nodePrefab,
+            ui.grid.CellToWorld(new(pos.x, pos.y, 0)),
+            new Quaternion(), ui.tilemap.transform);
         o.name = id.ToString();
-        Science sc = new(id, 1, 0, .75f, 4, "新科技", "描述", "备注", "-1", "-1", pos.y, pos.x, "-1", "-1", "-1", .01f, NewNodeColorInt, "-1");
+        Science sc = new(id, 1, 0, .75f, 4, "新科技", "描述", "备注", "-1", "-1",
+            pos.y, pos.x, "-1", "-1", "-1", .01f, NewNodeColorInt, "-1");
         o.GetComponent<Node>().sc = sc;
         ScienceDict.Add(id, sc);
 

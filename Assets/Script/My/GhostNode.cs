@@ -11,8 +11,9 @@ public class GhostNode : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        cam = GameObject.Find(Constants.GameObjectNames.CameraSence).GetComponent<Camera>();
-        grid = GameObject.Find(Constants.GameObjectNames.Grid).GetComponent<Grid>();
+        var ui = UIReferences.Instance;
+        cam = ui.camSence;
+        grid = ui.grid;
         mm = GameObject.Find(Constants.GameObjectNames.MainManager).GetComponent<MainManager>();
     }
 

@@ -622,16 +622,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: 9ac78b9e71702fb4cbbe41844b7b5543, type: 2}
-  Node: {fileID: 8987857040390006947, guid: 1f05a0cea3d639849a8d14ede664e2ef, type: 3}
-  ghostNodePrefab: {fileID: 2121890046620320992, guid: e3081ca3cd9973e40a24d0a0625533ca, type: 3}
-  techTreeItemTextPrefab: {fileID: 5935321847630660708, guid: 72bd029732355b545907e7db3d3bf014, type: 3}
-  camSence: {fileID: 2055877773}
-  gridDrawer: {fileID: 0}
-  tilemap: {fileID: 384059297}
-  dpMainPage: {fileID: 1502700580}
-  panelNodeEditPrefab: {fileID: 8565263650277911581, guid: e5407036a28192e4489d84ef98b3b096, type: 3}
-  canvas: {fileID: 2120133452}
-  scrollViewTechTreeItem: {fileID: 1470584798}
 --- !u!4 &129809004
 Transform:
   m_ObjectHideFlags: 0
@@ -6479,7 +6469,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1174753}
   m_HandleRect: {fileID: 1174752}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -6725,8 +6715,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1576684052}
   m_HandleRect: {fileID: 1576684051}
   m_Direction: 0
-  m_Value: 0
-  m_Size: 1
+  m_Value: 1
+  m_Size: 0.99999994
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -7365,6 +7355,72 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1728189737}
   m_CullTransparentMesh: 1
+--- !u!1 &1729769662
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1729769664}
+  - component: {fileID: 1729769663}
+  m_Layer: 0
+  m_Name: UIManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1729769663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1729769662}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dda24c64a3ede6d4f97b5c8dabf8c4e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  toggleMoveCam: {fileID: 772640795}
+  toggleMoveNode: {fileID: 453611447}
+  toggleEditNode: {fileID: 87654584}
+  toggleTTI: {fileID: 1079979097}
+  toggleTTIFilter: {fileID: 2097682480}
+  ifFilterFrom: {fileID: 1713993665}
+  ifFilterTo: {fileID: 1053910194}
+  btnFilterClear: {fileID: 959438956}
+  btnClipBoard: {fileID: 1334741687}
+  btnExport: {fileID: 1704244267}
+  scrollViewTechTreeItem: {fileID: 1470584798}
+  newNodeColorSlider: {fileID: 452879672}
+  tipText: {fileID: 302372456}
+  dpMainPage: {fileID: 1502700580}
+  canvas: {fileID: 2120133452}
+  tilemap: {fileID: 1606730383}
+  grid: {fileID: 1606730385}
+  camSence: {fileID: 2055877773}
+  nodePrefab: {fileID: 8987857040390006947, guid: 1f05a0cea3d639849a8d14ede664e2ef, type: 3}
+  ghostNodePrefab: {fileID: 2121890046620320992, guid: e3081ca3cd9973e40a24d0a0625533ca, type: 3}
+  panelNodeEditPrefab: {fileID: 8565263650277911581, guid: e5407036a28192e4489d84ef98b3b096, type: 3}
+  techTreeItemTextPrefab: {fileID: 5935321847630660708, guid: 72bd029732355b545907e7db3d3bf014, type: 3}
+--- !u!4 &1729769664
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1729769662}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1810204691
 GameObject:
   m_ObjectHideFlags: 0
@@ -8537,6 +8593,7 @@ SceneRoots:
   - {fileID: 2055877774}
   - {fileID: 1990237317}
   - {fileID: 129809004}
+  - {fileID: 1729769664}
   - {fileID: 2120133456}
   - {fileID: 1606730384}
   - {fileID: 896327187}
