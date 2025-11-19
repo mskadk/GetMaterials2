@@ -8,9 +8,9 @@ using UnityEngine.UI;
 public class UIReferences : MonoBehaviour
 {
     [Header("=== Toggle 组件 ===")]
-    public Toggle toggleMoveCam;
-    public Toggle toggleMoveNode;
-    public Toggle toggleEditNode;
+    //public Toggle toggleMoveCam;
+    //public Toggle toggleMoveNode;
+    //public Toggle toggleEditNode;
     public Toggle toggleTTI;
     public Toggle toggleTTIFilter;
 
@@ -80,9 +80,6 @@ public class UIReferences : MonoBehaviour
     {
         bool isValid = true;
 
-        if (toggleMoveCam == null) { Debug.LogError("toggleMoveCam 未赋值"); isValid = false; }
-        if (toggleMoveNode == null) { Debug.LogError("toggleMoveNode 未赋值"); isValid = false; }
-        if (toggleEditNode == null) { Debug.LogError("toggleEditNode 未赋值"); isValid = false; }
         if (scrollViewTechTreeItem == null) { Debug.LogError("scrollViewTechTreeItem 未赋值"); isValid = false; }
         if (tipText == null) { Debug.LogError("tipText 未赋值"); isValid = false; }
         if (grid == null) { Debug.LogError("grid 未赋值"); isValid = false; }

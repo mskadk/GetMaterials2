@@ -57,17 +57,8 @@ public class InputManager : MonoBehaviour
     #region 鼠标事件处理
     private void UpdateMouseEvent()
     {
-        // 节点编辑模式
-        if (ui.toggleEditNode && ui.toggleEditNode.isOn)
-        {
-            HandleNodeEdit();
-        }
-
-        // 节点移动模式
-        if (ui.toggleEditNode && ui.toggleMoveNode.isOn)
-        {
-            HandleNodeDrag();
-        }
+        HandleNodeEdit();
+        HandleNodeDrag();
     }
 
     /// <summary>

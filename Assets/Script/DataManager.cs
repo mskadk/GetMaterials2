@@ -149,4 +149,17 @@ public class DataManager : MonoBehaviour
         return excelManager.SaveScience(savePath, sourcePath, ScienceDict);
     }
     #endregion
+
+    public void ScienceToClipBoard()
+    {
+        string outs = "";
+        foreach (var sc in ScienceDict.Values)
+        {
+            outs += sc.ParseString();
+            outs += "\n";
+        }
+        GUIUtility.systemCopyBuffer = outs;
+        EventCenter.Instance.TriggerLogMessage("已复制科技数据到剪贴板");
+    }
+
 }

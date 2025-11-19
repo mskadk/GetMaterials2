@@ -42,10 +42,7 @@ public class CreateNodeCommand : ICommand
         // ´´½¨GameObject
         if (createdNode == null)
         {
-            Vector3 worldPos = ui.grid.CellToWorld(new Vector3Int(gridPosition.x, gridPosition.y, 0));
-            createdNode = Object.Instantiate(ui.nodePrefab, worldPos, Quaternion.identity, ui.tilemap.transform);
-            createdNode.name = newScience.Id.ToString();
-            createdNode.GetComponent<Node>().sc = newScience;
+            createdNode = NodeManager.Instance.CreateNodeObject(newScience);
         }
         else
         {

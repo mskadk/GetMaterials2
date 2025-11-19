@@ -5,7 +5,6 @@ using Input = UnityEngine.Input;
 
 public class CameraEventControll : MonoBehaviour
 {
-    public bool 相机控制 = true;
     public int 滚轮速度 = 1;
     public int mb = (int)MouseButton.MiddleMouse;
 
@@ -27,28 +26,25 @@ public class CameraEventControll : MonoBehaviour
     private float scroll;
     void updateMouseDown()
     {
-        if (相机控制)
+        //拾取位置
+        if (Input.GetMouseButtonDown(mb))
         {
-            //拾取位置
-            if (Input.GetMouseButtonDown(mb))
-            {
-                dragOrigin = Input.mousePosition;
-            }
+            dragOrigin = Input.mousePosition;
+        }
 
-            if (Input.GetMouseButton(mb))
-            {
-                pos = cam.ScreenToViewportPoint(Input.mousePosition - dragOrigin);
-                move = new(pos.x * cam.orthographicSize * 2 * cam.aspect, pos.y * cam.orthographicSize * 2, 0);
-                transform.Translate(-move, Space.World);
-                dragOrigin = Input.mousePosition;
-            }
+        if (Input.GetMouseButton(mb))
+        {
+            pos = cam.ScreenToViewportPoint(Input.mousePosition - dragOrigin);
+            move = new(pos.x * cam.orthographicSize * 2 * cam.aspect, pos.y * cam.orthographicSize * 2, 0);
+            transform.Translate(-move, Space.World);
+            dragOrigin = Input.mousePosition;
+        }
 
-            scroll = Input.GetAxis("Mouse ScrollWheel");
-            if (scroll != 0)
-            {
-                cam.orthographicSize -= scroll * 滚轮速度;
-                cam.orthographicSize = Mathf.Clamp(cam.orthographicSize, .5f, 30);
-            }
+        scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (scroll != 0)
+        {
+            cam.orthographicSize -= scroll * 滚轮速度;
+            cam.orthographicSize = Mathf.Clamp(cam.orthographicSize, .5f, 30);
         }
     }
 }

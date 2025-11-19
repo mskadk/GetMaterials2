@@ -19,6 +19,7 @@ public class UIManager : MonoBehaviour
         }
     }
     #endregion
+    // UIManager.cs
     public int CurrentNodeColorIndex => (int)ui.newNodeColorSlider.value;
 
     private UIReferences ui;
@@ -222,4 +223,44 @@ public class UIManager : MonoBehaviour
         ui.newNodeColorSlider.colors = v;
     }
     #endregion
+
+    #region 主界面 : 通过按钮添加节点
+    public void BtnNewNode()
+    {
+        GameObject newNode = Instantiate(ui.ghostNodePrefab);
+        EventCenter.Instance.TriggerLogMessage("添加节点中……");
+    }
+
+    #endregion
+
+
+    public async void SaveScience()
+    {
+        GameObject btn = ui.btnExport.gameObject;
+        Button btncomp = ui.btnExport;
+        Text tx = btn.GetComponentInChildren<Text>();
+
+        string originalText = tx.text;
+        tx.text = "导出中...";
+        btncomp.interactable = false;
+
+        EventCenter.Instance.TriggerDataSaveStarted();
+
+        System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
+        string fullname = null;
+
+        await System.Threading.Tasks.Task.Run(() =>
+        {
+            fullname = DataManager.Instance.SaveData();
+        });
+
+        sw.Stop();
+
+        EventCenter.Instance.TriggerLogMessage($"成功导出到{fullname}，耗时：{sw.ElapsedMilliseconds}毫秒");
+        EventCenter.Instance.TriggerDataSaveCompleted(fullname);
+
+        tx.text = originalText;
+        btncomp.interactable = true;
+    }
+
 }

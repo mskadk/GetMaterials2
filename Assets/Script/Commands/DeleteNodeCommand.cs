@@ -92,20 +92,18 @@ public class DeleteNodeCommand : ICommand
         int id = deletedScience.Id;
 
         // 恢复到字典
-        DataManager.Instance.ScienceDict.Add(id, deletedScience);
+        DataManager.Instance.AddScience(deletedScience);
 
-        // 恢复GameObject
-        var nodeObj = ui.tilemap.transform.Find(id.ToString());
-        if (nodeObj != null)
+        /// 恢复GameObject
+        var node = NodeManager.Instance.GetNode(id);
+        if (node != null)
         {
-            nodeObj.gameObject.SetActive(true);
+            node.gameObject.SetActive(true);
         }
         else
         {
-            // 如果已被销毁，需要重新创建
-            GameObject newNode = Object.Instantiate(ui.nodePrefab, nodePosition, Quaternion.identity, ui.tilemap.transform);
-            newNode.name = id.ToString();
-            newNode.GetComponent<Node>().sc = deletedScience;
+            // 重新创建
+            NodeManager.Instance.CreateNodeObject(deletedScience);
         }
 
         // 恢复前置节点的后继
