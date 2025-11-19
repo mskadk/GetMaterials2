@@ -20,6 +20,8 @@ public class InputManager : MonoBehaviour
     private GameObject currentEditPanel;
     #endregion
 
+    private Vector3Int lastNodePosition;  // 记录节点移动前的位置
+
     #region 初始化
     public void Initialize(MainManager manager)
     {
@@ -142,8 +144,12 @@ public class InputManager : MonoBehaviour
 
             if (rayHitMove && rayHitMove.tag == Constants.Tags.Node)
             {
+                // 记录初始位置
+                Node node = rayHitMove.GetComponent<Node>();
+                lastNodePosition = new Vector3Int(node.sc.HexGridY, node.sc.HexGridX, 0);
+
                 // 按下时切换样式
-                rayHitMove.GetComponent<Node>().SetHoverStyle(true);
+                node.SetHoverStyle(true);
             }
         }
 
@@ -153,12 +159,32 @@ public class InputManager : MonoBehaviour
             HandleDragMove();
         }
 
-        // 松开鼠标
+        // 松开鼠标 - 生成命令
         if (Input.GetMouseButtonUp(0))
         {
             if (rayHitMove && rayHitMove.tag == Constants.Tags.Node)
             {
-                rayHitMove.GetComponent<Node>().SetHoverStyle(false);
+
+                Node node = rayHitMove.GetComponent<Node>();
+                Vector3Int currentPos = new Vector3Int(node.sc.HexGridY, node.sc.HexGridX, 0);
+
+                // 如果位置改变了，创建移动命令
+                if (lastNodePosition != currentPos)
+                {
+                    var moveCmd = new MoveNodeCommand(
+                        node,
+                        lastNodePosition,
+                        currentPos,
+                        ui.grid,
+                        mainManager
+                    );
+
+                    // 注意：这里是 Execute 后的状态，所以先 Undo 回到起始位置，再通过命令管理器执行
+                    node.UpdateGridPos(lastNodePosition);  // 先回到原位置
+                    CommandManager.Instance.ExecuteCommand(moveCmd);  // 再通过命令执行
+                }
+
+                node.SetHoverStyle(false);
             }
             rayHitMove = null;
         }
@@ -277,6 +303,21 @@ public class InputManager : MonoBehaviour
     #region 键盘事件处理
     private void UpdateKeyboardEvent()
     {
+        // 撤销：Ctrl+Z
+        if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Z))
+        {
+            CommandManager.Instance.Undo();
+            return;  // 避免继续处理其他按键
+        }
+        // 重做：Ctrl+Y 或 Ctrl+Shift+Z
+        if (Input.GetKey(KeyCode.LeftControl) &&
+            (Input.GetKeyDown(KeyCode.Y) ||
+             (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.Z))))
+        {
+            CommandManager.Instance.Redo();
+            return;
+        }
+
         // 只在有编辑面板且没有输入框获焦时处理
         if (!EventSystem.current.currentSelectedGameObject && currentEditPanel)
         {
@@ -310,48 +351,14 @@ public class InputManager : MonoBehaviour
     {
         var panelScript = currentEditPanel.GetComponent<PanelScienceEdit>();
         var sc = panelScript.sc;
-        var id = sc.Id;
-        var node = ui.tilemap.transform.Find(id.ToString());
 
-        // 更新科技树项显示
-        EventCenter.Instance.TriggerTechTreeItemUpdate(sc.Building_unlock, "");
-        EventCenter.Instance.TriggerTechTreeItemUpdate(sc.NonBuilding_unlock, "");
-
-        // 删除前置节点的后继
-        foreach (var preId in sc.Pre_technology.ToList())
-        {
-            if (mainManager.ScienceDict.TryGetValue(preId, out var preScience))
-            {
-                preScience.After_technology.Remove(id);
-            }
-        }
-
-        // 删除后续节点的前置字段
-        foreach (var aftId in sc.After_technology)
-        {
-            if (mainManager.ScienceDict.TryGetValue(aftId, out var aftScience))
-            {
-                aftScience.Pre_technology = aftScience.Pre_technology.RemoveIdPreNode(id.ToString());
-                aftScience.PathNode = aftScience.PathNode.RemoveIdPrePath(id.ToString());
-                ui.tilemap.transform.Find(aftId.ToString())?.GetComponent<Node>().UpdateNodeAppearance();
-            }
-        }
-
-        // 从字典删除
-        mainManager.ScienceDict.Remove(id);
-
-        // 销毁GameObject
-        if (node != null)
-        {
-            Destroy(node.gameObject);
-        }
+        // 创建删除命令
+        var deleteCmd = new DeleteNodeCommand(sc, mainManager, ui);
+        CommandManager.Instance.ExecuteCommand(deleteCmd);
 
         // 关闭编辑面板
         panelScript.DestoryPanel();
         currentEditPanel = null;
-
-        // 触发删除事件
-        EventCenter.Instance.TriggerNodeDeleted(id);
     }
     #endregion
 

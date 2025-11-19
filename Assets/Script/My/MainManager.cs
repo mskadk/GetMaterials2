@@ -398,21 +398,11 @@ public class MainManager : MonoBehaviour
     #endregion
 
     #region 外部调用,利用幽灵节点的左键点击创建新的节点
+    // 修改 NewNode() 方法使用命令
     public void NewNode(Vector3Int pos)
     {
-        int id = Constants.SpecialIds.NewNodeStartId;
-        while (ScienceDict.ContainsKey(id)) { id--; }
-
-        GameObject o = Instantiate(ui.nodePrefab,
-            ui.grid.CellToWorld(new(pos.x, pos.y, 0)),
-            new Quaternion(), ui.tilemap.transform);
-        o.name = id.ToString();
-        Science sc = new(id, 1, 0, .75f, 4, "新科技", "描述", "备注", "-1", "-1",
-            pos.y, pos.x, "-1", "-1", "-1", .01f, NewNodeColorInt, "-1");
-        o.GetComponent<Node>().sc = sc;
-        ScienceDict.Add(id, sc);
-        // 触发节点创建事件
-        EventCenter.Instance.TriggerNodeCreated(o.GetComponent<Node>());
+        var createCmd = new CreateNodeCommand(pos, NewNodeColorInt, this, ui);
+        CommandManager.Instance.ExecuteCommand(createCmd);
     }
 
     #endregion
