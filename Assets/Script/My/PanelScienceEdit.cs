@@ -27,7 +27,6 @@ public class PanelScienceEdit : MonoBehaviour
 {
     public Science sc { get; set; }
     public Node node { get; set; }
-    public MainManager mm;
     public GameObject content;
     public GameObject TTITPrefab;
     TipText debug;
@@ -104,8 +103,6 @@ public class PanelScienceEdit : MonoBehaviour
 
         submit = transform.Find("btn_submit").GetComponent<Button>();
 
-        mm = GameObject.Find("MainManager").GetComponent<MainManager>();
-
         updateTTIContent();
     }
     void Start()
@@ -131,11 +128,8 @@ public class PanelScienceEdit : MonoBehaviour
     {
         oldId = sc.Id;
         int id = int.Parse(i_id.text);
-        if (id == oldId)
-        {
-            return;
-        }
-        else if (mm.ScienceDict.ContainsKey(id))
+        if (id == oldId) return;
+        if (DataManager.Instance.ScienceDict.ContainsKey(id))
         {
             debug.LogError($"{id}已经存在");
             i_id.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.red;
@@ -149,7 +143,7 @@ public class PanelScienceEdit : MonoBehaviour
         {
             //更新字典内容
             sc.Id = id;
-            mm.ScienceDict = mm.ScienceDict.ToDictionary(k => k.Key == oldId ? id : k.Key, k => k.Value);
+            DataManager.Instance.UpdateScienceId(oldId, id);
             //更新panel字体颜色
             i_id.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
             //更新nodeid的文本
@@ -170,7 +164,7 @@ public class PanelScienceEdit : MonoBehaviour
             //更新后继节点中，前驱路径字段的id
             foreach (var idAfter in sc.After_technology)
             {
-                mm.ScienceDict.TryGetValue(idAfter, out var scAfter);
+                DataManager.Instance.ScienceDict.TryGetValue(idAfter, out var scAfter);
                 if (scAfter != null)
                 {
                     scAfter.Pre_technology = scAfter.Pre_technology.ReplacePreTech(oldId.ToString(), id.ToString());
@@ -181,7 +175,7 @@ public class PanelScienceEdit : MonoBehaviour
             //更新前置sc的Afternode中，自己的id
             sc.Pre_technology.Split("|").ToList().ForEach(idpre =>
             {
-                mm.ScienceDict.TryGetValue(int.Parse(idpre), out var scpre);
+                DataManager.Instance.ScienceDict.TryGetValue(int.Parse(idpre), out var scpre);
                 if (scpre != null)
                 {
                     scpre.After_technology.Remove(oldId);
@@ -257,7 +251,7 @@ public class PanelScienceEdit : MonoBehaviour
             //输入内容校验
             foreach (var item in n)
             {
-                if (item != "-1" && !mm.ScienceDict.ContainsKey(int.Parse(item)))
+                if (item != "-1" && !DataManager.Instance.ScienceDict.ContainsKey(int.Parse(item)))
                 {
                     debug.LogError($"当前所有节点中不存在一个id为{item}的节点。");
                     return;
@@ -266,7 +260,7 @@ public class PanelScienceEdit : MonoBehaviour
 
             foreach (var oldsc in o)
             {
-                mm.ScienceDict.TryGetValue(int.Parse(oldsc), out Science outSc);
+                DataManager.Instance.ScienceDict.TryGetValue(int.Parse(oldsc), out Science outSc);
                 if (outSc is not null && outSc.After_technology.Contains(sc.Id))
                 {
                     outSc.After_technology.Remove(sc.Id);
@@ -274,7 +268,7 @@ public class PanelScienceEdit : MonoBehaviour
             }
             foreach (var newSc in n)
             {
-                mm.ScienceDict.TryGetValue(int.Parse(newSc), out Science outSc);
+                DataManager.Instance.ScienceDict.TryGetValue(int.Parse(newSc), out Science outSc);
                 if (outSc is not null)
                 {
                     outSc.After_technology.Add(sc.Id);
@@ -371,7 +365,7 @@ public class PanelScienceEdit : MonoBehaviour
         //为sc中有的解锁项进行显示
         foreach (var id in sc.Building_unlock.ToList())
         {
-            mm.TechTreeItemDict.TryGetValue(id, out var tti);
+            DataManager.Instance.TechTreeItemDict.TryGetValue(id, out var tti);
             if (tti != null)
             {
                 if (!content.transform.Find(tti.Id.ToString()))
@@ -382,7 +376,7 @@ public class PanelScienceEdit : MonoBehaviour
         }
         foreach (var id in sc.NonBuilding_unlock.ToList())
         {
-            mm.TechTreeItemDict.TryGetValue(id, out var tti);
+            DataManager.Instance.TechTreeItemDict.TryGetValue(id, out var tti);
             if (tti != null)
             {
                 if (!content.transform.Find(tti.Id.ToString()))

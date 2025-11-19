@@ -10,7 +10,6 @@ public class InputManager : MonoBehaviour
 {
     #region 引用
     private UIReferences ui;
-    private MainManager mainManager;
     #endregion
 
     #region 输入状态
@@ -23,9 +22,8 @@ public class InputManager : MonoBehaviour
     private Vector3Int lastNodePosition;  // 记录节点移动前的位置
 
     #region 初始化
-    public void Initialize(MainManager manager)
+    public void Initialize()
     {
-        mainManager = manager;
         ui = UIReferences.Instance;
     }
     #endregion
@@ -175,8 +173,7 @@ public class InputManager : MonoBehaviour
                         node,
                         lastNodePosition,
                         currentPos,
-                        ui.grid,
-                        mainManager
+                        ui.grid
                     );
 
                     // 注意：这里是 Execute 后的状态，所以先 Undo 回到起始位置，再通过命令管理器执行
@@ -274,7 +271,7 @@ public class InputManager : MonoBehaviour
         string nodeFrom = lr.gameObject.name.Split("->")[0];
         string nodeTo = lr.gameObject.name.Split("->")[1];
 
-        if (mainManager.ScienceDict.TryGetValue(int.Parse(nodeTo), out var sc))
+        if (DataManager.Instance.ScienceDict.TryGetValue(int.Parse(nodeTo), out var sc))
         {
             int positionCount = lr.positionCount;
             string newpos = null;
@@ -353,7 +350,7 @@ public class InputManager : MonoBehaviour
         var sc = panelScript.sc;
 
         // 创建删除命令
-        var deleteCmd = new DeleteNodeCommand(sc, mainManager, ui);
+        var deleteCmd = new DeleteNodeCommand(sc, ui);
         CommandManager.Instance.ExecuteCommand(deleteCmd);
 
         // 关闭编辑面板
@@ -383,7 +380,7 @@ public class InputManager : MonoBehaviour
     /// </summary>
     private void DebugPrintScienceDict()
     {
-        foreach (var sc in mainManager.ScienceDict)
+        foreach (var sc in DataManager.Instance.ScienceDict)
         {
             Debug.Log($"KEY:{sc.Key}, VALUE:{sc.Value}");
         }
@@ -398,7 +395,7 @@ public class InputManager : MonoBehaviour
         if (hitObj != null && hitObj.tag == Constants.Tags.Node)
         {
             var node = hitObj.GetComponent<Node>();
-            if (mainManager.ScienceDict.TryGetValue(node.sc.Id, out Science sc))
+            if (DataManager.Instance.ScienceDict.TryGetValue(node.sc.Id, out Science sc))
             {
                 Debug.Log($"字典数据：{sc}");
             }

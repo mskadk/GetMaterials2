@@ -9,7 +9,6 @@ using UnityEngine;
 /// </summary>
 public class DeleteNodeCommand : ICommand
 {
-    private MainManager mainManager;
     private UIReferences ui;
 
     // 保存节点数据用于撤销
@@ -21,9 +20,8 @@ public class DeleteNodeCommand : ICommand
 
     public string Description => $"删除节点 {deletedScience.Id}:{deletedScience.Name}";
 
-    public DeleteNodeCommand(Science science, MainManager manager, UIReferences uiRefs)
+    public DeleteNodeCommand(Science science, UIReferences uiRefs)
     {
-        this.mainManager = manager;
         this.ui = uiRefs;
         this.deletedScience = science;
 
@@ -42,7 +40,7 @@ public class DeleteNodeCommand : ICommand
         affectedPathNodes = new Dictionary<int, string>();
         foreach (var aftId in science.After_technology)
         {
-            if (mainManager.ScienceDict.TryGetValue(aftId, out var aftScience))
+            if (DataManager.Instance.ScienceDict.TryGetValue(aftId, out var aftScience))
             {
                 affectedPreTechs[aftId] = aftScience.Pre_technology;
                 affectedPathNodes[aftId] = aftScience.PathNode;
@@ -61,7 +59,7 @@ public class DeleteNodeCommand : ICommand
         // 删除前置节点的后继
         foreach (var preId in deletedScience.Pre_technology.ToList())
         {
-            if (mainManager.ScienceDict.TryGetValue(preId, out var preScience))
+            if (DataManager.Instance.ScienceDict.TryGetValue(preId, out var preScience))
             {
                 preScience.After_technology.Remove(id);
             }
@@ -70,7 +68,7 @@ public class DeleteNodeCommand : ICommand
         // 删除后续节点的前置字段
         foreach (var aftId in deletedScience.After_technology)
         {
-            if (mainManager.ScienceDict.TryGetValue(aftId, out var aftScience))
+            if (DataManager.Instance.ScienceDict.TryGetValue(aftId, out var aftScience))
             {
                 aftScience.Pre_technology = aftScience.Pre_technology.RemoveIdPreNode(id.ToString());
                 aftScience.PathNode = aftScience.PathNode.RemoveIdPrePath(id.ToString());
@@ -79,7 +77,7 @@ public class DeleteNodeCommand : ICommand
         }
 
         // 从字典删除
-        mainManager.ScienceDict.Remove(id);
+        DataManager.Instance.ScienceDict.Remove(id);
 
         // 销毁GameObject
         var nodeObj = ui.tilemap.transform.Find(id.ToString());
@@ -94,7 +92,7 @@ public class DeleteNodeCommand : ICommand
         int id = deletedScience.Id;
 
         // 恢复到字典
-        mainManager.ScienceDict.Add(id, deletedScience);
+        DataManager.Instance.ScienceDict.Add(id, deletedScience);
 
         // 恢复GameObject
         var nodeObj = ui.tilemap.transform.Find(id.ToString());
@@ -113,7 +111,7 @@ public class DeleteNodeCommand : ICommand
         // 恢复前置节点的后继
         foreach (var preId in preNodeIds)
         {
-            if (mainManager.ScienceDict.TryGetValue(preId, out var preScience))
+            if (DataManager.Instance.ScienceDict.TryGetValue(preId, out var preScience))
             {
                 if (!preScience.After_technology.Contains(id))
                 {
@@ -125,7 +123,7 @@ public class DeleteNodeCommand : ICommand
         // 恢复后续节点的前置和路径字段
         foreach (var kvp in affectedPreTechs)
         {
-            if (mainManager.ScienceDict.TryGetValue(kvp.Key, out var aftScience))
+            if (DataManager.Instance.ScienceDict.TryGetValue(kvp.Key, out var aftScience))
             {
                 aftScience.Pre_technology = kvp.Value;
                 aftScience.PathNode = affectedPathNodes[kvp.Key];

@@ -5,7 +5,6 @@ using UnityEngine;
 /// </summary>
 public class CreateNodeCommand : ICommand
 {
-    private MainManager mainManager;
     private UIReferences ui;
     private Science newScience;
     private GameObject createdNode;
@@ -14,16 +13,15 @@ public class CreateNodeCommand : ICommand
 
     public string Description => $"创建节点 {newScience.Id}:{newScience.Name} 在 ({gridPosition.y},{gridPosition.x})";
 
-    public CreateNodeCommand(Vector3Int pos, int colorInt, MainManager manager, UIReferences uiRefs)
+    public CreateNodeCommand(Vector3Int pos, int colorInt, UIReferences uiRefs)
     {
-        this.mainManager = manager;
         this.ui = uiRefs;
         this.gridPosition = pos;
         this.nodeColorInt = colorInt;
 
         // 生成新ID
         int id = Constants.SpecialIds.NewNodeStartId;
-        while (mainManager.ScienceDict.ContainsKey(id)) { id--; }
+        while (DataManager.Instance.ScienceDict.ContainsKey(id)) { id--; }
 
         // 创建Science数据
         newScience = new Science(
@@ -39,7 +37,7 @@ public class CreateNodeCommand : ICommand
     public void Execute()
     {
         // 添加到字典
-        mainManager.ScienceDict.Add(newScience.Id, newScience);
+        DataManager.Instance.ScienceDict.Add(newScience.Id, newScience);
 
         // 创建GameObject
         if (createdNode == null)
@@ -61,7 +59,7 @@ public class CreateNodeCommand : ICommand
     public void Undo()
     {
         // 从字典移除
-        mainManager.ScienceDict.Remove(newScience.Id);
+        DataManager.Instance.ScienceDict.Remove(newScience.Id);
 
         // 隐藏GameObject（不销毁，方便重做）
         if (createdNode != null)

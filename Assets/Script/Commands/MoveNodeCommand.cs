@@ -13,13 +13,12 @@ public class MoveNodeCommand : ICommand
 
     public string Description => $"移动节点 {node.sc.Id}:{node.sc.Name} 从 ({oldPosition.y},{oldPosition.x}) 到 ({newPosition.y},{newPosition.x})";
 
-    public MoveNodeCommand(Node node, Vector3Int oldPos, Vector3Int newPos, Grid grid, MainManager manager)
+    public MoveNodeCommand(Node node, Vector3Int oldPos, Vector3Int newPos, Grid grid)
     {
         this.node = node;
         this.oldPosition = oldPos;
         this.newPosition = newPos;
         this.grid = grid;
-        this.mainManager = manager;
     }
 
     public void Execute()

@@ -32,9 +32,7 @@ public class MainManager : MonoBehaviour
 
     // Excel
     ExcelManager em;
-    // Dictionary
-    public Dictionary<int, Science> ScienceDict;
-    public Dictionary<int, TechTreeItem> TechTreeItemDict;
+    
     // 其他运行时变量
     Color NewNodeColor;
     int NewNodeColorInt;
@@ -55,14 +53,19 @@ public class MainManager : MonoBehaviour
         // 订阅事件
         SubscribeEvents();
 
+        // 初始化数据管理器
+        DataManager.Instance.Initialize(config);
+
         // 初始化输入管理器
         inputManager = gameObject.AddComponent<InputManager>();
-        inputManager.Initialize(this);
+        inputManager.Initialize();
 
-        initExcel();
+        // initExcel() 删除的方法，迁移到DataManager中
         initUI();
         //initTilemap(); // 删除的功能
-        initTTI();
+        //initTTI(); // 迁移到了UIManager
+        // 初始化 UI 管理器
+        UIManager.Instance.Initialize();
         initNode();
 
         // 数据加载完成
@@ -74,24 +77,15 @@ public class MainManager : MonoBehaviour
     /// </summary>
     private void SubscribeEvents()
     {
-        EventCenter.Instance.OnTechTreeItemUpdate += UpdateTTIShow;
+        EventCenter.Instance.OnTechTreeItemUpdate += UIManager.Instance.UpdateTTIShow;
     }
     private void OnDestroy()
     {
         // 取消订阅
         if (EventCenter.Instance != null)
         {
-            EventCenter.Instance.OnTechTreeItemUpdate -= UpdateTTIShow;
+            EventCenter.Instance.OnTechTreeItemUpdate -= UIManager.Instance.UpdateTTIShow;
         }
-    }
-
-    private void initExcel()
-    {
-        em = new();
-        ScienceDict = em.LoadScience(config.excelPath + Constants.FileNames.ScienceExcel);
-        TechTreeItemDict = em.LoadTechTreeitem(config.excelPath + Constants.FileNames.TechTreeItem);
-
-        // 保持不变，但字典已改为属性，带有private set
     }
 
     private void initUI()
@@ -99,27 +93,12 @@ public class MainManager : MonoBehaviour
         // 不再使用 GameObject.Find，直接从 UIReferences 获取，其他的初始化工作也由UIR代管了，棒！
         content = ui.scrollViewTechTreeItem.transform.Find(Constants.UIPath.ScrollViewContent).gameObject;
         //初始化时调用一次，调整滑条颜色
-        NewNodeColorControll();
-    }
-
-    private void initTTI()
-    {
-        foreach (var tti in TechTreeItemDict)
-        {
-            GameObject o = Instantiate(ui.techTreeItemTextPrefab, content.transform);
-            o.name = tti.Key.ToString();
-            TechTreeItemText ttit = o.GetComponent<TechTreeItemText>();
-            tti.Value.GO = o;
-            ttit.t_id.text = tti.Key.ToString();
-            ttit.t_name.text = tti.Value.Name;
-            ttit.t_desc.text = tti.Value.Desc;
-            ttit.t_times.text = 0.ToString();
-        }
+        UIManager.Instance.NewNodeColorControll();
     }
 
     private void initNode()
     {
-        foreach (var sc in ScienceDict.Values)
+        foreach (var sc in DataManager.Instance.ScienceDict.Values)
         {
 
             GameObject o = Instantiate(ui.nodePrefab,
@@ -187,160 +166,7 @@ public class MainManager : MonoBehaviour
         EventCenter.Instance.TriggerLogMessage("添加节点中……");
     }
 
-    // 滑条修改新节点的颜色
-    public void NewNodeColorControll()
-    {
-        NewNodeColorInt = (int)ui.newNodeColorSlider.value;
-
-        // 改用配置文件的颜色
-        NewNodeColor = config.GetColor(NewNodeColorInt);
-
-        ColorBlock v = new()
-        {
-            colorMultiplier = 1,
-            normalColor = NewNodeColor,
-            pressedColor = NewNodeColor,
-            selectedColor = NewNodeColor,
-            highlightedColor = NewNodeColor,
-        };
-
-        ui.newNodeColorSlider.colors = v;
-
-    }
-
     #region 科技解锁项筛选
-    public void ToggleTTI()
-    {
-        ui.scrollViewTechTreeItem.gameObject.SetActive(ui.toggleTTI.isOn);
-        ui.toggleTTIFilter.gameObject.SetActive(ui.toggleTTI.isOn);
-        ui.ifFilterFrom.gameObject.SetActive(ui.toggleTTI.isOn);
-        ui.ifFilterTo.gameObject.SetActive(ui.toggleTTI.isOn);
-        ui.btnFilterClear.gameObject.SetActive(ui.toggleTTI.isOn);
-    }
-
-    int min = 0;
-    int max = 100000;
-    public void UpdateTTIFilterMin()
-    {
-        min = int.Parse(ui.ifFilterFrom.text);
-        updateFilter();
-    }
-    public void UpdateTTIFilterMax()
-    {
-        max = int.Parse(ui.ifFilterTo.text);
-        updateFilter();
-    }
-    private void updateFilter()
-    {
-        foreach (var ttit in TechTreeItemDict)
-        {
-            var g = ttit.Value.GO;
-            var gc = g.GetComponent<TechTreeItemText>();
-            if (int.Parse(gc.t_id.text) >= min && int.Parse(gc.t_id.text) <= max)
-            {
-                g.SetActive(true);
-            }
-            else
-            {
-                g.SetActive(false);
-            }
-        }
-    }
-    public void ClearFilter()
-    {
-        ui.ifFilterFrom.text = "0";
-        min = 0;
-        ui.ifFilterTo.text = "100000";
-        max = 100000;
-        updateFilter();
-    }
-
-
-
-    public void ToggleTTIFilter()
-    {
-        foreach (var ttit in TechTreeItemDict)
-        {
-            if (ttit.Value.GO.GetComponent<TechTreeItemText>().t_times.text == "1")
-            {
-                ttit.Value.GO.SetActive(ui.toggleTTIFilter.isOn);
-            }
-        }
-    }
-
-    public void UpdateTTIShow(string oldStr = "", string newStr = "")
-    {
-        var oldList = oldStr.ToList();
-        var newList = newStr.ToList();
-        string newNotFound = null;
-
-        foreach (var item in oldList)
-        {
-            Transform t = content.transform.Find(item.ToString());
-            if (t)
-            {
-                var ttit = t.GetComponent<TechTreeItemText>();
-                int times_i = int.Parse(ttit.t_times.text);
-                times_i--;
-                if (times_i > 1)
-                {
-                    ttit.t_times.color = Constants.Colors.RedDuplicate;
-                    ttit.t_id.color = Constants.Colors.RedDuplicate;
-                    ttit.t_name.color = Constants.Colors.RedDuplicate;
-                    EventCenter.Instance.TriggerLogError($"{t.name}解锁项——重复引用！");
-                }
-                else if (times_i == 1)
-                {
-                    ttit.t_times.color = Constants.Colors.GreenUsed;
-                    ttit.t_id.color = Constants.Colors.GreenUsed;
-                    ttit.t_name.color = Constants.Colors.GreenUsed;
-                }
-                else if (times_i < 1)
-                {
-                    ttit.t_times.color = Constants.Colors.BlackNormal;
-                    ttit.t_id.color = Constants.Colors.BlackNormal;
-                    ttit.t_name.color = Constants.Colors.BlackNormal;
-                }
-                ttit.t_times.text = times_i.ToString();
-            }
-        }
-
-        foreach (var item in newList)
-        {
-            Transform t = content.transform.Find(item.ToString());
-            if (t)
-            {
-                var ttit = t.GetComponent<TechTreeItemText>();
-                int times_i = int.Parse(ttit.t_times.text);
-                times_i++;
-
-                if (times_i > 1)
-                {
-                    ttit.t_times.color = Constants.Colors.RedDuplicate;
-                    ttit.t_id.color = Constants.Colors.RedDuplicate;
-                    ttit.t_name.color = Constants.Colors.RedDuplicate;
-                    EventCenter.Instance.TriggerLogError($"{t.name}解锁项被重复解锁（TechTreeItem：id 重复引用）");
-                }
-                else if (times_i == 1)
-                {
-                    ttit.t_times.color = Constants.Colors.GreenUsed;
-                    ttit.t_id.color = Constants.Colors.GreenUsed;
-                    ttit.t_name.color = Constants.Colors.GreenUsed;
-                }
-                ttit.t_times.text = times_i.ToString();
-            }
-            else
-            {
-                newNotFound += newNotFound + " " + item.ToString();
-            }
-        }
-        if (newNotFound is not null)
-        {
-            EventCenter.Instance.TriggerLogError($"{newNotFound} 是不存在的科技解锁项。");
-        }
-
-
-    }
 
     #endregion
 
@@ -372,10 +198,8 @@ public class MainManager : MonoBehaviour
         string fullname = null;
         await Task.Run(() =>
         {
-            // 把 WorkSpace_Saveto 改成 config.savePath
-            fullname = em.SaveScience(config.savePath,
-                                       config.excelPath + Constants.FileNames.ScienceExcel,
-                                       ScienceDict);
+            // 使用 DataManager 保存
+            fullname = DataManager.Instance.SaveData();
         });
         sw.Stop();
         EventCenter.Instance.TriggerLogMessage($"成功导出：{fullname}，用时：{sw.ElapsedMilliseconds}毫秒");
@@ -388,7 +212,7 @@ public class MainManager : MonoBehaviour
     public void ScienceToClipBoard()
     {
         string outs = "";
-        foreach (var sc in ScienceDict.Values)
+        foreach (var sc in DataManager.Instance.ScienceDict.Values)
         {
             outs += sc.ParseString();
             outs += "\n";
@@ -401,7 +225,8 @@ public class MainManager : MonoBehaviour
     // 修改 NewNode() 方法使用命令
     public void NewNode(Vector3Int pos)
     {
-        var createCmd = new CreateNodeCommand(pos, NewNodeColorInt, this, ui);
+        int colorInt = UIManager.Instance.CurrentNodeColorIndex;
+        var createCmd = new CreateNodeCommand(pos, colorInt, ui);
         CommandManager.Instance.ExecuteCommand(createCmd);
     }
 
