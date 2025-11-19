@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -211,9 +212,8 @@ public class UIManager : MonoBehaviour
     public void NewNodeColorControll()
     {
         int colorInt = (int)ui.newNodeColorSlider.value;
-        // 注意：MainManager 中可能有个 NewNodeColor 变量需要处理
         // 这里只处理 UI 显示
-        Color color = DataManager.Instance.GetColor(colorInt); // 假设 Config 已移入 DataManager
+        Color color = DataManager.Instance.GetColor(colorInt);
 
         ColorBlock v = ui.newNodeColorSlider.colors;
         v.normalColor = color;
@@ -246,7 +246,7 @@ public class UIManager : MonoBehaviour
 
         EventCenter.Instance.TriggerDataSaveStarted();
 
-        System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
+        Stopwatch sw = Stopwatch.StartNew();
         string fullname = null;
 
         await System.Threading.Tasks.Task.Run(() =>

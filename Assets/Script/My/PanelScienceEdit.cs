@@ -421,8 +421,8 @@ public class PanelScienceEdit : MonoBehaviour
     /// </summary>
     public void UpdatePositionByDrag(Vector2Int pos)
     {
-        sc.HexGridX = pos.y;
-        sc.HexGridY = pos.x;
+        sc.HexGridX = pos.x;
+        sc.HexGridY = pos.y;
         i_x.text = sc.HexGridX.ToString();
         i_y.text = sc.HexGridY.ToString();
 

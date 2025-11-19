@@ -8,9 +8,6 @@ using UnityEngine.UI;
 public class UIReferences : MonoBehaviour
 {
     [Header("=== Toggle ×é¼þ ===")]
-    //public Toggle toggleMoveCam;
-    //public Toggle toggleMoveNode;
-    //public Toggle toggleEditNode;
     public Toggle toggleTTI;
     public Toggle toggleTTIFilter;
 
