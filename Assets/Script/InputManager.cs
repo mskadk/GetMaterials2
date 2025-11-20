@@ -19,6 +19,11 @@ public class InputManager : MonoBehaviour
     private GameObject currentEditPanel;
     #endregion
 
+    // 新增字段,用于处理锚点操作
+    private GameObject selectedAnchor;
+    private float lastClickTime;
+    private const float DOUBLE_CLICK_TIME = 0.3f;
+
     private Vector3Int lastNodePosition;  // 记录节点移动前的位置
 
     #region 初始化
@@ -40,8 +45,10 @@ public class InputManager : MonoBehaviour
     #region 射线检测
     /// <summary>
     /// 射线检测 - 获取鼠标点击的对象
+    /// 修改 RayDetect，增加 LayerMask 参数以便过滤
     /// </summary>
-    private GameObject RayDetect()
+    private GameObject RayDetect(string tagFilter = null)
+
     {
         GameObject ob = null;
         Vector3 worldPos = ui.camSence.ScreenToWorldPoint(Input.mousePosition);
@@ -50,6 +57,10 @@ public class InputManager : MonoBehaviour
         {
             ob = hit.transform.gameObject;
         }
+        if (hit && tagFilter != null && hit.transform.gameObject.tag != tagFilter)
+        {
+            return null;
+        }
         return ob;
     }
     #endregion
@@ -57,8 +68,17 @@ public class InputManager : MonoBehaviour
     #region 鼠标事件处理
     private void UpdateMouseEvent()
     {
+        // 始终允许编辑（右键点击）
         HandleNodeEdit();
+        // 始终允许拖拽（左键拖动）
         HandleNodeDrag();
+
+        // 始终允许锚点操作（如果有编辑面板）
+        if (currentEditPanel != null)
+        {
+            HandleAnchorSelection();
+            HandleLineDoubleClick();
+        }
     }
 
     /// <summary>
@@ -288,6 +308,123 @@ public class InputManager : MonoBehaviour
     }
     #endregion
 
+    #region 锚点处理单独
+    // 锚点选中逻辑
+    private void HandleAnchorSelection()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            GameObject hit = RayDetect();
+            if (hit != null && hit.tag == Constants.Tags.Anchor)
+            {
+                // 恢复上一个选中的锚点颜色（如果有）
+                if (selectedAnchor != null)
+                    selectedAnchor.GetComponent<SpriteRenderer>().color = Color.white; // 假设原色是白
+                selectedAnchor = hit;
+                selectedAnchor.GetComponent<SpriteRenderer>().color = Color.yellow; // 选中变黄
+            }
+            else if (hit == null) // 点击空地取消选中
+            {
+                if (selectedAnchor != null)
+                    selectedAnchor.GetComponent<SpriteRenderer>().color = Color.white;
+                selectedAnchor = null;
+            }
+        }
+    }
+    // 线条双击逻辑
+    private void HandleLineDoubleClick()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (Time.time - lastClickTime < DOUBLE_CLICK_TIME)
+            {
+                // 双击发生了！
+                var (lr, index, point) = DetectLineNearMouse();
+                if (lr != null)
+                {
+                    // 执行添加锚点命令
+                    var cmd = new AddAnchorCommand(lr, index, point);
+                    CommandManager.Instance.ExecuteCommand(cmd);
+
+                    // 解析出目标节点ID
+                    string nodeToId = lr.name.Split(new string[] { "->" }, System.StringSplitOptions.None)[1];
+                    int id = int.Parse(nodeToId);
+
+                    // 如果当前没打开面板，或者打开的不是这个节点的面板
+                    if (currentEditPanel == null || currentEditPanel.GetComponent<PanelScienceEdit>().sc.Id != id)
+                    {
+                        // 关闭旧的
+                        if (currentEditPanel) currentEditPanel.GetComponent<PanelScienceEdit>().DestoryPanel();
+
+                        // 打开新的（选中该节点）
+                        var nodeObj = NodeManager.Instance.GetNode(id).gameObject;
+                        OpenEditPanel(nodeObj);
+                    }
+                }
+            }
+            lastClickTime = Time.time;
+        }
+    }
+    // 线条检测算法
+    private (LineRenderer, int, Vector3) DetectLineNearMouse()
+    {
+        Vector3 mousePos = ui.camSence.ScreenToWorldPoint(Input.mousePosition);
+        mousePos.z = 0;
+        // 获取当前编辑节点的所有连线
+        // 既然我们在编辑模式，currentEditPanel 对应的节点就是中心
+        // 但连线是 LineRenderer，它是 Node 的子物体
+        // 我们需要遍历所有 NodeLine
+
+        // 优化：只检测当前编辑节点相关的线？
+        // 不，用户可能想点击进入其他节点的线。
+        // 全局查找所有线可能较慢，但在点击瞬间做一次是可以接受的。
+        var lines = GameObject.FindGameObjectsWithTag(Constants.Tags.NodeLine);
+
+        float minDst = 5f; // 阈值
+        LineRenderer bestLr = null;
+        int bestIndex = -1;
+        Vector3 bestPoint = Vector3.zero;
+        foreach (var lineObj in lines)
+        {
+            LineRenderer lr = lineObj.GetComponent<LineRenderer>();
+            if (!lr) continue;
+            for (int i = 0; i < lr.positionCount - 1; i++)
+            {
+                Vector3 p1 = lr.GetPosition(i);
+                Vector3 p2 = lr.GetPosition(i + 1);
+
+                float dst = HandleUtility_DistancePointLine(mousePos, p1, p2);
+                if (dst < minDst)
+                {
+                    minDst = dst;
+                    bestLr = lr;
+                    bestIndex = i + 1; // 插入在 p1 之后
+                    bestPoint = ProjectPointOnLineSegment(p1, p2, mousePos);
+                }
+            }
+        }
+
+        return (bestLr, bestIndex, bestPoint);
+    }
+    // 数学辅助方法：点到线段距离
+    private float HandleUtility_DistancePointLine(Vector3 p, Vector3 a, Vector3 b)
+    {
+        Vector3 proj = ProjectPointOnLineSegment(a, b, p);
+        return Vector3.Distance(p, proj);
+    }
+    private Vector3 ProjectPointOnLineSegment(Vector3 linePoint1, Vector3 linePoint2, Vector3 point)
+    {
+        Vector3 vector = linePoint2 - linePoint1;
+        Vector3 vector2 = point - linePoint1;
+        float d = vector.sqrMagnitude;
+        if (d == 0f) return linePoint1;
+        float t = Vector3.Dot(vector2, vector) / d;
+        if (t < 0f) return linePoint1;
+        if (t > 1f) return linePoint2;
+        return linePoint1 + vector * t;
+    }
+    #endregion
+
     #region 键盘事件处理
     private void UpdateKeyboardEvent()
     {
@@ -328,7 +465,16 @@ public class InputManager : MonoBehaviour
         // Delete - 删除节点
         if (Input.GetKeyDown(KeyCode.Delete))
         {
-            DeleteCurrentNode();
+            if (selectedAnchor != null)
+            {
+                var cmd = new DeleteAnchorCommand(selectedAnchor);
+                CommandManager.Instance.ExecuteCommand(cmd);
+                selectedAnchor = null;
+                return; // 优先删除锚点
+            }
+
+            // 然后才是删除节点
+            if (currentEditPanel) DeleteCurrentNode();
         }
     }
 

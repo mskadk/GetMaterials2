@@ -110,6 +110,17 @@ public class Node : MonoBehaviour
     {
         UpdateNodeStyle();
         UpdateLine();
+        // 新增：如果当前是选中状态（即处于编辑模式），必须强制刷新锚点
+        // 判断依据可以是是否有 border 子物体，或者外部传入状态
+        // 更简单的做法：先清除所有锚点，再重新生成（如果有需要）
+
+        // 检查是否处于编辑状态（有 border 子物体且激活）
+        var border = transform.Find("border");
+        if (border && border.gameObject.activeSelf)
+        {
+            ClearAnchor();      // 先清除旧的（解决残留问题）
+            UpdateLineAnchor(); // 再生成新的（解决次序和新锚点显示问题）
+        }
     }
 
     private void UpdateNodeStyle()

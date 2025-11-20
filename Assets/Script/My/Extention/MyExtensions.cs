@@ -217,6 +217,101 @@ namespace Assets.Script.My.Extention
             }
             return result;
         }
+
+
+        /// <summary>
+        /// 在指定的前置节点路径中插入一个新的坐标点
+        /// </summary>
+        public static string InsertPathNode(this string pathNodeStr, string targetPreId, int insertIndex, Vector2Int newPoint)
+        {
+            if (string.IsNullOrEmpty(pathNodeStr) || pathNodeStr == "-1")
+                return $"{targetPreId}_{newPoint.y}_{newPoint.x}";
+
+            var paths = pathNodeStr.Split('|').ToList();
+            bool found = false;
+
+            for (int i = 0; i < paths.Count; i++)
+            {
+                var segments = paths[i].Split('_').ToList();
+                string preId = segments[0];
+
+                if (preId == targetPreId)
+                {
+                    // 格式: ID_Y1_X1_Y2_X2...
+                    // 索引: 0  1  2  3  4
+                    // 坐标组索引 k 对应 segments 中的 1+2*k 和 2+2*k
+                    // insertIndex 是 LineRenderer 的索引，从 1 开始（0是起点）
+                    // 我们要插入在第 insertIndex 个锚点之前
+                    // 对应的 segments 插入位置是 1 + (insertIndex - 1) * 2 = 2 * insertIndex - 1
+
+                    int listIndex = 2 * insertIndex - 1;
+                    // 保护一下，防止越界追加
+                    if (listIndex > segments.Count) listIndex = segments.Count;
+                    if (listIndex < 1) listIndex = 1;
+
+                    segments.Insert(listIndex, newPoint.x.ToString()); // X (注意顺序，你的格式可能是 Y_X)
+                    segments.Insert(listIndex, newPoint.y.ToString()); // Y
+
+                    paths[i] = string.Join("_", segments);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                paths.Add($"{targetPreId}_{newPoint.y}_{newPoint.x}");
+            }
+
+            return string.Join("|", paths);
+        }
+
+        /// <summary>
+        /// 删除指定前置节点路径中的某个坐标点
+        /// </summary>
+        public static string RemovePathNode(this string pathNodeStr, string targetPreId, int anchorIndex)
+        {
+            if (string.IsNullOrEmpty(pathNodeStr) || pathNodeStr == "-1") return pathNodeStr;
+
+            var paths = pathNodeStr.Split('|').ToList();
+            List<string> newPaths = new List<string>();
+
+            foreach (var path in paths)
+            {
+                var segments = path.Split('_').ToList();
+                string preId = segments[0];
+
+                if (preId == targetPreId)
+                {
+                    // anchorIndex 是第几个锚点（从1开始）
+                    // 对应的 segments 索引是 1 + (anchorIndex-1)*2
+                    int removeStart = 1 + (anchorIndex - 1) * 2;
+
+                    if (removeStart + 1 < segments.Count)
+                    {
+                        segments.RemoveRange(removeStart, 2); // 删除 Y 和 X
+                    }
+
+                    // 如果只剩 ID 了，这就变成空路径了，是否要保留取决于你的逻辑
+                    // 这里假设保留 ID 代表直连
+                    if (segments.Count > 1)
+                    {
+                        newPaths.Add(string.Join("_", segments));
+                    }
+                    // 如果删光了锚点，但还要保留连接关系，可能需要处理。
+                    // 你的逻辑似乎是：如果 PathNode 里没有这个 ID，就是直连。
+                    // 所以如果 segments.Count == 1，就不加到 newPaths 里
+                }
+                else
+                {
+                    newPaths.Add(path);
+                }
+            }
+
+            if (newPaths.Count == 0) return "-1";
+            return string.Join("|", newPaths);
+        }
+
     }
 
 

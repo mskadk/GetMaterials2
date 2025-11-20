@@ -123,6 +123,24 @@ public class PanelScienceEdit : MonoBehaviour
     }
 
     #region 内容与UI应用
+    // 添加一个公共方法，用于外部刷新 UI
+    public void RefreshUI()
+    {
+        // 确保重新从 sc 对象读取最新数据
+        if (sc != null)
+        {
+            // 关键：更新路径输入框
+            if (i_prePath != null)
+            {
+                i_prePath.text = sc.PathNode;
+            }
+
+            // 其他可能需要更新的字段（可选）
+            i_x.text = sc.HexGridX.ToString();
+            i_y.text = sc.HexGridY.ToString();
+        }
+    }
+
     int oldId;
     public void UpdateId()
     {
