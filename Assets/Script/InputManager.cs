@@ -25,8 +25,11 @@ public class InputManager : MonoBehaviour
     private float lastClickTime;
     private const float DOUBLE_CLICK_TIME = 0.3f;
 
-    // 记录节点移动前的基准位置
+    // 记录节点移动前的基准位置 (网格坐标，用于单体移动判断)
     private Vector3Int lastNodePosition;
+
+    // 记录鼠标按下时的世界坐标 (用于批量移动计算增量)
+    private Vector3 lastMouseWorldPos;
 
     // 当前选中的对象集合
     private HashSet<GameObject> selectedObjects = new HashSet<GameObject>();
@@ -42,6 +45,7 @@ public class InputManager : MonoBehaviour
     private Vector3 dragStartMousePos;
     private bool isDragging = false;
     private const float DRAG_THRESHOLD = 5f; // 拖拽阈值
+    private bool isPointerOverUI = false; // 是否点击在UI上
 
     #region 初始化
     public void Initialize()
@@ -84,81 +88,87 @@ public class InputManager : MonoBehaviour
     #region 鼠标事件处理
     private void UpdateMouseEvent()
     {
-        // 1. 优先处理右键（编辑/取消）
+        // 1. 优先处理右键
         if (Input.GetMouseButtonDown(1))
         {
             HandleRightClick();
             return;
         }
-
         // 2. 鼠标左键按下
         if (Input.GetMouseButtonDown(0))
         {
             if (EventSystem.current.IsPointerOverGameObject()) return;
+            // 【修复3】编辑模式下的严格隔离
+            if (currentEditPanel != null)
+            {
+                GameObject hit = RayDetect();
+                int editId = currentEditPanel.GetComponent<PanelScienceEdit>().sc.Id;
 
+                // 如果点到了其他节点 -> 屏蔽操作（直接返回）
+                if (hit != null && hit.tag == Constants.Tags.Node && hit.GetComponent<Node>().sc.Id != editId)
+                {
+                    return;
+                }
+                // 如果点到了空地 -> 允许（可能是为了 GhostNode 或者双击连线）
+                // 如果点到了当前节点 -> 允许（准备拖拽）
+                // 如果点到了锚点 -> 允许（准备拖拽/选中）
+                // 如果点到了连线 -> 允许（双击添加锚点，虽然这是 MouseDown，但双击检测需要它）
+            }
             dragStartMousePos = Input.mousePosition;
             isDragging = false;
-
             rayHitMove = RayDetect();
-
             // 如果点击了节点 -> 准备拖拽
             if (rayHitMove != null && rayHitMove.tag == Constants.Tags.Node)
             {
-                // 记录基准点
                 Node n = rayHitMove.GetComponent<Node>();
                 lastNodePosition = new Vector3Int(n.sc.HexGridY, n.sc.HexGridX, 0);
-            }
-            // 锚点也准备拖拽
-            else if (rayHitMove != null && rayHitMove.tag == Constants.Tags.Anchor)
-            {
-                // 锚点不需要记录 lastNodePosition，它直接跟随鼠标
+                lastMouseWorldPos = ui.camSence.ScreenToWorldPoint(Input.mousePosition);
+                lastMouseWorldPos.z = 0;
+                // 【修复1】移除这里的 SetHoverStyle(true)，移到拖拽开始处
+
+                // 选中逻辑保持不变
+                if (!selectedObjects.Contains(rayHitMove))
+                {
+                    if (!Input.GetKey(KeyCode.LeftShift)) ClearSelection();
+                    AddToSelection(rayHitMove);
+                }
+
+                // 初始化批量数据
+                batchStartPositions.Clear();
+                foreach (var obj in selectedObjects)
+                {
+                    if (obj.tag == Constants.Tags.Node)
+                    {
+                        Node node = obj.GetComponent<Node>();
+                        batchStartPositions[obj] = new Vector3Int(node.sc.HexGridY, node.sc.HexGridX, 0);
+                    }
+                }
             }
         }
-
         // 3. 鼠标拖动中
         if (Input.GetMouseButton(0))
         {
-            // 检测是否达到拖拽阈值
+            if (isPointerOverUI) return;
             if (!isDragging && Vector3.Distance(Input.mousePosition, dragStartMousePos) > DRAG_THRESHOLD)
             {
                 isDragging = true; // 开始拖拽
-
-                // 如果点击的是空地 -> 开始框选
+                // 【修复1】在这里触发 Hover 样式
+                if (rayHitMove != null && rayHitMove.tag == Constants.Tags.Node)
+                {
+                    rayHitMove.GetComponent<Node>().SetHoverStyle(true);
+                }
+                // 空地 -> 开始框选
                 if (rayHitMove == null)
                 {
-                    // 【规则】只有在非编辑模式下才允许框选
-                    if (currentEditPanel == null)
+                    if (currentEditPanel == null) // 编辑模式下禁止框选
                     {
                         isBoxSelecting = true;
                         boxStartPos = dragStartMousePos;
-                        // 开始框选时，如果没有按 Shift，清除已有选择
                         if (!Input.GetKey(KeyCode.LeftShift)) ClearSelection();
-                    }
-                }
-                // 如果点击的是节点 -> 开始移动
-                else if (rayHitMove.tag == Constants.Tags.Node)
-                {
-                    // 如果拖拽的是未选中的节点 -> 单选它
-                    if (!selectedObjects.Contains(rayHitMove))
-                    {
-                        if (!Input.GetKey(KeyCode.LeftShift)) ClearSelection();
-                        AddToSelection(rayHitMove);
-                    }
-
-                    // 初始化批量移动数据
-                    batchStartPositions.Clear();
-                    foreach (var obj in selectedObjects)
-                    {
-                        if (obj.tag == Constants.Tags.Node)
-                        {
-                            Node n = obj.GetComponent<Node>();
-                            batchStartPositions[obj] = new Vector3Int(n.sc.HexGridY, n.sc.HexGridX, 0);
-                        }
                     }
                 }
             }
-
-            // 执行拖拽逻辑
+            // 执行拖拽
             if (isDragging)
             {
                 if (isBoxSelecting)
@@ -169,11 +179,11 @@ public class InputManager : MonoBehaviour
                 {
                     if (rayHitMove.tag == Constants.Tags.Node)
                     {
-                        HandleBatchMove(); // 批量移动节点
+                        HandleBatchMove();
                     }
                     else if (rayHitMove.tag == Constants.Tags.Anchor)
                     {
-                        // 锚点移动（保持单体）
+                        // 锚点移动
                         Vector3 worldPos = ui.camSence.ScreenToWorldPoint(Input.mousePosition);
                         worldPos.z = 0;
                         Vector3Int currentGridPos = ui.grid.WorldToCell(worldPos);
@@ -183,13 +193,11 @@ public class InputManager : MonoBehaviour
                 }
             }
         }
-
         // 4. 鼠标左键松开
         if (Input.GetMouseButtonUp(0))
         {
             if (isDragging)
             {
-                // 结束拖拽/框选
                 if (isBoxSelecting)
                 {
                     isBoxSelecting = false;
@@ -198,27 +206,32 @@ public class InputManager : MonoBehaviour
                 }
                 else if (rayHitMove != null)
                 {
-                    // 结算移动命令
                     FinishBatchMove();
+                    // 【修复1】拖拽结束，取消 Hover 样式
+                    if (rayHitMove.tag == Constants.Tags.Node)
+                    {
+                        rayHitMove.GetComponent<Node>().SetHoverStyle(false);
+                    }
                 }
             }
             else
             {
-                // 这是一个点击事件（没有发生拖拽）
-                HandleLeftClick();
+                // 点击事件
+                if (!isPointerOverUI) HandleLeftClick();
             }
-
             isDragging = false;
             rayHitMove = null;
             batchStartPositions.Clear();
         }
-
-        // 5. 处理双击连线（添加锚点）
-        // 只有在编辑模式下才允许
-        if (currentEditPanel != null)
+        // 5. 双击连线
+        // 【修复2】确保编辑模式下能检测到连线点击
+        // 之前的逻辑是 currentEditPanel != null 才能进这里，这没问题
+        // 问题是你觉得"双击屏幕任意位置"？
+        // 双击连线必须点在线上。InputManager 不会拦截空地点击，所以 GhostNode 应该能工作。
+        if (currentEditPanel != null && !isPointerOverUI)
         {
             HandleLineDoubleClick();
-            HandleAnchorSelection(); // 锚点点击选中
+            HandleAnchorSelection();
         }
     }
 
@@ -230,15 +243,24 @@ public class InputManager : MonoBehaviour
         // 点击空地 -> 取消所有选中
         if (hit == null)
         {
+            // 如果处于编辑模式，左键点击空地不应取消选中（防止误操作）
+            if (currentEditPanel != null) return;
+
             if (!Input.GetKey(KeyCode.LeftShift))
             {
                 ClearSelection();
-                // 注意：这里不关闭面板，保留右键关闭的习惯
             }
         }
         // 点击节点 -> 选中/反选
         else if (hit.tag == Constants.Tags.Node)
         {
+            // 编辑模式下，如果点击的不是当前节点，忽略（或者是切换？按你的需求是忽略）
+            if (currentEditPanel != null)
+            {
+                int editId = currentEditPanel.GetComponent<PanelScienceEdit>().sc.Id;
+                if (hit.GetComponent<Node>().sc.Id != editId) return;
+            }
+
             if (Input.GetKey(KeyCode.LeftShift))
             {
                 // 反选逻辑
@@ -249,8 +271,7 @@ public class InputManager : MonoBehaviour
             }
             else
             {
-                // 单选（如果没有按Shift，且点击了未选中的节点，则清除其他只选这个）
-                // 如果点击了已选中的节点，保持选中状态不变
+                // 单选
                 if (!selectedObjects.Contains(hit))
                 {
                     ClearSelection();
@@ -302,28 +323,37 @@ public class InputManager : MonoBehaviour
     // 批量移动逻辑（拖拽中）
     private void HandleBatchMove()
     {
-        Vector3 worldPos = ui.camSence.ScreenToWorldPoint(Input.mousePosition);
-        worldPos.z = 0;
-        Vector3Int currentGridPos = ui.grid.WorldToCell(worldPos);
+        // 获取当前鼠标世界坐标
+        Vector3 currentMouseWorldPos = ui.camSence.ScreenToWorldPoint(Input.mousePosition);
+        currentMouseWorldPos.z = 0;
 
-        // 计算增量 (当前鼠标格子 - 起始基准格子)
-        Vector3Int delta = currentGridPos - lastNodePosition;
+        // 计算世界坐标增量 (当前 - 按下时)
+        Vector3 worldDelta = currentMouseWorldPos - lastMouseWorldPos;
 
-        // 移动所有选中节点
         foreach (var kvp in batchStartPositions)
         {
             GameObject obj = kvp.Key;
-            Vector3Int startPos = kvp.Value;
-            Vector3Int targetPos = startPos + delta;
+            Vector3Int startGridPos = kvp.Value;
 
-            HandleNodeMove(obj, targetPos);
+            // 1. 获取该节点起始的世界坐标
+            Vector3 startNodeWorldPos = ui.grid.CellToWorld(startGridPos);
+            startNodeWorldPos.z = 0;
+
+            // 2. 应用增量
+            Vector3 targetWorldPos = startNodeWorldPos + worldDelta;
+
+            // 3. 转换回网格坐标 (Unity 会自动处理六角网格的奇偶偏移)
+            Vector3Int targetGridPos = ui.grid.WorldToCell(targetWorldPos);
+
+            // 4. 执行移动
+            HandleNodeMove(obj, targetGridPos);
         }
     }
 
     // 批量移动结算（松开鼠标）
     private void FinishBatchMove()
     {
-        if (rayHitMove.tag == Constants.Tags.Node)
+        if (rayHitMove != null && rayHitMove.tag == Constants.Tags.Node)
         {
             var batchCmd = new BatchMoveCommand();
             bool hasMoved = false;
@@ -339,7 +369,7 @@ public class InputManager : MonoBehaviour
                 {
                     hasMoved = true;
                     // 创建命令
-                    var moveCmd = new MoveNodeCommand(n, startPos, currentPos, ui.grid); // 如果需要 Manager
+                    var moveCmd = new MoveNodeCommand(n, startPos, currentPos, ui.grid);
                     batchCmd.Add(moveCmd);
                 }
             }
@@ -498,15 +528,19 @@ public class InputManager : MonoBehaviour
                     var cmd = new AddAnchorCommand(lr, index, point);
                     CommandManager.Instance.ExecuteCommand(cmd);
 
-                    string nodeToId = lr.name.Split(new string[] { "->" }, System.StringSplitOptions.None)[1];
-                    int id = int.Parse(nodeToId);
+                    // 【关键修复】移除下面这段代码
+                    // 因为 DetectLineNearMouse 已经保证了 lr 属于当前节点
+                    // 所以不需要判断 id 是否匹配，也不需要切换面板
 
-                    if (currentEditPanel == null || currentEditPanel.GetComponent<PanelScienceEdit>().sc.Id != id)
-                    {
-                        if (currentEditPanel) currentEditPanel.GetComponent<PanelScienceEdit>().DestoryPanel();
-                        var nodeObj = NodeManager.Instance.GetNode(id).gameObject;
-                        OpenEditPanel(nodeObj);
-                    }
+                    //string nodeToId = lr.name.Split(new string[] { "->" }, System.StringSplitOptions.None)[1];
+                    //int id = int.Parse(nodeToId);
+
+                    //if (currentEditPanel == null || currentEditPanel.GetComponent<PanelScienceEdit>().sc.Id != id)
+                    //{
+                    //    if (currentEditPanel) currentEditPanel.GetComponent<PanelScienceEdit>().DestoryPanel();
+                    //    var nodeObj = NodeManager.Instance.GetNode(id).gameObject;
+                    //    OpenEditPanel(nodeObj);
+                    //}
                 }
             }
             lastClickTime = Time.time;
@@ -517,32 +551,58 @@ public class InputManager : MonoBehaviour
     {
         Vector3 mousePos = ui.camSence.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0;
-        var lines = GameObject.FindGameObjectsWithTag(Constants.Tags.NodeLine);
+        // 【关键修复】获取检测范围
+        List<GameObject> linestoCheck = new List<GameObject>();
+        // 如果处于编辑模式，只检测当前节点的连线
+        if (currentEditPanel != null)
+        {
+            int currentId = currentEditPanel.GetComponent<PanelScienceEdit>().sc.Id;
+            Node currentNode = NodeManager.Instance.GetNode(currentId);
 
+            if (currentNode != null)
+            {
+                // 遍历当前节点下的所有 LineRenderer
+                // 注意：连线是作为子物体存在的
+                foreach (Transform child in currentNode.transform)
+                {
+                    if (child.tag == Constants.Tags.NodeLine)
+                    {
+                        linestoCheck.Add(child.gameObject);
+                    }
+                }
+            }
+        }
+        else
+        {
+            // 非编辑模式下（虽然目前双击只在编辑模式启用，但保留逻辑完整性）
+            // 全局查找（或者是禁止双击，看你需求）
+            // 既然你的需求是"编辑模式下严格限制"，那么非编辑模式下可能不允许添加锚点？/YES!!!!!
+            // 如果允许，那就保持全局查找；如果不允许，这里直接返回 null
+            return (null, -1, Vector3.zero);
+        }
         float minDst = 5f; // 阈值
         LineRenderer bestLr = null;
         int bestIndex = -1;
         Vector3 bestPoint = Vector3.zero;
 
-        foreach (var lineObj in lines)
+        foreach (var lineObj in linestoCheck)
         {
             LineRenderer lr = lineObj.GetComponent<LineRenderer>();
             if (!lr) continue;
+
             for (int i = 0; i < lr.positionCount - 1; i++)
             {
                 Vector3 p1 = lr.GetPosition(i);
                 Vector3 p2 = lr.GetPosition(i + 1);
-
-                // 忽略 Z 轴差异
                 p1.z = 0; p2.z = 0;
-
                 float dst = HandleUtility_DistancePointLine(mousePos, p1, p2);
                 if (dst < minDst)
                 {
                     minDst = dst;
                     bestLr = lr;
                     bestIndex = i + 1;
-                    bestPoint = ProjectPointOnLineSegment(p1, p2, mousePos);
+                    //bestPoint = ProjectPointOnLineSegment(p1, p2, mousePos);
+                    bestPoint = ui.camSence.ScreenToWorldPoint(Input.mousePosition);
                 }
             }
         }
@@ -670,18 +730,6 @@ public class InputManager : MonoBehaviour
     #endregion
 
     #region 框选逻辑
-    private void HandleBoxSelection()
-    {
-        // 1. 开始框选
-        if (Input.GetMouseButtonDown(0))
-        {
-            // 这里的逻辑已经移到了 UpdateMouseEvent 的拖动部分
-            // 如果没有点中物体，就会触发 isBoxSelecting = true
-        }
-
-        // 这里只保留辅助逻辑，实际框选在 UpdateMouseEvent 中处理
-    }
-
     private void PerformBoxSelection()
     {
         Vector2 boxEndPos = Input.mousePosition;
@@ -696,6 +744,11 @@ public class InputManager : MonoBehaviour
         {
             GameObject obj = hit.gameObject;
             if (obj.tag == Constants.Tags.Node)
+            {
+                AddToSelection(obj);
+            }
+            // 框选锚点（仅当可见时）
+            else if (obj.tag == Constants.Tags.Anchor && obj.GetComponent<Renderer>().enabled)
             {
                 AddToSelection(obj);
             }
