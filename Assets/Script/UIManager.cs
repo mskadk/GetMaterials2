@@ -22,6 +22,8 @@ public class UIManager : MonoBehaviour
     #endregion
     // UIManager.cs
     public int CurrentNodeColorIndex => (int)ui.newNodeColorSlider.value;
+    [Header("=== 框选 UI ===")]
+    public RectTransform selectionBox; // 拖拽一个半透明的 Image (UI Panel)
 
     private UIReferences ui;
     private GameObject content;
@@ -41,6 +43,8 @@ public class UIManager : MonoBehaviour
         SubscribeEvents();
         InitTTI();
         NewNodeColorControll(); // 初始化颜色滑条
+
+        if (selectionBox) selectionBox.gameObject.SetActive(false);
     }
 
     private void SubscribeEvents()
@@ -233,6 +237,32 @@ public class UIManager : MonoBehaviour
 
     #endregion
 
+    #region 框选相关的内容
+    // 更新选框视觉
+    public void UpdateSelectionBox(Vector2 startScreenPos, Vector2 currentScreenPos)
+    {
+        if (!selectionBox) return;
+        if (!selectionBox.gameObject.activeSelf) selectionBox.gameObject.SetActive(true);
+        RectTransform parentRect = selectionBox.parent as RectTransform;
+        Vector2 localStart, localCurrent;
+
+        // 【关键修正】这里应该用 UI 相机，或者 null (如果是 Overlay)
+        // 你的场景里有 CameraUI，假设 Canvas 是 Screen Space - Camera
+        Camera uiCamera = GameObject.Find("CameraUI").GetComponent<Camera>();
+
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, startScreenPos, uiCamera, out localStart);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, currentScreenPos, uiCamera, out localCurrent);
+        Vector2 center = (localStart + localCurrent) * 0.5f;
+        Vector2 size = new Vector2(Mathf.Abs(localCurrent.x - localStart.x), Mathf.Abs(localCurrent.y - localStart.y));
+
+        selectionBox.anchoredPosition = center;
+        selectionBox.sizeDelta = size;
+    }
+    public void HideSelectionBox()
+    {
+        if (selectionBox) selectionBox.gameObject.SetActive(false);
+    }
+    #endregion
 
     public async void SaveScience()
     {
