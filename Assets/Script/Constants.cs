@@ -127,5 +127,7 @@ public static class Constants
         public static readonly UnityEngine.Color GreenUsed = new UnityEngine.Color(0.2f, 0.6f, 0.2f);
         public static readonly UnityEngine.Color RedDuplicate = UnityEngine.Color.red;
         public static readonly UnityEngine.Color BlackNormal = UnityEngine.Color.black;
+        public static readonly UnityEngine.Color AnchorNormal = new UnityEngine.Color(0.94f, 0.99f, 0.53f);
+        public static readonly UnityEngine.Color AnchorSelecting = new UnityEngine.Color(0.92f, 0.45f, 0.25f);
     }
 }

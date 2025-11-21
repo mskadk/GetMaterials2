@@ -45,6 +45,8 @@ public class UIManager : MonoBehaviour
         NewNodeColorControll(); // 初始化颜色滑条
 
         if (selectionBox) selectionBox.gameObject.SetActive(false);
+        ToggleTTI();
+
     }
 
     private void SubscribeEvents()
@@ -74,6 +76,8 @@ public class UIManager : MonoBehaviour
             ttit.t_desc.text = tti.Value.Desc;
             ttit.t_times.text = "0";
         }
+        
+
     }
 
     public void UpdateTTIShow(string oldStr, string newStr)
@@ -158,6 +162,7 @@ public class UIManager : MonoBehaviour
         ui.scrollViewTechTreeItem.gameObject.SetActive(isOn);
         ui.toggleTTIFilter.gameObject.SetActive(isOn);
         ui.ifFilterFrom.gameObject.SetActive(isOn);
+        ui.textDao.gameObject.SetActive(isOn);
         ui.ifFilterTo.gameObject.SetActive(isOn);
         ui.btnFilterClear.gameObject.SetActive(isOn);
     }

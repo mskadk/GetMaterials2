@@ -69,7 +69,7 @@ public class AddAnchorCommand : ICommand
     {
         // 通过 InputManager 获取当前面板
         var inputMgr = GameObject.Find(Constants.GameObjectNames.MainManager)?.GetComponent<InputManager>();
-        var currentPanel = inputMgr?.GetCurrentEditPanel();
+        var currentPanel = inputMgr?.CurrentEditPanel;
 
         if (currentPanel != null)
         {

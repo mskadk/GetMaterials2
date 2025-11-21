@@ -13,6 +13,7 @@ public class UIReferences : MonoBehaviour
 
     [Header("=== InputField 组件 ===")]
     public InputField ifFilterFrom;
+    public Text textDao;
     public InputField ifFilterTo;
 
     [Header("=== Button 组件 ===")]
