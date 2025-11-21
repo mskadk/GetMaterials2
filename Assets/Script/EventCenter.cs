@@ -8,10 +8,16 @@ public class EventCenter : MonoBehaviour
 {
     #region µ¥ÀýÄ£Ê½
     private static EventCenter _instance;
+
+    //private static bool _applicationIsQuitting = false;
     public static EventCenter Instance
     {
         get
         {
+            //if (_applicationIsQuitting)
+            //{
+            //    return null;
+            //}
             if (_instance == null)
             {
                 _instance = FindFirstObjectByType<EventCenter>();
@@ -208,6 +214,7 @@ public class EventCenter : MonoBehaviour
         OnDataLoaded = null;
         OnDataSaveStarted = null;
         OnDataSaveCompleted = null;
+        //_applicationIsQuitting = true;
     }
 
     #endregion

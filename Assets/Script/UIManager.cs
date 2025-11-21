@@ -245,9 +245,6 @@ public class UIManager : MonoBehaviour
         if (!selectionBox.gameObject.activeSelf) selectionBox.gameObject.SetActive(true);
         RectTransform parentRect = selectionBox.parent as RectTransform;
         Vector2 localStart, localCurrent;
-
-        // 【关键修正】这里应该用 UI 相机，或者 null (如果是 Overlay)
-        // 你的场景里有 CameraUI，假设 Canvas 是 Screen Space - Camera
         Camera uiCamera = GameObject.Find("CameraUI").GetComponent<Camera>();
 
         RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, startScreenPos, uiCamera, out localStart);

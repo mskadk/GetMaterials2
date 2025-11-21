@@ -97,8 +97,10 @@ public class InputManager : MonoBehaviour
         // 2. 鼠标左键按下
         if (Input.GetMouseButtonDown(0))
         {
-            if (EventSystem.current.IsPointerOverGameObject()) return;
-            // 【修复3】编辑模式下的严格隔离
+            // 点在UI上不执行，并 isPointerOverUI = False
+            if (isPointerOverUI = EventSystem.current.IsPointerOverGameObject()) return;
+
+            // 编辑模式下的严格隔离
             if (currentEditPanel != null)
             {
                 GameObject hit = RayDetect();
@@ -124,7 +126,6 @@ public class InputManager : MonoBehaviour
                 lastNodePosition = new Vector3Int(n.sc.HexGridY, n.sc.HexGridX, 0);
                 lastMouseWorldPos = ui.camSence.ScreenToWorldPoint(Input.mousePosition);
                 lastMouseWorldPos.z = 0;
-                // 【修复1】移除这里的 SetHoverStyle(true)，移到拖拽开始处
 
                 // 选中逻辑保持不变
                 if (!selectedObjects.Contains(rayHitMove))
@@ -149,28 +150,27 @@ public class InputManager : MonoBehaviour
         if (Input.GetMouseButton(0))
         {
             if (isPointerOverUI) return;
+            // 拖拽：触发阈值
             if (!isDragging && Vector3.Distance(Input.mousePosition, dragStartMousePos) > DRAG_THRESHOLD)
             {
                 isDragging = true; // 开始拖拽
-                // 【修复1】在这里触发 Hover 样式
+                // 节点：拖拽时改变样式
                 if (rayHitMove != null && rayHitMove.tag == Constants.Tags.Node)
                 {
                     rayHitMove.GetComponent<Node>().SetHoverStyle(true);
                 }
-                // 空地 -> 开始框选
-                if (rayHitMove == null)
+                // 空地：设定框选起始位置
+                if (rayHitMove == null && currentEditPanel == null)
                 {
-                    if (currentEditPanel == null) // 编辑模式下禁止框选
-                    {
-                        isBoxSelecting = true;
-                        boxStartPos = dragStartMousePos;
-                        if (!Input.GetKey(KeyCode.LeftShift)) ClearSelection();
-                    }
+                    isBoxSelecting = true;
+                    boxStartPos = dragStartMousePos;
+                    if (!Input.GetKey(KeyCode.LeftShift)) ClearSelection();
                 }
             }
             // 执行拖拽
             if (isDragging)
             {
+                // 框选：更新终止位置
                 if (isBoxSelecting)
                 {
                     UIManager.Instance.UpdateSelectionBox(boxStartPos, Input.mousePosition);
@@ -207,7 +207,7 @@ public class InputManager : MonoBehaviour
                 else if (rayHitMove != null)
                 {
                     FinishBatchMove();
-                    // 【修复1】拖拽结束，取消 Hover 样式
+                    // 取消 Hover 样式
                     if (rayHitMove.tag == Constants.Tags.Node)
                     {
                         rayHitMove.GetComponent<Node>().SetHoverStyle(false);
@@ -224,10 +224,6 @@ public class InputManager : MonoBehaviour
             batchStartPositions.Clear();
         }
         // 5. 双击连线
-        // 【修复2】确保编辑模式下能检测到连线点击
-        // 之前的逻辑是 currentEditPanel != null 才能进这里，这没问题
-        // 问题是你觉得"双击屏幕任意位置"？
-        // 双击连线必须点在线上。InputManager 不会拦截空地点击，所以 GhostNode 应该能工作。
         if (currentEditPanel != null && !isPointerOverUI)
         {
             HandleLineDoubleClick();
@@ -678,6 +674,8 @@ public class InputManager : MonoBehaviour
         var panelScript = currentEditPanel.GetComponent<PanelScienceEdit>();
         var sc = panelScript.sc;
         var deleteCmd = new DeleteNodeCommand(sc, ui);
+        // 删除时清楚选择，防止访问已经销毁的对象
+        ClearSelection();
         CommandManager.Instance.ExecuteCommand(deleteCmd);
         panelScript.DestoryPanel();
         currentEditPanel = null;
