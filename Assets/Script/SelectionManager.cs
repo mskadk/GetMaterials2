@@ -58,7 +58,7 @@ public class SelectionManager : MonoBehaviour
 
         // 现在的Anchor变黄
         if (SelectedAnchor != null)
-            SelectedAnchor.GetComponent<SpriteRenderer>().color = Constants.Colors.AnchorSelecting;
+            SelectedAnchor.GetComponent<SpriteRenderer>().color = Constants.Colors.AnchorSelected;
     }
 
     public void ClearAnchor()
