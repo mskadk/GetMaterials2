@@ -76,7 +76,7 @@ public class UIManager : MonoBehaviour
             ttit.t_desc.text = tti.Value.Desc;
             ttit.t_times.text = "0";
         }
-        
+
 
     }
 

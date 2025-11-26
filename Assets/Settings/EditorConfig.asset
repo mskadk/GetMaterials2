@@ -15,7 +15,7 @@ MonoBehaviour:
   spritePath: D:\work\manager\Assets WorkSpace\FreeWorld\sprite\
   excelPath: "D:\\work\\manager\\\u7B56\u5212\\\u9879\u76EE\u4F01\u5212\\\u6570\u636E\u8868\\"
   savePath: C:\Users\Administrator\Desktop\
-  colorRed: {r: 1, g: 0, b: 0, a: 1}
+  colorRed: {r: 0.754717, g: 0.754717, b: 0.754717, a: 1}
   colorOrange: {r: 1, g: 0.5, b: 0, a: 1}
   colorYellow: {r: 1, g: 1, b: 0, a: 1}
   colorGreen: {r: 0, g: 1, b: 0, a: 1}
