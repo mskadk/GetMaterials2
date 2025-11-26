@@ -128,14 +128,14 @@ public class Node : MonoBehaviour
         //节点颜色
         sr.color = getColor(sc.IconColor);
         //节点尺寸
-        
-        transform.localScale = sc.IconScale switch
+        if (sc.IconScale == Constants.NodeScale.Small)
         {
-            Constants.NodeScale.Large => Vector3.one * Constants.NodeScale.Large,
-            Constants.NodeScale.Middle => Vector3.one * Constants.NodeScale.Middle,
-            Constants.NodeScale.Small => Vector3.one * Constants.NodeScale.Small,
-            _ => Vector3.one * Constants.NodeScale.Middle,
-        };
+            transform.localScale = Constants.NodeScale.Small * Vector3.one;
+        }
+        else if (sc.IconScale == Constants.NodeScale.Large)
+        {
+            transform.localScale = (Constants.NodeScale.Large + 0.25f) * Vector3.one;
+        }
         //显示的id和名字
         tmUp.text = $"{sc.Id}";
         tmDown.text = $"{sc.Name}";
@@ -206,13 +206,13 @@ public class Node : MonoBehaviour
 
     void UpdateLine()
     {
-        List<Vector3Int> PrePathsList = sc.PathNode.ParesV3IList();
-        List<int> PreNodesList = sc.Pre_technology.ToList();
+        List<Vector3Int> List前置路径 = sc.PathNode.ParesV3IList();
+        List<int> List前置节点 = sc.Pre_technology.ToList();
         //没有前置，删除所有线
         //2025-8-22 排除-2，表示排除pda解锁的科技，这些科技没有前置所以不需要绘制前置线路
-        if (PreNodesList is null || PreNodesList.Contains(-2))
+        if (List前置节点 is null || List前置节点.Contains(-2))
         {
-            // 清空
+
             foreach (var item in getAllLineGOs())
             {
                 Destroy(item);
@@ -221,14 +221,14 @@ public class Node : MonoBehaviour
         }
         else
         {
-            List<string> LineNameList = new();
+            List<string> listLineName = new();
             //用前置字段生成线
-            foreach (var preNodeId in PreNodesList)
+            foreach (var 节点id in List前置节点)
             {
-                GameObject preNodeGameObject = parent.transform.Find(preNodeId.ToString()).gameObject;
-                Science parentSc = preNodeGameObject.GetComponent<Node>().sc;
+                GameObject parentNode = parent.transform.Find(节点id.ToString()).gameObject;
+                Science parentSc = parentNode.GetComponent<Node>().sc;
                 string lineName = $"{parentSc.Id}->{this.sc.Id}";
-                LineNameList.Add(lineName);
+                listLineName.Add(lineName);
                 //找到线或创建线
                 GameObject lineGO;
                 if (transform.Find(lineName))
@@ -241,20 +241,20 @@ public class Node : MonoBehaviour
                     lineGO.name = lineName;
                 }
                 var line = lineGO.GetComponent<LineRenderer>();
-                line.positionCount = PrePathsList.Count + 2;
-                if (PrePathsList.Count == 0)
+                line.positionCount = List前置路径.Count + 2;
+                if (List前置路径.Count == 0)
                 {
                     line.SetPositions(new[] {
-                    preNodeGameObject.transform.position + Vector3.forward,
+                    parentNode.transform.position + Vector3.forward,
                     transform.position + Vector3.forward
                     });
                 }
                 else
                 {
                     List<Vector3> positions = new() {
-                        preNodeGameObject.transform.position + Vector3.forward
+                        parentNode.transform.position + Vector3.forward
                     };
-                    foreach (var 路径 in PrePathsList)
+                    foreach (var 路径 in List前置路径)
                     {
                         if (路径.x == parentSc.Id)
                         {
@@ -269,20 +269,20 @@ public class Node : MonoBehaviour
                 //更新线的外观样式
                 line.startColor = getColor(parentSc.IconColor);
                 line.endColor = getColor(this.sc.IconColor);
-                //if (sc.LineScale == 8)
-                //{
-                //    line.startWidth = line.endWidth = .15f;
-                //}
-                //else if (sc.LineScale == 4)
-                //{
-                //    line.startWidth = line.endWidth = .05f;
-                //}
-                line.startWidth = line.endWidth = sc.LineScale;
+                if (sc.LineScale == 8)
+                {
+                    line.startWidth = line.endWidth = .15f;
+                }
+                else if (sc.LineScale == 4)
+                {
+                    line.startWidth = line.endWidth = .05f;
+
+                }
             }
             //清除多余线
             foreach (var item in getAllLineGOs())
             {
-                if (!LineNameList.Contains(item.name))
+                if (!listLineName.Contains(item.name))
                 {
                     Destroy(item);
                 }

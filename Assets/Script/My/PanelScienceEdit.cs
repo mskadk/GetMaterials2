@@ -84,10 +84,9 @@ public class PanelScienceEdit : MonoBehaviour
         d_color.value = sc.IconColor - 1;
         d_scale.value = sc.IconScale switch
         {
-            Constants.NodeScale.Large => 0,
-            Constants.NodeScale.Middle => 1,
-            Constants.NodeScale.Small => 2,
-            _ => 1,
+            1.5f => 0,
+            .75f => 1,
+            _ => 0,
         };
         i_icon.text = sc.ModuleId.ToString();
         i_pre.text = sc.Pre_technology.ToString();
@@ -320,11 +319,9 @@ public class PanelScienceEdit : MonoBehaviour
         switch (d_scale.value)
         {
             //´ó
-            case 0: sc.LineScale = Constants.LineWidth.Thick; sc.IconScale = Constants.NodeScale.Large; break;
-            //ÖÐ
-            case 1: sc.LineScale = Constants.LineWidth.Medium; sc.IconScale = Constants.NodeScale.Middle; break;
+            case 0: sc.LineScale = 8; sc.IconScale = 1.5f; break;
             //Ð¡
-            case 2: sc.LineScale = Constants.LineWidth.Thin; sc.IconScale = Constants.NodeScale.Small; ; break;
+            case 1: sc.LineScale = 4; sc.IconScale = .75f; ; break;
             default:
                 break;
         }

@@ -81,9 +81,8 @@ public static class Constants
     /// </summary>
     public static class NodeScale
     {
-        public const float Large = 3.9f;
-        public const float Middle = 1.9f;
-        public const float Small = 0.9f;
+        public const float Large = 1.5f;
+        public const float Small = 0.75f;
     }
 
     /// <summary>
@@ -91,9 +90,8 @@ public static class Constants
     /// </summary>
     public static class LineWidth
     {
-        public const float Thick = .49f;
-        public const float Medium = .24f;
-        public const float Thin = .12f;
+        public const float Thick = 0.15f;
+        public const float Thin = 0.05f;
     }
 
     /// <summary>

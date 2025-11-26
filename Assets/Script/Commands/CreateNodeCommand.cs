@@ -25,7 +25,7 @@ public class CreateNodeCommand : ICommand
 
         // 创建Science数据
         newScience = new Science(
-            id, 1, 0, 0.9f, 0.12f,
+            id, 1, 0, 0.75f, 4,
             "新科技", "介绍", "备注",
             "-1", "-1",
             pos.y, pos.x,

@@ -29,7 +29,7 @@ public class TipText : MonoBehaviour
 
     public void Log(string str)
     {
-        t.color = Color.gray;
+        t.color = Color.black;
         log(str);
     }
 

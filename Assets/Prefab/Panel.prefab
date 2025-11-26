@@ -615,8 +615,6 @@ MonoBehaviour:
     m_Options:
     - m_Text: "\u5927"
       m_Image: {fileID: 0}
-    - m_Text: "\u4E2D"
-      m_Image: {fileID: 0}
     - m_Text: "\u5C0F"
       m_Image: {fileID: 0}
   m_OnValueChanged:
@@ -9236,6 +9234,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67382702c77fed14b83c907d7296def5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mm: {fileID: 0}
   content: {fileID: 1058684929409899673}
   TTITPrefab: {fileID: 5935321847630660708, guid: 72bd029732355b545907e7db3d3bf014, type: 3}
 --- !u!1 &8604394332944268286
