@@ -326,8 +326,79 @@ public class InputManager : MonoBehaviour
             {
                 ToggleAnchorsForSelectedNodes();
             }
+            if (CurrentEditPanel == null)
+            {
+                if (Input.GetKeyDown(KeyCode.KeypadPlus))
+                {
+                    ChangeSelectedNodesScale(true); // 变大
+                }
+                else if (Input.GetKeyDown(KeyCode.KeypadMinus))
+                {
+                    ChangeSelectedNodesScale(false); // 变小
+                }
+            }
         }
     }
+
+    /// <summary>
+    /// 批量修改选中节点的尺寸
+    /// </summary>
+    /// <param name="increase">true为变大，false为变小</param>
+    private void ChangeSelectedNodesScale(bool increase)
+    {
+        var selectedNodes = SelectionManager.Instance.GetSelectedNodes();
+        if (selectedNodes.Count == 0) return;
+        var batchCmd = new BatchChangeNodeScaleCommand();
+        foreach (var nodeObj in selectedNodes)
+        {
+            if (nodeObj == null) continue;
+            var node = nodeObj.GetComponent<Node>();
+            if (node == null) continue;
+            // 计算新的尺寸参数
+            var (newIconScale, newLineScale) = CalculateNewScale(node.sc.IconScale, increase);
+            // 只有尺寸确实发生变化才添加命令
+            if (Mathf.Abs(newIconScale - node.sc.IconScale) > 0.001f)
+            {
+                batchCmd.Add(new ChangeNodeScaleCommand(node, newIconScale, newLineScale));
+            }
+        }
+        if (batchCmd.HasCommands)
+        {
+            CommandManager.Instance.ExecuteCommand(batchCmd);
+            EventCenter.Instance.TriggerLogMessage(increase ? "增大节点尺寸" : "减小节点尺寸");
+        }
+    }
+    /// <summary>
+    /// 根据当前尺寸和方向计算新尺寸
+    /// </summary>
+    private (float icon, float line) CalculateNewScale(float currentIconScale, bool increase)
+    {
+        // 定义三个档位
+        // Small:  Icon=0.9, Line=0.12 (Thin)
+        // Middle: Icon=1.9, Line=0.24 (Medium)
+        // Large:  Icon=3.9, Line=0.49 (Thick)
+        // 简单的模糊匹配逻辑
+        bool isSmall = currentIconScale <= Constants.NodeScale.Small + 0.1f;
+        bool isLarge = currentIconScale >= Constants.NodeScale.Large - 0.1f;
+        bool isMiddle = !isSmall && !isLarge;
+        if (increase)
+        {
+            // 变大逻辑
+            if (isSmall)
+                return (Constants.NodeScale.Middle, Constants.LineWidth.Medium);
+            else
+                return (Constants.NodeScale.Large, Constants.LineWidth.Thick);
+        }
+        else
+        {
+            // 变小逻辑
+            if (isLarge)
+                return (Constants.NodeScale.Middle, Constants.LineWidth.Medium);
+            else
+                return (Constants.NodeScale.Small, Constants.LineWidth.Thin);
+        }
+    }
+
 
     /// <summary>
     /// 删除所有选中的锚点

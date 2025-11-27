@@ -44,7 +44,7 @@ public class CameraEventControll : MonoBehaviour
         if (scroll != 0)
         {
             cam.orthographicSize -= scroll * ¹öÂÖËÙ¶È;
-            cam.orthographicSize = Mathf.Clamp(cam.orthographicSize, .5f, 30);
+            cam.orthographicSize = Mathf.Clamp(cam.orthographicSize, .5f, 80);
         }
     }
 }
