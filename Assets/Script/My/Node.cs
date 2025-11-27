@@ -16,10 +16,37 @@ public class Node : MonoBehaviour
     SpriteRenderer sr;
     TextMesh tmUp;
     TextMesh tmDown;
-    GameObject parent;
-    Grid grid;
+
+    private GameObject _parent;
+    private Grid _grid;
 
     private EditorConfig config;
+    private GameObject parent
+    {
+        get
+        {
+            if (_parent == null)
+                _parent = transform.parent?.gameObject;
+            return _parent;
+        }
+        set
+        {
+            _parent = value;
+        }
+    }
+    private Grid grid
+    {
+        get
+        {
+            if (_grid == null)
+                _grid = UIReferences.Instance?.grid;
+            return _grid;
+        }
+        set
+        {
+            _grid = value;
+        }
+    }
     private Color getColor(int i)
     {
         return config.GetColor(i);
@@ -40,15 +67,12 @@ public class Node : MonoBehaviour
     void Start()
     {
         var ui = UIReferences.Instance;
-
         config = GameObject.Find(Constants.GameObjectNames.MainManager).GetComponent<MainManager>().config;
-
-        parent = transform.parent.gameObject;
-        grid = ui.grid;
+        _parent = transform.parent.gameObject;
+        _grid = ui.grid;
         sr = GetComponent<SpriteRenderer>();
         tmUp = transform.Find("text_up").GetComponent<TextMesh>();
         tmDown = transform.Find("text_down").GetComponent<TextMesh>();
-
         UpdateNodeStyle();
         UpdateLine();
     }
@@ -159,6 +183,70 @@ public class Node : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// 只更新连线位置（不重建锚点，不改变线的数量）
+    /// </summary>
+    public void UpdateLineOnly()
+    {
+        if (grid == null)
+            grid = UIReferences.Instance?.grid;
+        if (parent == null)
+            parent = transform.parent?.gameObject;
+        if (grid == null || parent == null) return;
+        List<Vector3Int> PrePathsList = sc.PathNode.ParesV3IList();
+        List<int> PreNodesList = sc.Pre_technology.ToList();
+        if (PreNodesList == null || PreNodesList.Contains(-2))
+        {
+            foreach (var item in getAllLineGOs())
+            {
+                Destroy(item);
+            }
+            return;
+        }
+        List<string> LineNameList = new();
+        foreach (var preNodeId in PreNodesList)
+        {
+            GameObject preNodeGameObject = parent.transform.Find(preNodeId.ToString())?.gameObject;
+            if (preNodeGameObject == null) continue;
+            Science parentSc = preNodeGameObject.GetComponent<Node>()?.sc;
+            if (parentSc == null) continue;
+            string lineName = $"{parentSc.Id}->{this.sc.Id}";
+            LineNameList.Add(lineName);
+            Transform lineTransform = transform.Find(lineName);
+            if (lineTransform == null) continue; // 如果线不存在，跳过（不创建新的）
+            var line = lineTransform.GetComponent<LineRenderer>();
+            if (line == null) continue;
+            // 计算路径点
+            List<Vector3> positions = new() { preNodeGameObject.transform.position + Vector3.forward };
+            foreach (var path in PrePathsList)
+            {
+                if (path.x == parentSc.Id)
+                {
+                    var pos = grid.CellToWorld(new(path.z, path.y, 1));
+                    positions.Add(pos);
+                }
+            }
+            positions.Add(transform.position + Vector3.forward);
+            // 只有当点数量匹配时才更新（避免锚点数量变化导致问题）
+            if (line.positionCount == positions.Count)
+            {
+                line.SetPositions(positions.ToArray());
+            }
+            // 更新线的颜色样式
+            line.startColor = getColor(parentSc.IconColor);
+            line.endColor = getColor(this.sc.IconColor);
+            line.startWidth = line.endWidth = sc.LineScale;
+        }
+        // 清除多余的线
+        foreach (var item in getAllLineGOs())
+        {
+            if (!LineNameList.Contains(item.name))
+            {
+                Destroy(item);
+            }
+        }
+    }
+
     #region 连接线相关
 
     #region 连接线锚点相关
@@ -179,11 +267,13 @@ public class Node : MonoBehaviour
                         anchor.transform.position = new(lr.GetPosition(i).x, lr.GetPosition(i).y);
                         anchor.name = name;
                         anchor.transform.Find("text").GetComponent<TextMesh>().text = name;
-
                     }
                 }
             }
         }
+
+        // 锚点创建完成后，刷新选中状态的高亮显示
+        SelectionManager.Instance.RefreshAnchorHighlights();
     }
 
     public void ClearAnchor()
@@ -289,6 +379,25 @@ public class Node : MonoBehaviour
             }
         }
     }
+
+    /// <summary>
+    /// 检查当前节点是否已经生成了锚点
+    /// </summary>
+    public bool HasAnchors()
+    {
+        List<GameObject> listLine = getAllLineGOs();
+        foreach (var line in listLine)
+        {
+            // 锚点是作为 LineRenderer 物体的子物体生成的
+            // 如果 Line 有子物体，说明锚点已存在
+            if (line.transform.childCount > 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void UpdateLineStart(Vector3 position)
     {
         foreach (var item in getAllLineGOs())

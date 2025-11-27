@@ -11,6 +11,11 @@ public class BatchMoveCommand : ICommand
         commands.Add(cmd);
     }
 
+    public bool HasCommands()
+    {
+        return commands.Count > 0;
+    }
+
     public void Execute()
     {
         foreach (var cmd in commands) cmd.Execute();
@@ -18,7 +23,6 @@ public class BatchMoveCommand : ICommand
 
     public void Undo()
     {
-        // 撤销时建议倒序执行，虽然移动操作顺序可能不敏感，但这是好习惯
         for (int i = commands.Count - 1; i >= 0; i--)
         {
             commands[i].Undo();
