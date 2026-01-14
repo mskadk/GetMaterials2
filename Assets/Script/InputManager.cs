@@ -326,6 +326,7 @@ public class InputManager : MonoBehaviour
             {
                 ToggleAnchorsForSelectedNodes();
             }
+            // 放大/缩小 小键盘加减：调整选中节点尺寸
             if (CurrentEditPanel == null)
             {
                 if (Input.GetKeyDown(KeyCode.KeypadPlus))
@@ -336,6 +337,16 @@ public class InputManager : MonoBehaviour
                 {
                     ChangeSelectedNodesScale(false); // 变小
                 }
+            }
+            // 截图
+            if (Input.GetKeyDown(KeyCode.F2))
+            {
+                // 确保 ScreenshotManager 存在
+                if (ScreenshotManager.Instance == null)
+                {
+                    gameObject.AddComponent<ScreenshotManager>();
+                }
+                ScreenshotManager.Instance.CaptureSceneToClipboard();
             }
         }
     }

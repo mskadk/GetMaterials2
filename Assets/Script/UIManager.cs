@@ -1,3 +1,4 @@
+using Assets.Script.My.Extention;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -84,8 +85,8 @@ public class UIManager : MonoBehaviour
     {
         // ... 原封不动搬运 MainManager 中的 UpdateTTIShow 代码 ...
         // 注意：把 debug.Log 改为 EventCenter.Instance.TriggerLog...
-        var oldList = oldStr.ToList();
-        var newList = newStr.ToList();
+        var oldList = MyExtensions.ToList(oldStr);
+        var newList = MyExtensions.ToList(newStr);
         string newNotFound = null;
 
         foreach (var item in oldList)
