@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 
 /// <summary>
-/// 节点管理器 - 负责场景中节点对象的生命周期管理
+/// 节点管理器 - 负责场景中节点的创建、销毁和管理
 /// </summary>
 public class NodeManager : MonoBehaviour
 {
@@ -24,6 +24,7 @@ public class NodeManager : MonoBehaviour
             return _instance;
         }
     }
+
     private void Awake()
     {
         if (_instance == null) _instance = this;
@@ -40,14 +41,10 @@ public class NodeManager : MonoBehaviour
     /// </summary>
     public void InitializeNodes()
     {
-        // 清理现有节点（如果是重新加载）
-        // ClearExistingNodes();
-
         foreach (var sc in DataManager.Instance.ScienceDict.Values)
         {
             CreateNodeObject(sc);
 
-            // 更新科技树项显示状态
             EventCenter.Instance.TriggerTechTreeItemUpdate("", sc.Building_unlock);
             EventCenter.Instance.TriggerTechTreeItemUpdate("", sc.NonBuilding_unlock);
         }
@@ -56,18 +53,18 @@ public class NodeManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 创建单个节点对象
+    /// 创建单个节点对象（使用世界坐标）
     /// </summary>
     public GameObject CreateNodeObject(Science sc)
     {
-        Vector3 worldPos = ui.grid.CellToWorld(new Vector3Int(sc.HexGridY, sc.HexGridX, 0));
+        // 直接使用存储的世界坐标
+        Vector3 worldPos = new Vector3(sc.HexGridX, sc.HexGridY, 0);
 
         GameObject nodeObj = Instantiate(ui.nodePrefab, worldPos, Quaternion.identity, ui.tilemap.transform);
         nodeObj.name = sc.Id.ToString();
 
         Node nodeScript = nodeObj.GetComponent<Node>();
         nodeScript.sc = sc;
-        // nodeScript.UpdateNodeAppearance(); // Start() 中会自动调用
 
         return nodeObj;
     }
@@ -91,5 +88,24 @@ public class NodeManager : MonoBehaviour
     {
         Transform nodeTrans = ui.tilemap.transform.Find(id.ToString());
         return nodeTrans != null ? nodeTrans.GetComponent<Node>() : null;
+    }
+
+    /// <summary>
+    /// 刷新所有节点位置（切换网格类型时调用）
+    /// 现在使用世界坐标，节点位置不会因网格类型改变而变化
+    /// </summary>
+    public void RefreshNodePositions()
+    {
+        foreach (var sc in DataManager.Instance.ScienceDict.Values)
+        {
+            Node node = GetNode(sc.Id);
+            if (node != null)
+            {
+                // 直接使用存储的世界坐标
+                Vector3 worldPos = new Vector3(sc.HexGridX, sc.HexGridY, 0);
+                node.transform.position = worldPos;
+                node.UpdateLineOnly();
+            }
+        }
     }
 }

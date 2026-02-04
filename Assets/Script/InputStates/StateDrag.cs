@@ -1,5 +1,3 @@
-// 完全重写 StateDrag.cs
-
 using System.Collections.Generic;
 using UnityEngine;
 using Assets.Script.My.Extention;
@@ -12,23 +10,22 @@ public class StateDrag : IInputState
     private bool isDragging = false;
     private const float DRAG_THRESHOLD = 5f;
 
-    // 节点起始信息
+    // 节点初始信息（使用世界坐标）
     private Dictionary<GameObject, NodeMoveInfo> nodeInfos = new Dictionary<GameObject, NodeMoveInfo>();
 
-    // 锚点起始信息
+    // 锚点初始信息（使用世界坐标）
     private Dictionary<string, AnchorMoveInfo> anchorInfos = new Dictionary<string, AnchorMoveInfo>();
 
-    // 未选中但受影响的锚点（属于选中节点，但锚点本身未被选中）
+    // 未选中的受影响锚点
     private Dictionary<string, UnselectedAnchorInfo> unselectedAnchorInfos = new Dictionary<string, UnselectedAnchorInfo>();
 
-    // 后继节点的射线信息（需要更新起点）
+    // 后继节点的连线信息
     private Dictionary<int, List<SuccessorLineInfo>> successorLineInfos = new Dictionary<int, List<SuccessorLineInfo>>();
 
     private struct NodeMoveInfo
     {
         public Node node;
-        public Vector3Int startGridPos;
-        public Vector3 startWorldPos;
+        public Vector2 startWorldPos;  // 世界坐标
         public List<LineRendererInfo> lineRenderers;
     }
 
@@ -44,8 +41,7 @@ public class StateDrag : IInputState
         public int targetNodeId;
         public string preNodeId;
         public int anchorIndex;
-        public Vector3Int startGridPos;
-        public Vector3 startWorldPos;
+        public Vector2 startWorldPos;  // 世界坐标
         public GameObject anchorObj;
         public LineRenderer lr;
     }
@@ -64,7 +60,7 @@ public class StateDrag : IInputState
     {
         public int successorNodeId;
         public LineRenderer lr;
-        public int preNodeId; // 被移动的前置节点ID
+        public int preNodeId;
     }
 
     private bool isPrimaryTargetNode;
@@ -123,12 +119,10 @@ public class StateDrag : IInputState
         var grid = context.UI.grid;
         var selectedAnchorPositions = SelectionManager.Instance.GetSelectedAnchorPositions();
 
-        // 在编辑模式下，如果主要目标是锚点，则不记录节点（不移动节点）
         bool shouldRecordNodes = !(isEditMode && isPrimaryTargetAnchor);
 
         if (shouldRecordNodes)
         {
-            // 记录选中的节点
             foreach (var nodeObj in SelectionManager.Instance.GetSelectedNodes())
             {
                 if (nodeObj == null) continue;
@@ -139,7 +133,7 @@ public class StateDrag : IInputState
             }
         }
 
-        // 记录选中的锚点
+        // 记录选中的锚点（使用世界坐标）
         foreach (var kvp in selectedAnchorPositions)
         {
             var parts = kvp.Key.Split(new string[] { "->" }, System.StringSplitOptions.None);
@@ -149,15 +143,15 @@ public class StateDrag : IInputState
             var anchorObj = FindAnchorGameObject(context, targetNodeId, preNodeId, anchorIndex);
             if (anchorObj == null) continue;
             var lr = anchorObj.GetComponentInParent<LineRenderer>();
-            // 关键修改：从GameObject的实际位置获取，而不是用存储的位置
-            Vector3 actualWorldPos = anchorObj.transform.position;
-            Vector3Int actualGridPos = grid.WorldToCell(actualWorldPos);
+
+            // 使用实际的世界坐标
+            Vector2 actualWorldPos = anchorObj.transform.position;
+
             anchorInfos[kvp.Key] = new AnchorMoveInfo
             {
                 targetNodeId = targetNodeId,
                 preNodeId = preNodeId,
                 anchorIndex = anchorIndex,
-                startGridPos = actualGridPos,
                 startWorldPos = actualWorldPos,
                 anchorObj = anchorObj,
                 lr = lr
@@ -171,12 +165,11 @@ public class StateDrag : IInputState
         var info = new NodeMoveInfo
         {
             node = node,
-            startGridPos = new Vector3Int(node.sc.HexGridY, node.sc.HexGridX, 0),
-            startWorldPos = nodeObj.transform.position,
+            startWorldPos = new Vector2(node.sc.HexGridX, node.sc.HexGridY),  // 使用存储的世界坐标
             lineRenderers = new List<LineRendererInfo>()
         };
 
-        // 收集该节点下的所有LineRenderer（该节点作为目标节点的射线）
+        // 收集该节点下的所有LineRenderer
         foreach (Transform child in nodeObj.transform)
         {
             if (child.tag == Constants.Tags.NodeLine)
@@ -195,7 +188,7 @@ public class StateDrag : IInputState
                         startEndPoint = lr.GetPosition(lr.positionCount - 1)
                     });
 
-                    // 收集该LineRenderer下未被选中的锚点
+                    // 收集该LineRenderer中未被选中的锚点
                     for (int i = 1; i < lr.positionCount - 1; i++)
                     {
                         string anchorKey = $"{node.sc.Id}->{preNodeId}->{i}";
@@ -223,13 +216,10 @@ public class StateDrag : IInputState
 
         nodeInfos[nodeObj] = info;
 
-        // 收集后继节点的射线信息（这些射线的起点需要更新）
+        // 收集后继节点的连线信息
         CollectSuccessorLineInfos(context, node);
     }
 
-    /// <summary>
-    /// 收集后继节点的射线信息
-    /// </summary>
     private void CollectSuccessorLineInfos(InputManager context, Node node)
     {
         int nodeId = node.sc.Id;
@@ -241,11 +231,9 @@ public class StateDrag : IInputState
 
         foreach (var successorId in node.sc.After_technology)
         {
-            // 查找后继节点
             var successorTransform = context.UI.tilemap.transform.Find(successorId.ToString());
             if (successorTransform == null) continue;
 
-            // 查找后继节点中，以当前节点为起点的射线
             string lineName = $"{nodeId}->{successorId}";
             var lineTransform = successorTransform.Find(lineName);
             if (lineTransform == null) continue;
@@ -300,9 +288,7 @@ public class StateDrag : IInputState
     {
         Vector3 currentMouseWorldPos = context.GetMouseWorldPos();
         Vector3 worldDelta = currentMouseWorldPos - startMouseWorldPos;
-        var grid = context.UI.grid;
 
-        // 收集被移动的节点ID及其新位置（用于更新后继节点的射线起点）
         Dictionary<int, Vector3> movedNodeNewPositions = new Dictionary<int, Vector3>();
 
         // 1. 移动选中的节点
@@ -313,28 +299,28 @@ public class StateDrag : IInputState
 
             NodeMoveInfo info = kvp.Value;
 
-            Vector3 targetWorldPos = info.startWorldPos + worldDelta;
-            Vector3Int targetGridPos = grid.WorldToCell(targetWorldPos);
-            Vector3 snappedWorldPos = grid.CellToWorld(targetGridPos);
+            // 计算目标世界坐标
+            Vector2 targetWorldPos = info.startWorldPos + new Vector2(worldDelta.x, worldDelta.y);
+
+            // 根据网格类型决定是否对齐
+            Vector3 snappedWorldPos = GridManager.Instance.SnapToGrid(new Vector3(targetWorldPos.x, targetWorldPos.y, 0));
             snappedWorldPos.z = 0;
 
             // 更新节点位置
             nodeObj.transform.position = snappedWorldPos;
 
-            // 更新节点数据
-            info.node.sc.HexGridX = targetGridPos.y;
-            info.node.sc.HexGridY = targetGridPos.x;
+            // 更新节点数据（三位小数）
+            info.node.sc.HexGridX = (float)System.Math.Round(snappedWorldPos.x, 3);
+            info.node.sc.HexGridY = (float)System.Math.Round(snappedWorldPos.y, 3);
 
-            // 记录新位置
             movedNodeNewPositions[info.node.sc.Id] = snappedWorldPos;
 
-            // 更新该节点下所有LineRenderer的末端点（该节点作为目标节点）
+            // 更新该节点下的所有LineRenderer的末端点
             foreach (var lrInfo in info.lineRenderers)
             {
                 Vector3 newEndPoint = snappedWorldPos + Vector3.forward;
                 lrInfo.lr.SetPosition(lrInfo.lr.positionCount - 1, newEndPoint);
 
-                // 如果前置节点也被移动了，更新射线起点
                 if (int.TryParse(lrInfo.preNodeId, out int preNodeId))
                 {
                     if (movedNodeNewPositions.TryGetValue(preNodeId, out Vector3 preNodeNewPos))
@@ -346,7 +332,7 @@ public class StateDrag : IInputState
             }
         }
 
-        // 2. 更新后继节点的射线起点
+        // 2. 更新后继节点的连线起点
         foreach (var kvp in successorLineInfos)
         {
             int movedNodeId = kvp.Key;
@@ -354,7 +340,6 @@ public class StateDrag : IInputState
 
             foreach (var lineInfo in kvp.Value)
             {
-                // 检查后继节点是否也被移动了
                 bool successorAlsoMoved = false;
                 foreach (var nodeKvp in nodeInfos)
                 {
@@ -365,16 +350,12 @@ public class StateDrag : IInputState
                     }
                 }
 
-                // 更新射线起点
                 Vector3 newStartPoint = newPos + Vector3.forward;
                 lineInfo.lr.SetPosition(0, newStartPoint);
-
-                // 如果后继节点也被移动了，射线终点已经在上面的循环中更新了
-                // 如果后继节点没有被移动，射线终点保持不变
             }
         }
 
-        // 3. 保持未选中锚点的世界坐标不变
+        // 3. 更新未选中锚点（保持世界坐标不变）
         foreach (var kvp in unselectedAnchorInfos)
         {
             var info = kvp.Value;
@@ -392,9 +373,10 @@ public class StateDrag : IInputState
             var info = kvp.Value;
             if (info.anchorObj == null) continue;
 
-            Vector3 targetWorldPos = info.startWorldPos + worldDelta;
-            Vector3Int targetGridPos = grid.WorldToCell(targetWorldPos);
-            Vector3 snappedWorldPos = grid.CellToWorld(targetGridPos);
+            Vector2 targetWorldPos = info.startWorldPos + new Vector2(worldDelta.x, worldDelta.y);
+
+            // 根据网格类型决定是否对齐
+            Vector3 snappedWorldPos = GridManager.Instance.SnapToGrid(new Vector3(targetWorldPos.x, targetWorldPos.y, 0));
 
             info.anchorObj.transform.position = new Vector2(snappedWorldPos.x, snappedWorldPos.y);
 
@@ -426,42 +408,50 @@ public class StateDrag : IInputState
 
     private void CommitMoveCommands(InputManager context)
     {
-        var grid = context.UI.grid;
         var batchCmd = new BatchMoveCommand();
         bool hasNodeMoved = false;
+
         // 处理节点移动命令
         foreach (var kvp in nodeInfos)
         {
             GameObject nodeObj = kvp.Key;
             if (nodeObj == null) continue;
             NodeMoveInfo info = kvp.Value;
-            Vector3Int currentPos = new Vector3Int(info.node.sc.HexGridY, info.node.sc.HexGridX, 0);
-            if (info.startGridPos != currentPos)
+
+            Vector2 currentPos = new Vector2(info.node.sc.HexGridX, info.node.sc.HexGridY);
+
+            // 比较世界坐标是否变化
+            if (Vector2.Distance(info.startWorldPos, currentPos) > 0.001f)
             {
                 hasNodeMoved = true;
-                batchCmd.Add(new MoveNodeCommand(info.node, info.startGridPos, currentPos, grid));
+                batchCmd.Add(new MoveNodeCommand(info.node, info.startWorldPos, currentPos));
             }
         }
-        // 处理锚点数据更新
+
+        // 更新锚点数据
         foreach (var kvp in anchorInfos)
         {
             var info = kvp.Value;
             if (info.anchorObj == null) continue;
-            Vector3Int currentPos = grid.WorldToCell(info.anchorObj.transform.position);
-            if (info.startGridPos != currentPos)
+
+            Vector2 currentPos = new Vector2(info.anchorObj.transform.position.x, info.anchorObj.transform.position.y);
+
+            if (Vector2.Distance(info.startWorldPos, currentPos) > 0.001f)
             {
-                // 更新 PathNode 数据
                 UpdateAnchorInPathNode(context, info);
 
                 // 同步更新 SelectionManager 中存储的锚点位置
+                var grid = context.UI.grid;
+                Vector3Int gridPos = grid.WorldToCell(info.anchorObj.transform.position);
                 SelectionManager.Instance.UpdateAnchorPosition(
                     info.targetNodeId,
                     info.preNodeId,
                     info.anchorIndex,
-                    currentPos
+                    gridPos
                 );
             }
         }
+
         if (hasNodeMoved && batchCmd.HasCommands())
         {
             CommandManager.Instance.ExecuteCommand(batchCmd);
@@ -474,13 +464,13 @@ public class StateDrag : IInputState
         if (info.lr == null) return;
 
         string newPath = null;
-        var grid = context.UI.grid;
 
         for (int i = 1; i < info.lr.positionCount - 1; i++)
         {
             if (newPath != null) newPath += "_";
-            var cellPos = grid.WorldToCell(info.lr.GetPosition(i));
-            newPath += $"{cellPos.y}_{cellPos.x}";
+            Vector3 pos = info.lr.GetPosition(i);
+            // 使用世界坐标，三位小数
+            newPath += $"{pos.x:F3}_{pos.y:F3}";
         }
 
         if (string.IsNullOrEmpty(newPath))
@@ -506,7 +496,6 @@ public class StateDrag : IInputState
     {
         HashSet<int> affectedNodeIds = new HashSet<int>();
 
-        // 收集被移动的节点及其后继节点
         foreach (var kvp in nodeInfos)
         {
             var node = kvp.Value.node;
@@ -519,13 +508,11 @@ public class StateDrag : IInputState
             }
         }
 
-        // 收集锚点所属的节点
         foreach (var kvp in anchorInfos)
         {
             affectedNodeIds.Add(kvp.Value.targetNodeId);
         }
 
-        // 刷新节点外观
         foreach (var nodeId in affectedNodeIds)
         {
             var node = NodeManager.Instance.GetNode(nodeId);

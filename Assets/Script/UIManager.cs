@@ -53,6 +53,10 @@ public class UIManager : MonoBehaviour
     private void SubscribeEvents()
     {
         EventCenter.Instance.OnTechTreeItemUpdate += UpdateTTIShow;
+        if (ui.dpGridType != null)
+        {
+            ui.dpGridType.onValueChanged.AddListener(OnGridTypeChanged);
+        }
     }
 
     private void OnDestroy()
@@ -60,6 +64,10 @@ public class UIManager : MonoBehaviour
         if (EventCenter.Instance != null)
         {
             EventCenter.Instance.OnTechTreeItemUpdate -= UpdateTTIShow;
+        }
+        if (ui.dpGridType != null)
+        {
+            ui.dpGridType.onValueChanged.RemoveListener(OnGridTypeChanged);
         }
     }
 
@@ -244,6 +252,11 @@ public class UIManager : MonoBehaviour
     #endregion
 
     #region 框选相关的内容
+    private void OnGridTypeChanged(int index)
+    {
+        GridType type = (GridType)index;
+        GridManager.Instance.SetGridType(type);
+    }
     // 更新选框视觉
     public void UpdateSelectionBox(Vector2 startScreenPos, Vector2 currentScreenPos)
     {

@@ -2,22 +2,25 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// ÊÂ¼şÖĞĞÄ - ÓÃÓÚÄ£¿é¼ä½âñîÍ¨ĞÅ
+/// äº‹ä»¶ä¸­å¿ƒ - ç”¨äºæ¨¡å—é—´è§£è€¦é€šä¿¡
 /// </summary>
 public class EventCenter : MonoBehaviour
 {
-    #region µ¥ÀıÄ£Ê½
+    #region å•ä¾‹æ¨¡å¼
     private static EventCenter _instance;
+    private static bool _applicationIsQuitting = false;
 
-    //private static bool _applicationIsQuitting = false;
     public static EventCenter Instance
     {
         get
         {
-            //if (_applicationIsQuitting)
-            //{
-            //    return null;
-            //}
+            // é˜²æ­¢åœ¨åº”ç”¨é€€å‡ºæ—¶åˆ›å»ºæ–°å®ä¾‹
+            if (_applicationIsQuitting)
+            {
+                Debug.LogWarning("[EventCenter] Instance requested after application quit. Returning null.");
+                return null;
+            }
+
             if (_instance == null)
             {
                 _instance = FindFirstObjectByType<EventCenter>();
@@ -44,177 +47,94 @@ public class EventCenter : MonoBehaviour
             Destroy(gameObject);
         }
     }
+
+    private void OnEnable()
+    {
+        _applicationIsQuitting = false;
+    }
     #endregion
 
-    #region ½ÚµãÏà¹ØÊÂ¼ş
+    #region èŠ‚ç‚¹ç›¸å…³äº‹ä»¶
 
-    /// <summary>
-    /// ½Úµã±»Ñ¡ÖĞÊÂ¼ş
-    /// </summary>
     public event Action<Node> OnNodeSelected;
-
-    /// <summary>
-    /// ½ÚµãÈ¡ÏûÑ¡ÖĞÊÂ¼ş
-    /// </summary>
     public event Action<Node> OnNodeDeselected;
-
-    /// <summary>
-    /// ½ÚµãÎ»ÖÃ¸Ä±äÊÂ¼ş
-    /// </summary>
     public event Action<Node, Vector3Int> OnNodeMoved;
-
-    /// <summary>
-    /// ½Úµã±»É¾³ıÊÂ¼ş
-    /// </summary>
     public event Action<int> OnNodeDeleted;
-
-    /// <summary>
-    /// ĞÂ½Úµã´´½¨ÊÂ¼ş
-    /// </summary>
     public event Action<Node> OnNodeCreated;
-
-    /// <summary>
-    /// ½ÚµãÊı¾İĞŞ¸ÄÊÂ¼ş
-    /// </summary>
     public event Action<Science> OnNodeDataChanged;
 
     #endregion
 
-    #region ¿Æ¼¼Ê÷ÏîÊÂ¼ş
+    #region ç§‘æŠ€æ ‘é¡¹äº‹ä»¶
 
-    /// <summary>
-    /// ¿Æ¼¼Ê÷ÏîÏÔÊ¾×´Ì¬¸üĞÂ
-    /// </summary>
     public event Action<string, string> OnTechTreeItemUpdate;
 
     #endregion
 
-    #region UIÊÂ¼ş
+    #region UIäº‹ä»¶
 
-    /// <summary>
-    /// ÈÕÖ¾ÏûÏ¢
-    /// </summary>
     public event Action<string> OnLogMessage;
-
-    /// <summary>
-    /// ¾¯¸æÏûÏ¢
-    /// </summary>
     public event Action<string> OnLogWarning;
-
-    /// <summary>
-    /// ´íÎóÏûÏ¢
-    /// </summary>
     public event Action<string> OnLogError;
 
     #endregion
 
-    #region Êı¾İÊÂ¼ş
+    #region æ•°æ®äº‹ä»¶
 
-    /// <summary>
-    /// Êı¾İ¼ÓÔØÍê³É
-    /// </summary>
     public event Action OnDataLoaded;
-
-    /// <summary>
-    /// Êı¾İ±£´æ¿ªÊ¼
-    /// </summary>
     public event Action OnDataSaveStarted;
-
-    /// <summary>
-    /// Êı¾İ±£´æÍê³É
-    /// </summary>
     public event Action<string> OnDataSaveCompleted;
 
     #endregion
 
-    #region ´¥·¢ÊÂ¼şµÄ·½·¨
+    #region è§¦å‘äº‹ä»¶çš„æ–¹æ³•
 
-    public void TriggerNodeSelected(Node node)
-    {
-        OnNodeSelected?.Invoke(node);
-    }
-
-    public void TriggerNodeDeselected(Node node)
-    {
-        OnNodeDeselected?.Invoke(node);
-    }
-
-    public void TriggerNodeMoved(Node node, Vector3Int newPos)
-    {
-        OnNodeMoved?.Invoke(node, newPos);
-    }
-
-    public void TriggerNodeDeleted(int nodeId)
-    {
-        OnNodeDeleted?.Invoke(nodeId);
-    }
-
-    public void TriggerNodeCreated(Node node)
-    {
-        OnNodeCreated?.Invoke(node);
-    }
-
-    public void TriggerNodeDataChanged(Science science)
-    {
-        OnNodeDataChanged?.Invoke(science);
-    }
-
-    public void TriggerTechTreeItemUpdate(string oldStr, string newStr)
-    {
-        OnTechTreeItemUpdate?.Invoke(oldStr, newStr);
-    }
-
-    public void TriggerLogMessage(string message)
-    {
-        OnLogMessage?.Invoke(message);
-    }
-
-    public void TriggerLogWarning(string message)
-    {
-        OnLogWarning?.Invoke(message);
-    }
-
-    public void TriggerLogError(string message)
-    {
-        OnLogError?.Invoke(message);
-    }
-
-    public void TriggerDataLoaded()
-    {
-        OnDataLoaded?.Invoke();
-    }
-
-    public void TriggerDataSaveStarted()
-    {
-        OnDataSaveStarted?.Invoke();
-    }
-
-    public void TriggerDataSaveCompleted(string filepath)
-    {
-        OnDataSaveCompleted?.Invoke(filepath);
-    }
+    public void TriggerNodeSelected(Node node) => OnNodeSelected?.Invoke(node);
+    public void TriggerNodeDeselected(Node node) => OnNodeDeselected?.Invoke(node);
+    public void TriggerNodeMoved(Node node, Vector3Int newPos) => OnNodeMoved?.Invoke(node, newPos);
+    public void TriggerNodeDeleted(int nodeId) => OnNodeDeleted?.Invoke(nodeId);
+    public void TriggerNodeCreated(Node node) => OnNodeCreated?.Invoke(node);
+    public void TriggerNodeDataChanged(Science science) => OnNodeDataChanged?.Invoke(science);
+    public void TriggerTechTreeItemUpdate(string oldStr, string newStr) => OnTechTreeItemUpdate?.Invoke(oldStr, newStr);
+    public void TriggerLogMessage(string message) => OnLogMessage?.Invoke(message);
+    public void TriggerLogWarning(string message) => OnLogWarning?.Invoke(message);
+    public void TriggerLogError(string message) => OnLogError?.Invoke(message);
+    public void TriggerDataLoaded() => OnDataLoaded?.Invoke();
+    public void TriggerDataSaveStarted() => OnDataSaveStarted?.Invoke();
+    public void TriggerDataSaveCompleted(string filepath) => OnDataSaveCompleted?.Invoke(filepath);
 
     #endregion
 
-    #region ÇåÀí
+    #region æ¸…ç†
+
+    private void OnApplicationQuit()
+    {
+        _applicationIsQuitting = true;
+    }
 
     private void OnDestroy()
     {
-        // Çå¿ÕËùÓĞÊÂ¼ş¶©ÔÄ
-        OnNodeSelected = null;
-        OnNodeDeselected = null;
-        OnNodeMoved = null;
-        OnNodeDeleted = null;
-        OnNodeCreated = null;
-        OnNodeDataChanged = null;
-        OnTechTreeItemUpdate = null;
-        OnLogMessage = null;
-        OnLogWarning = null;
-        OnLogError = null;
-        OnDataLoaded = null;
-        OnDataSaveStarted = null;
-        OnDataSaveCompleted = null;
-        //_applicationIsQuitting = true;
+        _applicationIsQuitting = true;
+
+        //// æ¸…ç©ºæ‰€æœ‰äº‹ä»¶è®¢é˜…
+        //OnNodeSelected = null;
+        //OnNodeDeselected = null;
+        //OnNodeMoved = null;
+        //OnNodeDeleted = null;
+        //OnNodeCreated = null;
+        //OnNodeDataChanged = null;
+        //OnTechTreeItemUpdate = null;
+        //OnLogMessage = null;
+        //OnLogWarning = null;
+        //OnLogError = null;
+        //OnDataLoaded = null;
+        //OnDataSaveStarted = null;
+        //OnDataSaveCompleted = null;
+
+        if (_instance == this)
+        {
+            _instance = null;
+        }
     }
 
     #endregion

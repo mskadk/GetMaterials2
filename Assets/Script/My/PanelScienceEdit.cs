@@ -79,8 +79,8 @@ public class PanelScienceEdit : MonoBehaviour
         i_id.text = sc.Id.ToString();
         i_subtype.text = sc.SubType.ToString();
         i_name.text = sc.Name;
-        i_x.text = sc.HexGridX.ToString();
-        i_y.text = sc.HexGridY.ToString();
+        i_x.text = sc.HexGridX.ToString("F3");
+        i_y.text = sc.HexGridY.ToString("F3");
         d_color.value = sc.IconColor - 1;
         d_scale.value = sc.IconScale switch
         {
@@ -127,18 +127,15 @@ public class PanelScienceEdit : MonoBehaviour
     // 添加一个公共方法，用于外部刷新 UI
     public void RefreshUI()
     {
-        // 确保重新从 sc 对象读取最新数据
         if (sc != null)
         {
-            // 关键：更新路径输入框
             if (i_prePath != null)
             {
                 i_prePath.text = sc.PathNode;
             }
-
-            // 其他可能需要更新的字段（可选）
-            i_x.text = sc.HexGridX.ToString();
-            i_y.text = sc.HexGridY.ToString();
+            // 使用三位小数显示
+            i_x.text = sc.HexGridX.ToString("F3");
+            i_y.text = sc.HexGridY.ToString("F3");
         }
     }
 
@@ -187,7 +184,7 @@ public class PanelScienceEdit : MonoBehaviour
                 if (scAfter != null)
                 {
                     scAfter.Pre_technology = scAfter.Pre_technology.ReplacePreTech(oldId.ToString(), id.ToString());
-                    scAfter.PathNode = scAfter.PathNode.PeplacePathNode(oldId.ToString(), id.ToString());
+                    scAfter.PathNode = scAfter.PathNode.ReplacePathNode(oldId.ToString(), id.ToString());
                 }
             }
 
@@ -440,13 +437,20 @@ public class PanelScienceEdit : MonoBehaviour
     /// <summary>
     /// 给鼠标拖动用
     /// </summary>
+    public void UpdatePositionByDrag(Vector2 worldPos)
+    {
+        sc.HexGridX = (float)System.Math.Round(worldPos.x, 3);
+        sc.HexGridY = (float)System.Math.Round(worldPos.y, 3);
+        i_x.text = sc.HexGridX.ToString("F3");
+        i_y.text = sc.HexGridY.ToString("F3");
+    }
+    /// <summary>
+    /// 兼容旧的 Vector2Int 调用（已废弃）
+    /// </summary>
+    [System.Obsolete("请使用 UpdatePositionByDrag(Vector2) 版本")]
     public void UpdatePositionByDrag(Vector2Int pos)
     {
-        sc.HexGridX = pos.x;
-        sc.HexGridY = pos.y;
-        i_x.text = sc.HexGridX.ToString();
-        i_y.text = sc.HexGridY.ToString();
-
+        UpdatePositionByDrag(new Vector2(pos.x, pos.y));
     }
     #endregion
 
@@ -490,30 +494,32 @@ public class PanelScienceEdit : MonoBehaviour
             int.Parse(i_icon.text),
             d_scale.value switch
             {
-                0 => 1.5f,
-                1 => .75f,
-                _ => 1.5f,
+                0 => Constants.NodeScale.Large,
+                1 => Constants.NodeScale.Middle,
+                2 => Constants.NodeScale.Small,
+                _ => Constants.NodeScale.Middle,
             },
             d_scale.value switch
             {
-                0 => 1.5f,
-                1 => .75f,
-                _ => 1.5f,
+                0 => Constants.LineWidth.Thick,
+                1 => Constants.LineWidth.Medium,
+                2 => Constants.LineWidth.Thin,
+                _ => Constants.LineWidth.Medium,
             },
             i_name.text,
             i_desc.text,
             i_descAdd.text,
             i_build.text,
             i_unbuild.text,
-            int.Parse(i_x.text),
-            int.Parse(i_y.text),
+            float.Parse(i_x.text),   // 改为 float
+            float.Parse(i_y.text),   // 改为 float
             i_pre.text,
             i_prePath.text,
             i_material.text,
             float.Parse(i_time.text),
             d_color.value + 1,
             i_trigger.text
-            );
+        );
         return save;
     }
 

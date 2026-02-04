@@ -1,5 +1,3 @@
-// 修改 InputManager.cs - 在 UpdateKeyboardEvent 方法中添加空格键处理
-
 using Assets.Script.My.Extention;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,7 +9,6 @@ public class InputManager : MonoBehaviour
     public UIReferences UI { get; private set; }
     public GameObject CurrentEditPanel { get; private set; }
 
-    // 新增：跟踪非编辑模式下锚点显示状态
     private bool _anchorsVisibleInNormalMode = false;
     #endregion
 
@@ -37,13 +34,11 @@ public class InputManager : MonoBehaviour
     public void ChangeState(IInputState newState)
     {
         currentState?.OnExit(this);
-
         currentState = newState;
-
         currentState?.OnEnter(this);
     }
 
-    #region 工具方法 (供状态类调用)
+    #region 工具方法
 
     public Vector3 GetMouseWorldPos()
     {
@@ -68,47 +63,46 @@ public class InputManager : MonoBehaviour
         return ob;
     }
 
-    // 供 StateDragNode 调用
-    public void MoveNodeVisual(GameObject obj, Vector3Int gridPosI)
+    /// <summary>
+    /// 移动节点视觉（使用世界坐标）
+    /// </summary>
+    public void MoveNodeVisual(GameObject obj, Vector2 worldPos)
     {
         Node node = obj.GetComponent<Node>();
-        node.UpdateGridPos(gridPosI);
+        node.UpdateWorldPos(worldPos);
 
-        Vector3 newPos = UI.grid.CellToWorld(gridPosI);
-        newPos.z = 0;
+        Vector3 newPos = new Vector3(worldPos.x, worldPos.y, 0);
         obj.transform.position = newPos;
 
-        // 更新子节点的连线
         foreach (var afterId in node.sc.After_technology)
         {
-            // 假设你的 Tilemap 是直接挂着节点，保留原有逻辑
             GameObject child = UI.tilemap.transform.Find(afterId.ToString())?.gameObject;
             child?.GetComponent<Node>().UpdateNodeAppearance();
         }
 
-        // 如果是当前编辑的节点，同步更新面板数值
         if (CurrentEditPanel && CurrentEditPanel.GetComponent<PanelScienceEdit>().sc.Id == node.sc.Id)
         {
             CurrentEditPanel.GetComponent<PanelScienceEdit>()
-                .UpdatePositionByDrag(new Vector2Int(gridPosI.y, gridPosI.x)); // 注意 xy 对应
+                .UpdatePositionByDrag(worldPos);
 
             node.ClearAnchor();
             node.UpdateLineAnchor();
         }
     }
 
-    // 供 StateDragAnchor 调用
-    public void MoveAnchorVisual(GameObject anchorObj, Vector3 worldPos, Vector3Int gridPosI)
+    /// <summary>
+    /// 移动锚点视觉（使用世界坐标）
+    /// </summary>
+    public void MoveAnchorVisual(GameObject anchorObj, Vector3 worldPos)
     {
         int lrIndex = int.Parse(anchorObj.name);
         LineRenderer lr = anchorObj.GetComponentInParent<LineRenderer>();
 
         Vector2 anchorMoveTo = new Vector2(worldPos.x, worldPos.y);
-        Vector3 lineIndexAt = new Vector3(anchorMoveTo.x, anchorMoveTo.y, 1); // Z=1 确保显示
+        Vector3 lineIndexAt = new Vector3(anchorMoveTo.x, anchorMoveTo.y, 1);
         anchorObj.transform.position = anchorMoveTo;
         lr.SetPosition(lrIndex, lineIndexAt);
 
-        // 更新数据
         string nodeFrom = lr.gameObject.name.Split("->")[0];
         string nodeTo = lr.gameObject.name.Split("->")[1];
 
@@ -119,12 +113,10 @@ public class InputManager : MonoBehaviour
 
             for (int i = 1; i < positionCount - 1; i++)
             {
-                if (newpos is not null) newpos += "_";
-                // 注意：这里原来是用 lr.GetPosition(i) 转 Cell，可能存在精度问题，
-                // 虽然你现在已经传了 gridPosI，但实际上直接用，因为为了保持对多个点的一致性，
-                // 还是保留 LineRenderer 的点比较安全
-                var cellPos = UI.grid.WorldToCell(lr.GetPosition(i));
-                newpos += $"{cellPos.y}_{cellPos.x}";
+                if (newpos != null) newpos += "_";
+                Vector3 pos = lr.GetPosition(i);
+                // 使用世界坐标，三位小数
+                newpos += $"{pos.x:F3}_{pos.y:F3}";
             }
 
             sc.PathNode = sc.PathNode.UpdatePathNodeById(nodeFrom, newpos);
@@ -136,7 +128,6 @@ public class InputManager : MonoBehaviour
         }
     }
 
-    // 供 StateIdle 调用
     public (LineRenderer, int, Vector3) DetectLineNearMouse()
     {
         Vector3 mousePos = GetMouseWorldPos();
@@ -145,7 +136,7 @@ public class InputManager : MonoBehaviour
         if (CurrentEditPanel != null)
         {
             int currentId = CurrentEditPanel.GetComponent<PanelScienceEdit>().sc.Id;
-            Node currentNode = NodeManager.Instance.GetNode(currentId); // 假设你有 NodeManager
+            Node currentNode = NodeManager.Instance.GetNode(currentId);
 
             if (currentNode != null)
             {
@@ -177,7 +168,6 @@ public class InputManager : MonoBehaviour
                 Vector3 p2 = lr.GetPosition(i + 1);
                 p1.z = 0; p2.z = 0;
 
-                // 简单的点到线段距离计算
                 float dst = HandleUtility_DistancePointLine(mousePos, p1, p2);
                 if (dst < minDst)
                 {
@@ -216,10 +206,8 @@ public class InputManager : MonoBehaviour
     {
         CurrentEditPanel = panel;
 
-        // 当进入编辑模式时，重置非编辑模式的锚点显示状态
         if (panel != null)
         {
-            // 清除非编辑模式下显示的锚点（如果有的话）
             if (_anchorsVisibleInNormalMode)
             {
                 HideAnchorsForSelectedNodes();
@@ -233,7 +221,6 @@ public class InputManager : MonoBehaviour
         string nodeId = nodeObj.name;
         Node node = nodeObj.GetComponent<Node>();
 
-        // 如果之前在非编辑模式下显示了锚点，先清除
         if (_anchorsVisibleInNormalMode)
         {
             HideAnchorsForSelectedNodes();
@@ -258,7 +245,6 @@ public class InputManager : MonoBehaviour
 
     public void CheckEditPanelState()
     {
-        // 如果多选了，且当前有编辑面板，则关闭面板
         if (SelectionManager.Instance.Count > 1)
         {
             if (CurrentEditPanel)
@@ -270,7 +256,7 @@ public class InputManager : MonoBehaviour
     }
     #endregion
 
-    #region 键盘事件 (通用，不依赖状态)
+    #region 键盘事件
     private void UpdateKeyboardEvent()
     {
         // 撤销/重做
@@ -279,20 +265,18 @@ public class InputManager : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.Z)) { CommandManager.Instance.Undo(); return; }
             if (Input.GetKeyDown(KeyCode.Y)) { CommandManager.Instance.Redo(); return; }
         }
+
         if (!EventSystem.current.currentSelectedGameObject)
         {
             // 删除
             if (Input.GetKeyDown(KeyCode.Delete))
             {
-                // 优先检查：是否有选中的锚点（多选或单选）
                 if (SelectionManager.Instance.AnchorCount > 0)
                 {
-                    // 删除所有选中的锚点
                     DeleteSelectedAnchors();
                     return;
                 }
 
-                // 其次检查：编辑模式下的单选锚点（兼容旧逻辑）
                 if (SelectionManager.Instance.SelectedAnchor != null)
                 {
                     var cmd = new DeleteAnchorCommand(SelectionManager.Instance.SelectedAnchor);
@@ -300,12 +284,13 @@ public class InputManager : MonoBehaviour
                     SelectionManager.Instance.ClearAnchor();
                     return;
                 }
-                // 最后：删除节点 (仅在编辑模式下)
+
                 if (CurrentEditPanel)
                 {
                     DeleteCurrentNode();
                 }
             }
+
             // ESC
             if (Input.GetKeyDown(KeyCode.Escape))
             {
@@ -321,27 +306,29 @@ public class InputManager : MonoBehaviour
                     _anchorsVisibleInNormalMode = false;
                 }
             }
-            // 空格键：非编辑模式下切换选中节点的锚点显示
+
+            // 空格键切换锚点显示
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 ToggleAnchorsForSelectedNodes();
             }
-            // 放大/缩小 小键盘加减：调整选中节点尺寸
+
+            // 放大/缩小节点
             if (CurrentEditPanel == null)
             {
                 if (Input.GetKeyDown(KeyCode.KeypadPlus))
                 {
-                    ChangeSelectedNodesScale(true); // 变大
+                    ChangeSelectedNodesScale(true);
                 }
                 else if (Input.GetKeyDown(KeyCode.KeypadMinus))
                 {
-                    ChangeSelectedNodesScale(false); // 变小
+                    ChangeSelectedNodesScale(false);
                 }
             }
+
             // 截图
             if (Input.GetKeyDown(KeyCode.F2))
             {
-                // 确保 ScreenshotManager 存在
                 if (ScreenshotManager.Instance == null)
                 {
                     gameObject.AddComponent<ScreenshotManager>();
@@ -351,50 +338,40 @@ public class InputManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 批量修改选中节点的尺寸
-    /// </summary>
-    /// <param name="increase">true为变大，false为变小</param>
     private void ChangeSelectedNodesScale(bool increase)
     {
         var selectedNodes = SelectionManager.Instance.GetSelectedNodes();
         if (selectedNodes.Count == 0) return;
+
         var batchCmd = new BatchChangeNodeScaleCommand();
         foreach (var nodeObj in selectedNodes)
         {
             if (nodeObj == null) continue;
             var node = nodeObj.GetComponent<Node>();
             if (node == null) continue;
-            // 计算新的尺寸参数
+
             var (newIconScale, newLineScale) = CalculateNewScale(node.sc.IconScale, increase);
-            // 只有尺寸确实发生变化才添加命令
+
             if (Mathf.Abs(newIconScale - node.sc.IconScale) > 0.001f)
             {
                 batchCmd.Add(new ChangeNodeScaleCommand(node, newIconScale, newLineScale));
             }
         }
+
         if (batchCmd.HasCommands)
         {
             CommandManager.Instance.ExecuteCommand(batchCmd);
-            EventCenter.Instance.TriggerLogMessage(increase ? "增大节点尺寸" : "减小节点尺寸");
+            EventCenter.Instance.TriggerLogMessage(increase ? "放大节点尺寸" : "缩小节点尺寸");
         }
     }
-    /// <summary>
-    /// 根据当前尺寸和方向计算新尺寸
-    /// </summary>
+
     private (float icon, float line) CalculateNewScale(float currentIconScale, bool increase)
     {
-        // 定义三个档位
-        // Small:  Icon=0.9, Line=0.12 (Thin)
-        // Middle: Icon=1.9, Line=0.24 (Medium)
-        // Large:  Icon=3.9, Line=0.49 (Thick)
-        // 简单的模糊匹配逻辑
         bool isSmall = currentIconScale <= Constants.NodeScale.Small + 0.1f;
         bool isLarge = currentIconScale >= Constants.NodeScale.Large - 0.1f;
-        bool isMiddle = !isSmall && !isLarge;
+
         if (increase)
         {
-            // 变大逻辑
             if (isSmall)
                 return (Constants.NodeScale.Middle, Constants.LineWidth.Medium);
             else
@@ -402,7 +379,6 @@ public class InputManager : MonoBehaviour
         }
         else
         {
-            // 变小逻辑
             if (isLarge)
                 return (Constants.NodeScale.Middle, Constants.LineWidth.Medium);
             else
@@ -410,27 +386,20 @@ public class InputManager : MonoBehaviour
         }
     }
 
-
-    /// <summary>
-    /// 删除所有选中的锚点
-    /// </summary>
     private void DeleteSelectedAnchors()
     {
         var anchorPositions = SelectionManager.Instance.GetSelectedAnchorPositions();
         if (anchorPositions.Count == 0) return;
 
-        // 创建批量删除命令
         var batchCmd = new BatchDeleteAnchorCommand();
 
         foreach (var kvp in anchorPositions)
         {
-            // 解析 key: "targetNodeId->preNodeId->anchorIndex"
             var parts = kvp.Key.Split(new string[] { "->" }, System.StringSplitOptions.None);
             int targetNodeId = int.Parse(parts[0]);
             string preNodeId = parts[1];
             int anchorIndex = int.Parse(parts[2]);
 
-            // 查找对应的锚点GameObject
             var anchorObj = FindAnchorGameObject(targetNodeId, preNodeId, anchorIndex);
             if (anchorObj != null)
             {
@@ -445,9 +414,7 @@ public class InputManager : MonoBehaviour
 
         SelectionManager.Instance.ClearAnchors();
     }
-    /// <summary>
-    /// 查找锚点GameObject
-    /// </summary>
+
     private GameObject FindAnchorGameObject(int targetNodeId, string preNodeId, int anchorIndex)
     {
         var nodeTransform = UI.tilemap.transform.Find(targetNodeId.ToString());
@@ -460,19 +427,14 @@ public class InputManager : MonoBehaviour
         return anchorTransform?.gameObject;
     }
 
-    /// <summary>
-    /// 切换选中节点的锚点显示状态（仅在非编辑模式下生效）
-    /// </summary>
     private void ToggleAnchorsForSelectedNodes()
     {
-        // 如果在编辑模式下，不处理（编辑模式有自己的锚点显示逻辑）
         if (CurrentEditPanel != null)
         {
             EventCenter.Instance.TriggerLogWarning("编辑模式下请使用编辑面板管理锚点");
             return;
         }
 
-        // 检查是否有选中的节点
         var selectedNodes = SelectionManager.Instance.GetSelectedNodes();
         if (selectedNodes.Count == 0)
         {
@@ -480,7 +442,6 @@ public class InputManager : MonoBehaviour
             return;
         }
 
-        // 切换状态
         _anchorsVisibleInNormalMode = !_anchorsVisibleInNormalMode;
 
         if (_anchorsVisibleInNormalMode)
@@ -495,9 +456,6 @@ public class InputManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 显示选中节点的锚点
-    /// </summary>
     private void ShowAnchorsForSelectedNodes()
     {
         var selectedNodes = SelectionManager.Instance.GetSelectedNodes();
@@ -513,13 +471,9 @@ public class InputManager : MonoBehaviour
             }
         }
 
-        // 锚点创建后，刷新选中锚点的高亮状态
         SelectionManager.Instance.RefreshAnchorHighlights();
     }
 
-    /// <summary>
-    /// 隐藏选中节点的锚点
-    /// </summary>
     private void HideAnchorsForSelectedNodes()
     {
         var selectedNodes = SelectionManager.Instance.GetSelectedNodes();
@@ -542,7 +496,7 @@ public class InputManager : MonoBehaviour
         var sc = panelScript.sc;
         var deleteCmd = new DeleteNodeCommand(sc, UI);
 
-        SelectionManager.Instance.ClearNodes(); // 清空选择防止引用空对象
+        SelectionManager.Instance.ClearNodes();
         CommandManager.Instance.ExecuteCommand(deleteCmd);
 
         panelScript.DestoryPanel();
@@ -551,7 +505,6 @@ public class InputManager : MonoBehaviour
 
     private void UpdateDebugInput()
     {
-        // 临时调试代码
         if (Input.GetKeyDown(KeyCode.Slash))
         {
             foreach (var sc in DataManager.Instance.ScienceDict)
@@ -571,21 +524,14 @@ public class InputManager : MonoBehaviour
     }
     #endregion
 
-    #region 公共属性和方法
-    /// <summary>
-    /// 非编辑模式下锚点是否正在显示
-    /// </summary>
+    #region 公开属性和方法
     public bool AnchorsVisibleInNormalMode => _anchorsVisibleInNormalMode;
-    /// <summary>
-    /// 重置锚点显示状态（供 SelectionManager 调用）
-    /// </summary>
+
     public void ResetAnchorVisibilityState()
     {
         _anchorsVisibleInNormalMode = false;
     }
-    /// <summary>
-    /// 设置非编辑模式下锚点可见状态（供外部调用）
-    /// </summary>
+
     public void SetAnchorsVisibleInNormalMode(bool visible)
     {
         _anchorsVisibleInNormalMode = visible;

@@ -2243,8 +2243,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -441.90002, y: -141.5}
-  m_SizeDelta: {x: 44, y: 30}
+  m_AnchoredPosition: {x: -424.90002, y: -141.5}
+  m_SizeDelta: {x: 78, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2357880993671640574
 CanvasRenderer:
@@ -2327,13 +2327,13 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6668852317186696772}
   m_TextComponent: {fileID: 1743199395386852936}
   m_Placeholder: {fileID: 6977065026769363898}
-  m_ContentType: 2
+  m_ContentType: 9
   m_InputType: 0
   m_AsteriskChar: 42
-  m_KeyboardType: 4
-  m_LineType: 0
+  m_KeyboardType: 0
+  m_LineType: 1
   m_HideMobileInput: 0
-  m_CharacterValidation: 1
+  m_CharacterValidation: 2
   m_CharacterLimit: 0
   m_OnSubmit:
     m_PersistentCalls:
@@ -5628,7 +5628,7 @@ MonoBehaviour:
     m_Alignment: 0
     m_AlignByGeometry: 0
     m_RichText: 0
-    m_HorizontalOverflow: 1
+    m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 123
@@ -7516,10 +7516,10 @@ MonoBehaviour:
     m_Alignment: 0
     m_AlignByGeometry: 0
     m_RichText: 0
-    m_HorizontalOverflow: 1
+    m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 123
+  m_Text: 12345
 --- !u!1 &7255935748780804594
 GameObject:
   m_ObjectHideFlags: 0
@@ -7790,8 +7790,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -397.90002, y: -141.5}
-  m_SizeDelta: {x: 44, y: 30}
+  m_AnchoredPosition: {x: -342.1786, y: -141.5}
+  m_SizeDelta: {x: 82.5146, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7470996709523918073
 CanvasRenderer:
@@ -7874,13 +7874,13 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6649558504634100205}
   m_TextComponent: {fileID: 2216780743529977482}
   m_Placeholder: {fileID: 4289122217525812062}
-  m_ContentType: 2
+  m_ContentType: 9
   m_InputType: 0
   m_AsteriskChar: 42
-  m_KeyboardType: 4
-  m_LineType: 0
+  m_KeyboardType: 0
+  m_LineType: 1
   m_HideMobileInput: 0
-  m_CharacterValidation: 1
+  m_CharacterValidation: 2
   m_CharacterLimit: 0
   m_OnSubmit:
     m_PersistentCalls:
