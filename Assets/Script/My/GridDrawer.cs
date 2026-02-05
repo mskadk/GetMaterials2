@@ -27,12 +27,12 @@ public class GridDrawer : MonoBehaviour
     public bool 渲染游戏视图 = true;
     public bool 渲染场景视图 = true;
 
-    [Header("=== 对齐线设置 ===")]
-    public bool 启用对齐线 = true;
-    public Color 对齐线颜色 = new Color(0f, 1f, 1f, 0.1f);
-    public float 对齐线长度 = 200f;
+    [Header("=== 辅助线设置 ===")]
+    public bool 启用辅助线 = true;
+    public Color 辅助线颜色 = new Color(0f, 1f, 1f, 0.5f); // 增加透明度可见性
+    public float 辅助线长度 = 1000f; // 增加长度以覆盖屏幕
     [Range(0, 90)]
-    public float 对齐线角度偏移 = 60f;
+    public float 辅助线角度偏移 = 0f; // 默认为0，具体值在切换时设置
 
     // 当前网格类型
     private GridType currentGridType = GridType.Hexagon;
@@ -45,6 +45,8 @@ public class GridDrawer : MonoBehaviour
         {
             StartCoroutine(debugSize());
         }
+        // 初始化角度偏移
+        OnGridTypeChanged(currentGridType);
     }
 
     void Update()
@@ -59,13 +61,16 @@ public class GridDrawer : MonoBehaviour
     {
         currentGridType = newType;
 
-        // 根据网格类型调整对齐线角度
-        对齐线角度偏移 = newType switch
+        // 根据网格类型设置辅助线角度
+        // Hexagon: 30度偏移 (垂直线 + 60度交叉) 或 0度偏移 (水平线 + 60度交叉)
+        // Square: 0度 (水平垂直) + 45度 (对角)
+        // Free: 0度 (水平垂直) + 45度 (对角)
+        辅助线角度偏移 = newType switch
         {
-            GridType.Hexagon => 60f,  // 六边形：60度间隔
-            GridType.Square => 45f,   // 正方形：45度间隔（对角线+正交）
-            GridType.Free => 45f,     // 自由模式：默认45度
-            _ => 60f
+            GridType.Hexagon => 30f,  // 六边形通常是竖直方向，偏移30度
+            GridType.Square => 0f,    // 正方形从0度开始
+            GridType.Free => 0f,      // 自由模式从0度开始
+            _ => 0f
         };
     }
 
@@ -123,8 +128,8 @@ public class GridDrawer : MonoBehaviour
                 break;
         }
 
-        // 2. 绘制对齐线（鼠标按下时）
-        if (启用对齐线 && Input.GetMouseButton(0))
+        // 2. 绘制移动辅助线（鼠标按下时）
+        if (启用辅助线 && Input.GetMouseButton(0))
         {
             DrawAlignmentLines();
         }
@@ -133,7 +138,7 @@ public class GridDrawer : MonoBehaviour
     }
     #endregion
 
-    #region 六边形网格绘制
+    #region 绘制六边形网格
     private void DrawHexagonGrid()
     {
         if (grid == null) return;
@@ -186,7 +191,7 @@ public class GridDrawer : MonoBehaviour
     }
     #endregion
 
-    #region 正方形网格绘制
+    #region 绘制正方形网格
     private void DrawSquareGrid()
     {
         if (grid == null) return;
@@ -210,7 +215,8 @@ public class GridDrawer : MonoBehaviour
                     drawZero = true;
                     continue;
                 }
-                Vector3 center = grid.CellToLocal(new Vector3Int(x, y, 0));
+                // 使用 GetCellCenterLocal 获取中心
+                Vector3 center = grid.GetCellCenterLocal(new Vector3Int(x, y, 0));
                 DrawSquare(center, halfSize);
             }
         }
@@ -219,7 +225,7 @@ public class GridDrawer : MonoBehaviour
         if (drawZero)
         {
             GL.Color(Color.red);
-            Vector3 zeroCenter = grid.CellToLocal(new Vector3Int(0, 0, 0));
+            Vector3 zeroCenter = grid.GetCellCenterLocal(new Vector3Int(0, 0, 0));
             DrawSquare(zeroCenter, halfSize);
         }
 
@@ -242,14 +248,14 @@ public class GridDrawer : MonoBehaviour
     }
     #endregion
 
-    #region 自由模式网格绘制（仅绘制参考线）
+    #region 自由模式绘制（坐标轴 + 稀疏参考点）
     private void DrawFreeGrid()
     {
         if (grid == null) return;
 
         GL.Begin(GL.LINES);
 
-        // 自由模式只绘制坐标轴参考线
+        // 自由模式只绘制坐标轴作为参考
         Color axisColor = new Color(lineColor.r, lineColor.g, lineColor.b, lineColor.a * 0.5f);
         GL.Color(axisColor);
 
@@ -272,7 +278,7 @@ public class GridDrawer : MonoBehaviour
 
         GL.End();
 
-        // 可选：绘制淡化的网格点
+        // 可选：绘制稀疏的点阵作为参考
         DrawFreeGridDots();
     }
 
@@ -308,56 +314,65 @@ public class GridDrawer : MonoBehaviour
     }
     #endregion
 
-    #region 对齐线绘制
+    #region 辅助线绘制
     private void DrawAlignmentLines()
     {
         Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0;
-
         Vector3 centerPos;
-
         if (currentGridType == GridType.Free)
         {
-            // Free模式：对齐线跟随鼠标位置
+            // Free模式：辅助线跟随鼠标位置
             centerPos = mousePos;
         }
-        else
+        else if (currentGridType == GridType.Square)
         {
-            // 其他模式：对齐线跟随网格中心
+            // Square模式：吸附到 0.5 格子
+            float step = grid.cellSize.x * 0.5f;
+            float x = Mathf.Round(mousePos.x / step) * step;
+            float y = Mathf.Round(mousePos.y / step) * step;
+            centerPos = new Vector3(x, y, 0);
+        }
+        else // Hexagon
+        {
+            // Hexagon模式：辅助线跟随最近的网格中心
             Vector3Int cellPos = grid.WorldToCell(mousePos);
-            // 这里也改为 GetCellCenterWorld
             Vector3 center = grid.GetCellCenterWorld(cellPos);
             centerPos = new Vector3(center.x, center.y, 0);
         }
-
         GL.Begin(GL.LINES);
-        GL.Color(对齐线颜色);
-
-        int lineCount = currentGridType switch
+        GL.Color(辅助线颜色);
+        // 设置线条数量和角度间隔
+        int lineCount;
+        float angleStep;
+        float startAngle = 辅助线角度偏移;
+        switch (currentGridType)
         {
-            GridType.Hexagon => 3,  // 六边形：3条线（6个方向）
-            GridType.Square => 4,   // 正方形：4条线（8个方向，含对角线）
-            GridType.Free => 2,     // 自由模式：2条线（水平+垂直）
-            _ => 3
-        };
-
-        float angleStep = currentGridType switch
-        {
-            GridType.Hexagon => 60f,
-            GridType.Square => 45f,
-            GridType.Free => 90f,
-            _ => 60f
-        };
-
+            case GridType.Hexagon:
+                lineCount = 3; // 3条线，6个方向
+                angleStep = 60f;
+                break;
+            case GridType.Square:
+                lineCount = 4; // 4条线 (水平垂直 + 对角)
+                angleStep = 45f;
+                break;
+            case GridType.Free:
+                lineCount = 4; // 4条线 (米字型)
+                angleStep = 45f;
+                startAngle = 0f;
+                break;
+            default:
+                lineCount = 3;
+                angleStep = 60f;
+                break;
+        }
         for (int i = 0; i < lineCount; i++)
         {
-            float angle = (对齐线角度偏移 + i * angleStep) * Mathf.Deg2Rad;
+            float angle = (startAngle + i * angleStep) * Mathf.Deg2Rad;
             Vector3 dir = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0);
-
-            GL.Vertex(centerPos - dir * 对齐线长度);
-            GL.Vertex(centerPos + dir * 对齐线长度);
+            GL.Vertex(centerPos - dir * 辅助线长度);
+            GL.Vertex(centerPos + dir * 辅助线长度);
         }
-
         GL.End();
     }
     #endregion

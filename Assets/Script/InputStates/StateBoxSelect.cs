@@ -1,7 +1,6 @@
-// 修改 StateBoxSelect.cs
-
 using System.Collections.Generic;
 using UnityEngine;
+using System.Globalization;
 using Assets.Script.My.Extention;
 
 public class StateBoxSelect : IInputState
@@ -69,7 +68,11 @@ public class StateBoxSelect : IInputState
         Vector3 worldMin = context.UI.camSence.ScreenToWorldPoint(min);
         Vector3 worldMax = context.UI.camSence.ScreenToWorldPoint(max);
 
-        // 1. 选中框选区域内的节点和已存在的锚点
+        // 创建世界坐标选框
+        Rect selectionRect = Rect.MinMaxRect(worldMin.x, worldMin.y, worldMax.x, worldMax.y);
+
+        // 1. 选中框选范围内的节点和已实例化的锚点
+        // (如果有锚点GameObject在场景中，OverlapAreaAll 会检测到)
         Collider2D[] hits = Physics2D.OverlapAreaAll(worldMin, worldMax);
         foreach (var hit in hits)
         {
@@ -88,10 +91,11 @@ public class StateBoxSelect : IInputState
             }
         }
 
-        // 2. 计算式选中锚点（即使锚点GameObject不存在）
-        var newlySelectedAnchors = SelectAnchorsByCalculation(context, worldMin, worldMax);
+        // 2. 纯数学方式选中锚点 (针对锚点尚未实例化的情况)
+        // 解析所有数据的路径点，判断是否在框内
+        var newlySelectedAnchors = SelectAnchorsByCalculation(context, selectionRect);
 
-        // 3. 如果有新选中的锚点，确保它们的节点显示锚点
+        // 3. 如果有新选中的锚点，确保它们所在的节点显示锚点
         if (newlySelectedAnchors.Count > 0)
         {
             EnsureAnchorsVisible(context, newlySelectedAnchors);
@@ -103,48 +107,37 @@ public class StateBoxSelect : IInputState
     /// <summary>
     /// 通过计算选中锚点，返回新选中的锚点信息
     /// </summary>
-    private List<(int targetNodeId, string preNodeId, int anchorIndex, Vector3Int gridPos)> SelectAnchorsByCalculation(
-        InputManager context, Vector3 worldMin, Vector3 worldMax)
+    private List<(int targetNodeId, string preNodeId, int anchorIndex, Vector2 worldPos)> SelectAnchorsByCalculation(
+        InputManager context, Rect selectionRect)
     {
-        var grid = context.UI.grid;
-        var newlySelected = new List<(int, string, int, Vector3Int)>();
-
-        Vector3Int gridMin = grid.WorldToCell(worldMin);
-        Vector3Int gridMax = grid.WorldToCell(worldMax);
-
-        int minX = Mathf.Min(gridMin.x, gridMax.x);
-        int maxX = Mathf.Max(gridMin.x, gridMax.x);
-        int minY = Mathf.Min(gridMin.y, gridMax.y);
-        int maxY = Mathf.Max(gridMin.y, gridMax.y);
+        var newlySelected = new List<(int, string, int, Vector2)>();
 
         var selectedNodes = SelectionManager.Instance.GetSelectedNodes();
-        foreach (var nodeObj in selectedNodes)
-        {
-            if (nodeObj == null) continue;
-            var node = nodeObj.GetComponent<Node>();
-            if (node == null || node.sc == null) continue;
 
-            var anchorPositions = ParseAnchorPositions(node.sc);
+        // 遍历所有选中的节点（通常框选也包含节点，如果只框选锚点，可能需要遍历所有节点）
+        // 为了支持框选空节点间的连线锚点，我们遍历所有可见节点更稳妥
+        // 这里优化为遍历 DataManager 中的所有数据
+        foreach (var sc in DataManager.Instance.ScienceDict.Values)
+        {
+            var anchorPositions = ParseAnchorPositions(sc);
 
             foreach (var anchorInfo in anchorPositions)
             {
-                int gridX = anchorInfo.gridPos.x;
-                int gridY = anchorInfo.gridPos.y;
+                Vector2 pos = anchorInfo.worldPos;
 
-                if (gridX >= minX && gridX <= maxX && gridY >= minY && gridY <= maxY)
+                if (selectionRect.Contains(pos))
                 {
                     // 检查是否已经选中
                     if (!SelectionManager.Instance.ContainsAnchorPosition(
-                        node.sc.Id, anchorInfo.preNodeId, anchorInfo.anchorIndex))
+                        sc.Id, anchorInfo.preNodeId, anchorInfo.anchorIndex))
                     {
-                        Vector3Int gridPos = new Vector3Int(gridX, gridY, 0);
                         SelectionManager.Instance.AddAnchorByPosition(
-                            node.sc.Id,
+                            sc.Id,
                             anchorInfo.preNodeId,
                             anchorInfo.anchorIndex,
-                            gridPos
+                            pos
                         );
-                        newlySelected.Add((node.sc.Id, anchorInfo.preNodeId, anchorInfo.anchorIndex, gridPos));
+                        newlySelected.Add((sc.Id, anchorInfo.preNodeId, anchorInfo.anchorIndex, pos));
                     }
                 }
             }
@@ -157,7 +150,7 @@ public class StateBoxSelect : IInputState
     /// 确保选中的锚点可见（生成锚点GameObject）
     /// </summary>
     private void EnsureAnchorsVisible(InputManager context,
-        List<(int targetNodeId, string preNodeId, int anchorIndex, Vector3Int gridPos)> anchors)
+        List<(int targetNodeId, string preNodeId, int anchorIndex, Vector2 worldPos)> anchors)
     {
         // 收集需要显示锚点的节点ID
         HashSet<int> nodeIdsNeedingAnchors = new HashSet<int>();
@@ -179,13 +172,13 @@ public class StateBoxSelect : IInputState
         // 刷新高亮状态
         SelectionManager.Instance.RefreshAnchorHighlights();
 
-        // 更新 InputManager 的锚点可见状态
+        // 开启 InputManager 的锚点可见状态
         context.SetAnchorsVisibleInNormalMode(true);
     }
 
-    private List<(string preNodeId, int anchorIndex, Vector2Int gridPos)> ParseAnchorPositions(Science sc)
+    private List<(string preNodeId, int anchorIndex, Vector2 worldPos)> ParseAnchorPositions(Science sc)
     {
-        var result = new List<(string preNodeId, int anchorIndex, Vector2Int gridPos)>();
+        var result = new List<(string preNodeId, int anchorIndex, Vector2 worldPos)>();
 
         if (string.IsNullOrEmpty(sc.PathNode) || sc.PathNode == "-1")
             return result;
@@ -199,11 +192,14 @@ public class StateBoxSelect : IInputState
             string preNodeId = segments[0];
 
             int anchorIndex = 1;
+            // 格式: ID_X1_Y1_X2_Y2...
+            // 索引: 0  1  2  3  4
             for (int i = 1; i + 1 < segments.Length; i += 2)
             {
-                if (int.TryParse(segments[i], out int y) && int.TryParse(segments[i + 1], out int x))
+                if (float.TryParse(segments[i], NumberStyles.Float, CultureInfo.InvariantCulture, out float x) &&
+                    float.TryParse(segments[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out float y))
                 {
-                    result.Add((preNodeId, anchorIndex, new Vector2Int(x, y)));
+                    result.Add((preNodeId, anchorIndex, new Vector2(x, y)));
                     anchorIndex++;
                 }
             }

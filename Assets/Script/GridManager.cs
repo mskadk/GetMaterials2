@@ -89,17 +89,25 @@ public class GridManager : MonoBehaviour
     {
         var grid = UIReferences.Instance.grid;
         if (grid == null) return worldPos;
-
+        // 1. 自由模式：不吸附
         if (CurrentGridType == GridType.Free)
         {
-            // Free模式不对齐，直接返回原坐标
             return worldPos;
         }
-
-        // Hexagon和Square模式对齐到网格中心
+        // 2. 正方形模式：吸附到 0.5 格子大小
+        if (CurrentGridType == GridType.Square)
+        {
+            // 获取当前格子大小（假设XY一致）
+            float cellSize = grid.cellSize.x;
+            float step = cellSize * 0.5f; // 0.5倍步长
+            // 数学四舍五入计算
+            float x = Mathf.Round(worldPos.x / step) * step;
+            float y = Mathf.Round(worldPos.y / step) * step;
+            return new Vector3(x, y, 0);
+        }
+        // 3. 六边形模式：保持原有的中心吸附
+        // 使用 GetCellCenterWorld 确保获取的是六边形准确中心
         Vector3Int cellPos = grid.WorldToCell(worldPos);
-        // 使用 GetCellCenterWorld 确保获取的是中心点
-        // 注意：Z轴可能会被重置，我们需要保持 Z=0
         Vector3 center = grid.GetCellCenterWorld(cellPos);
         return new Vector3(center.x, center.y, 0);
     }

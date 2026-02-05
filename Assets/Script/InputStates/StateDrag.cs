@@ -159,8 +159,9 @@ public class StateDrag : IInputState
         }
     }
 
+    // 修复：参数类型从 Dictionary<string, Vector3Int> 改为 Dictionary<string, Vector2>
     private void RecordNodeInfo(InputManager context, GameObject nodeObj, Node node, Grid grid,
-        Dictionary<string, Vector3Int> selectedAnchorPositions)
+        Dictionary<string, Vector2> selectedAnchorPositions)
     {
         var info = new NodeMoveInfo
         {
@@ -440,14 +441,13 @@ public class StateDrag : IInputState
             {
                 UpdateAnchorInPathNode(context, info);
 
-                // 同步更新 SelectionManager 中存储的锚点位置
-                var grid = context.UI.grid;
-                Vector3Int gridPos = grid.WorldToCell(info.anchorObj.transform.position);
+                // 修复：直接传入世界坐标 Vector2，不再使用 Grid 转换
+                Vector2 worldPos = info.anchorObj.transform.position;
                 SelectionManager.Instance.UpdateAnchorPosition(
                     info.targetNodeId,
                     info.preNodeId,
                     info.anchorIndex,
-                    gridPos
+                    worldPos
                 );
             }
         }

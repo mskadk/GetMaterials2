@@ -1,5 +1,3 @@
-// 完全重写 SelectionManager.cs
-
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -11,15 +9,15 @@ public class SelectionManager : MonoBehaviour
 
     private HashSet<GameObject> selectedNodes = new HashSet<GameObject>();
 
-    // 选中的锚点：存储锚点的关键信息，而不仅仅是GameObject
-    // Key: "目标节点ID->前置节点ID->锚点索引"，例如 "-3->0->1"
-    // Value: 锚点的网格坐标
-    private Dictionary<string, Vector3Int> selectedAnchorPositions = new Dictionary<string, Vector3Int>();
+    // 选中的锚点：存储锚点的关键信息
+    // Key: "目标节点ID->前置节点ID->锚点索引" (例如 "-3->0->1")
+    // Value: 锚点的世界坐标 (Vector2)
+    private Dictionary<string, Vector2> selectedAnchorPositions = new Dictionary<string, Vector2>();
 
     // 当前高亮的锚点GameObject（用于显示效果）
     private HashSet<GameObject> highlightedAnchorObjects = new HashSet<GameObject>();
 
-    // 保留单选锚点的兼容性（用于编辑模式）
+    // 单选锚点（编辑模式专用）
     public GameObject SelectedAnchor { get; private set; }
 
     private void Awake()
@@ -52,7 +50,7 @@ public class SelectionManager : MonoBehaviour
             node.ClearAnchor();
         }
 
-        // 移除该节点相关的锚点选择
+        // 移除该节点相关的所有锚点选择
         RemoveAnchorsForNode(nodeObj);
     }
 
@@ -72,7 +70,7 @@ public class SelectionManager : MonoBehaviour
         }
         selectedNodes.Clear();
 
-        // 同时清除锚点选择
+        // 同时清空锚点选择
         ClearAnchors();
 
         // 通知 InputManager 重置锚点显示状态
@@ -95,7 +93,7 @@ public class SelectionManager : MonoBehaviour
     #region 锚点选择（基于位置）
 
     /// <summary>
-    /// 生成锚点的唯一Key
+    /// 生成锚点唯一Key
     /// </summary>
     private string GetAnchorKey(int targetNodeId, string preNodeId, int anchorIndex)
     {
@@ -114,12 +112,12 @@ public class SelectionManager : MonoBehaviour
     /// <summary>
     /// 添加锚点选择（通过位置信息）
     /// </summary>
-    public void AddAnchorByPosition(int targetNodeId, string preNodeId, int anchorIndex, Vector3Int gridPos)
+    public void AddAnchorByPosition(int targetNodeId, string preNodeId, int anchorIndex, Vector2 worldPos)
     {
         string key = GetAnchorKey(targetNodeId, preNodeId, anchorIndex);
         if (!selectedAnchorPositions.ContainsKey(key))
         {
-            selectedAnchorPositions[key] = gridPos;
+            selectedAnchorPositions[key] = worldPos;
         }
 
         // 尝试高亮对应的GameObject（如果存在）
@@ -133,23 +131,23 @@ public class SelectionManager : MonoBehaviour
     {
         if (anchorObj == null) return;
 
-        // 从锚点GameObject解析信息
+        // 从锚点GameObject获取信息
         var anchorInfo = GetAnchorInfoFromGameObject(anchorObj);
         if (anchorInfo.HasValue)
         {
-            var (targetNodeId, preNodeId, anchorIndex, gridPos) = anchorInfo.Value;
-            AddAnchorByPosition(targetNodeId, preNodeId, anchorIndex, gridPos);
+            var (targetNodeId, preNodeId, anchorIndex, worldPos) = anchorInfo.Value;
+            AddAnchorByPosition(targetNodeId, preNodeId, anchorIndex, worldPos);
         }
     }
 
     /// <summary>
     /// 从锚点GameObject获取信息
     /// </summary>
-    private (int targetNodeId, string preNodeId, int anchorIndex, Vector3Int gridPos)? GetAnchorInfoFromGameObject(GameObject anchorObj)
+    private (int targetNodeId, string preNodeId, int anchorIndex, Vector2 worldPos)? GetAnchorInfoFromGameObject(GameObject anchorObj)
     {
         if (anchorObj == null) return null;
 
-        // 锚点的父物体是LineRenderer，名称格式为 "PreID->TargetID"
+        // 锚点的父级是LineRenderer，命名格式为 "PreID->TargetID"
         var lineObj = anchorObj.transform.parent;
         if (lineObj == null) return null;
 
@@ -160,26 +158,37 @@ public class SelectionManager : MonoBehaviour
         string preNodeId = parts[0];
         int targetNodeId = int.Parse(parts[1]);
 
-        // 锚点名称就是索引
+        // 锚点名字就是索引
         int anchorIndex = int.Parse(anchorObj.name);
 
-        // 获取网格坐标
-        var grid = UIReferences.Instance.grid;
-        Vector3Int gridPos = grid.WorldToCell(anchorObj.transform.position);
+        // 获取世界坐标
+        Vector2 worldPos = anchorObj.transform.position;
 
-        return (targetNodeId, preNodeId, anchorIndex, gridPos);
+        return (targetNodeId, preNodeId, anchorIndex, worldPos);
     }
 
     /// <summary>
     /// 更新已选中锚点的位置信息
     /// </summary>
-    public void UpdateAnchorPosition(int targetNodeId, string preNodeId, int anchorIndex, Vector3Int newGridPos)
+    public void UpdateAnchorPosition(int targetNodeId, string preNodeId, int anchorIndex, Vector2 newWorldPos)
     {
         string key = GetAnchorKey(targetNodeId, preNodeId, anchorIndex);
         if (selectedAnchorPositions.ContainsKey(key))
         {
-            selectedAnchorPositions[key] = newGridPos;
+            selectedAnchorPositions[key] = newWorldPos;
         }
+    }
+
+    /// <summary>
+    /// 兼容旧代码：如果仍有代码传入 Vector3Int，将其转换为 Vector2
+    /// </summary>
+    public void UpdateAnchorPosition(int targetNodeId, string preNodeId, int anchorIndex, Vector3Int gridPos)
+    {
+        // 这里假设 gridPos 是某种网格坐标，但在新系统中我们应尽量避免使用它
+        // 为了兼容，我们可能需要 Grid 引用来转换，或者直接报错提醒
+        // 暂时留空或简单的转换（假设调用者知道自己在做什么，或者调用者已经修正）
+        // 建议：直接修改调用处，不要使用这个重载
+        Debug.LogWarning("UpdateAnchorPosition with Vector3Int is deprecated. Use Vector2 worldPos instead.");
     }
 
 
@@ -234,11 +243,11 @@ public class SelectionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 清除所有锚点选择
+    /// 清空所有锚点选择
     /// </summary>
     public void ClearAnchors()
     {
-        // 清除高亮效果
+        // 恢复颜色效果
         foreach (var anchorObj in highlightedAnchorObjects.ToList())
         {
             if (anchorObj != null)
@@ -253,7 +262,7 @@ public class SelectionManager : MonoBehaviour
         highlightedAnchorObjects.Clear();
         selectedAnchorPositions.Clear();
 
-        // 清除单选锚点
+        // 清空单选锚点
         SelectedAnchor = null;
     }
 
@@ -290,11 +299,11 @@ public class SelectionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 刷新锚点高亮状态（当锚点GameObject被创建后调用）
+    /// 刷新锚点高亮状态（当锚点GameObject被重建后调用）
     /// </summary>
     public void RefreshAnchorHighlights()
     {
-        // 先清除旧的高亮记录（但不改变颜色，因为对象可能已被销毁重建）
+        // 清空旧的引用记录（因为物体可能已被销毁重建）
         highlightedAnchorObjects.Clear();
 
         var tilemap = UIReferences.Instance.tilemap;
@@ -347,7 +356,8 @@ public class SelectionManager : MonoBehaviour
 
     public int AnchorCount => selectedAnchorPositions.Count;
 
-    public Dictionary<string, Vector3Int> GetSelectedAnchorPositions() => new Dictionary<string, Vector3Int>(selectedAnchorPositions);
+    // 修改返回类型为 Vector2
+    public Dictionary<string, Vector2> GetSelectedAnchorPositions() => new Dictionary<string, Vector2>(selectedAnchorPositions);
 
     public void ToggleAnchorSelection(GameObject anchor)
     {
@@ -358,7 +368,7 @@ public class SelectionManager : MonoBehaviour
     }
     #endregion
 
-    #region 单选锚点（编辑模式兼容）
+    #region 单选锚点（编辑模式专用）
     public void SelectAnchor(GameObject anchor)
     {
         if (SelectedAnchor != null && SelectedAnchor != anchor)
@@ -387,12 +397,66 @@ public class SelectionManager : MonoBehaviour
     }
     #endregion
 
+    #region 框选逻辑支持
+    /// <summary>
+    /// 根据世界坐标矩形选中物体（节点和锚点）
+    /// </summary>
+    /// <param name="worldRect">世界坐标矩形</param>
+    /// <param name="clearPrevious">是否清空之前的选择</param>
+    public void SelectInWorldRect(Rect worldRect, bool clearPrevious = true)
+    {
+        if (clearPrevious)
+        {
+            ClearNodes();
+            ClearAnchors();
+        }
+
+        var tilemap = UIReferences.Instance.tilemap;
+        if (tilemap == null) return;
+
+        // 1. 遍历所有节点
+        foreach (Transform nodeTrans in tilemap.transform)
+        {
+            if (nodeTrans.tag == Constants.Tags.Node)
+            {
+                // 检查节点是否在框内
+                if (worldRect.Contains(nodeTrans.position))
+                {
+                    AddNode(nodeTrans.gameObject);
+                }
+
+                // 2. 遍历节点下的所有连线，查找锚点
+                // 锚点是 LineRenderer 的子物体
+                foreach (Transform lineTrans in nodeTrans)
+                {
+                    if (lineTrans.tag == Constants.Tags.NodeLine)
+                    {
+                        foreach (Transform anchorTrans in lineTrans)
+                        {
+                            // 假设锚点没有特殊的Tag，或者Tag是Anchor
+                            // 我们可以通过名字（数字）或者组件（SpriteRenderer）来判断
+                            // 这里假设所有子物体都是锚点
+                            if (anchorTrans.GetComponent<SpriteRenderer>() != null)
+                            {
+                                if (worldRect.Contains(anchorTrans.position))
+                                {
+                                    AddAnchor(anchorTrans.gameObject);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    #endregion
+
     #region 统一查询
     public List<GameObject> GetAllSelectedObjects()
     {
         var result = new List<GameObject>();
         result.AddRange(selectedNodes);
-        // 注意：锚点现在是基于位置的，不一定有对应的GameObject
+        // 注意：锚点选择是基于位置的，不一定总有对应的GameObject
         return result;
     }
 
