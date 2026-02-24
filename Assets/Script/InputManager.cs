@@ -264,6 +264,11 @@ public class InputManager : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Z)) { CommandManager.Instance.Undo(); return; }
             if (Input.GetKeyDown(KeyCode.Y)) { CommandManager.Instance.Redo(); return; }
+            if (Input.GetKeyDown(KeyCode.C))
+            {
+                CopySelectedNodesToClipboard();
+                return;
+            }
         }
 
         if (!EventSystem.current.currentSelectedGameObject)
@@ -337,6 +342,44 @@ public class InputManager : MonoBehaviour
             }
         }
     }
+    private void CopySelectedNodesToClipboard()
+    {
+        // 1. 获取 SelectionManager 中选中的节点列表
+        var selectedNodes = SelectionManager.Instance.GetSelectedNodes();
+        List<Science> list = new List<Science>();
+
+        // 2. 如果有选中节点，收集它们的数据
+        if (selectedNodes.Count > 0)
+        {
+            foreach (var obj in selectedNodes)
+            {
+                if (obj != null)
+                {
+                    var node = obj.GetComponent<Node>();
+                    if (node != null && node.sc != null)
+                    {
+                        list.Add(node.sc);
+                    }
+                }
+            }
+        }
+        // 3. 如果没有选中节点，但当前正在编辑某个节点（打开了面板），则复制该节点
+        else if (CurrentEditPanel != null)
+        {
+            var panel = CurrentEditPanel.GetComponent<PanelScienceEdit>();
+            if (panel != null && panel.sc != null)
+            {
+                list.Add(panel.sc);
+            }
+        }
+
+        // 4. 如果收集到了数据，调用 DataManager 导出
+        if (list.Count > 0)
+        {
+            DataManager.Instance.ScienceToClipBoard(list);
+        }
+    }
+
 
     private void ChangeSelectedNodesScale(bool increase)
     {

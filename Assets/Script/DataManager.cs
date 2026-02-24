@@ -150,16 +150,34 @@ public class DataManager : MonoBehaviour
     }
     #endregion
 
+    /// <summary>
+    /// 将所有科技数据复制到剪贴板
+    /// </summary>
     public void ScienceToClipBoard()
     {
+        ScienceToClipBoard(ScienceDict.Values);
+    }
+    /// <summary>
+    /// 将指定的科技数据列表复制到剪贴板
+    /// </summary>
+    public void ScienceToClipBoard(IEnumerable<Science> sciences)
+    {
         string outs = "";
-        foreach (var sc in ScienceDict.Values)
+        foreach (var sc in sciences)
         {
             outs += sc.ParseString();
             outs += "\n";
         }
-        GUIUtility.systemCopyBuffer = outs;
-        EventCenter.Instance.TriggerLogMessage("已复制科技数据到剪贴板");
+
+        if (!string.IsNullOrEmpty(outs))
+        {
+            GUIUtility.systemCopyBuffer = outs;
+            EventCenter.Instance.TriggerLogMessage($"已复制 {System.Linq.Enumerable.Count(sciences)} 条科技数据到剪贴板");
+        }
+        else
+        {
+            EventCenter.Instance.TriggerLogWarning("没有可复制的数据");
+        }
     }
 
 }
