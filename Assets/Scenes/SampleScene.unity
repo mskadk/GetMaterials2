@@ -2009,7 +2009,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 344.4, y: 0}
+  m_AnchoredPosition: {x: 344.39996, y: 0}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &504798656
@@ -5543,12 +5543,12 @@ GameObject:
   m_Component:
   - component: {fileID: 1540289855}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: "\u79D1\u6280\u7B49\u7EA7\u80CC\u666F\u6761"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1540289855
 Transform:
   m_ObjectHideFlags: 0
@@ -5988,7 +5988,7 @@ Grid:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1606730383}
   m_Enabled: 1
-  m_CellSize: {x: 0.8659766, y: 1, z: 1}
+  m_CellSize: {x: 86.59766, y: 100, z: 100}
   m_CellGap: {x: 0, y: 0, z: 0}
   m_CellLayout: 1
   m_CellSwizzle: 2
@@ -7625,7 +7625,7 @@ Camera:
   far clip plane: 20
   field of view: 26.991467
   orthographic: 1
-  orthographic size: 3
+  orthographic size: 500
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -7670,14 +7670,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   lineMaterial: {fileID: 0}
   scale: 1
-  lineColor: {r: 0.23584908, g: 0.23584908, b: 0.23584908, a: 0.18039216}
+  lineColor: {r: 0.23584908, g: 0.23584908, b: 0.23584908, a: 0.03137255}
   "\u5F00\u542F\u8C03\u8BD5\u4FE1\u606F": 0
   "\u6E32\u67D3\u6E38\u620F\u89C6\u56FE": 1
   "\u6E32\u67D3\u573A\u666F\u89C6\u56FE": 1
-  "\u542F\u7528\u5BF9\u9F50\u7EBF": 1
-  "\u5BF9\u9F50\u7EBF\u989C\u8272": {r: 0, g: 1, b: 1, a: 0.101960786}
-  "\u5BF9\u9F50\u7EBF\u957F\u5EA6": 200
-  "\u5BF9\u9F50\u7EBF\u89D2\u5EA6\u504F\u79FB": 60
+  "\u542F\u7528\u8F85\u52A9\u7EBF": 1
+  "\u8F85\u52A9\u7EBF\u989C\u8272": {r: 0, g: 1, b: 1, a: 0.5}
+  "\u8F85\u52A9\u7EBF\u957F\u5EA6": 10000
+  "\u8F85\u52A9\u7EBF\u89D2\u5EA6\u504F\u79FB": 0
 --- !u!114 &2055877776
 MonoBehaviour:
   m_ObjectHideFlags: 0

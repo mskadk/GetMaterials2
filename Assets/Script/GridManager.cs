@@ -13,9 +13,9 @@ public class GridManager : MonoBehaviour
     public GridType CurrentGridType { get; private set; } = GridType.Hexagon;
 
     // Õ¯∏Ò≥ﬂ¥Á≈‰÷√
-    public static readonly Vector3 HexCellSize = new Vector3(0.8659766f, 1f, 1f);
-    public static readonly Vector3 SquareCellSize = new Vector3(1f, 1f, 1f);
-    public static readonly Vector3 FreeCellSize = new Vector3(1f, 1f, 1f);
+    public static readonly Vector3 HexCellSize = new Vector3(86.59766f, 100f, 100f);
+    public static readonly Vector3 SquareCellSize = new Vector3(100f, 100f, 100f);
+    public static readonly Vector3 FreeCellSize = new Vector3(100f, 100f, 100f);
 
     private static GridManager _instance;
     public static GridManager Instance

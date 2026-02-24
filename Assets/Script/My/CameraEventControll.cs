@@ -43,8 +43,8 @@ public class CameraEventControll : MonoBehaviour
         scroll = Input.GetAxis("Mouse ScrollWheel");
         if (scroll != 0)
         {
-            cam.orthographicSize -= scroll * 滚轮速度;
-            cam.orthographicSize = Mathf.Clamp(cam.orthographicSize, .5f, 80);
+            cam.orthographicSize -= scroll * 滚轮速度 * 500;
+            cam.orthographicSize = Mathf.Clamp(cam.orthographicSize, 500, 8000);
         }
     }
 }

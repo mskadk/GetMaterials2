@@ -169,7 +169,7 @@ public class Node : MonoBehaviour
             return;
         }
         GameObject g = SpriteManager.Paint(gameObject, "Icon_Technology", 0, sc.ModuleId);
-        g.transform.localScale = Vector3.one * .01f;
+        //g.transform.localScale = Vector3.one * .01f;
         g.GetComponent<MeshRenderer>().material.shader = Shader.Find("Custom/ScienceIcon_Shader");
         g.GetComponent<MeshRenderer>().material.SetColor("_TintColor", getColor(sc.IconColor));
     }
