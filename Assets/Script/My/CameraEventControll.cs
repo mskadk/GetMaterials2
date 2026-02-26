@@ -7,7 +7,9 @@ public class CameraEventControll : MonoBehaviour
 {
     public int 滚轮速度 = 1;
     public int mb = (int)MouseButton.MiddleMouse;
-
+    [Header("镜头缩放大小")]
+    public int ScaleMin = 200;
+    public int ScaleMax = 8000;
     Camera cam;
     void Start()
     {
@@ -44,7 +46,7 @@ public class CameraEventControll : MonoBehaviour
         if (scroll != 0)
         {
             cam.orthographicSize -= scroll * 滚轮速度 * 500;
-            cam.orthographicSize = Mathf.Clamp(cam.orthographicSize, 500, 8000);
+            cam.orthographicSize = Mathf.Clamp(cam.orthographicSize, ScaleMin, ScaleMax);
         }
     }
 }
