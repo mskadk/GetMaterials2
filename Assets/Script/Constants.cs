@@ -1,10 +1,10 @@
 /// <summary>
-/// 全局常量定义 - 避免字符串硬编码
+/// 全局常量定义
 /// </summary>
 public static class Constants
 {
     /// <summary>
-    /// Tag 名称
+    /// Tag 常量
     /// </summary>
     public static class Tags
     {
@@ -20,7 +20,6 @@ public static class Constants
     /// </summary>
     public static class GameObjectNames
     {
-        // 主要管理器
         public const string MainManager = "MainManager";
         public const string InputManager = "InputManager";
         public const string CameraSence = "CameraSence";
@@ -28,7 +27,6 @@ public static class Constants
         public const string Tilemap = "Tilemap";
         public const string Canvas = "Canvas";
 
-        // UI 组件
         public const string ToggleMoveCam = "ToggleMoveCam";
         public const string ToggleMoveNode = "ToggleMoveNode";
         public const string ToggleEditNode = "ToggleEditNode";
@@ -81,9 +79,9 @@ public static class Constants
     /// </summary>
     public static class NodeScale
     {
-        public const float Large = 3.9f;
-        public const float Middle = 1.9f;
-        public const float Small = 0.9f;
+        public const float Large = 4f;
+        public const float Middle = 2f;
+        public const float Small = 1f;
     }
 
     /// <summary>
@@ -102,8 +100,8 @@ public static class Constants
     public static class SpecialIds
     {
         public const int InvalidId = -1;
-        public const int PdaTech = -2;  // PDA科技没有前置
-        public const int NewNodeStartId = -3;  // 新节点从-3开始递减
+        public const int PdaTech = -2;
+        public const int NewNodeStartId = -3;
     }
 
     /// <summary>
@@ -113,12 +111,23 @@ public static class Constants
     {
         // 前置科技格式: -1 或 数字|数字|...
         public const string PreTechnology = @"^\(-1\)|(?!-1\b)(?!-2\b)-?\d+(?:\|(?!-1\b)(?!-2\b)-?\d+)*$";
-        // 旧的是："^(?:-*[0-9]*|(\\d+)(?:_(\\d+)_(\\d+))*(?:\\|(?:(\\d+)(?:_(\\d+)_(\\d+))*))*)$"
-        // 这个疑似是不包含负数：@"^(-1|\d+(\|\d+)*)$"
 
-        // 路径节点格式: -1 或 id_y_x_y_x|id_y_x
-        public const string PathNode = @"^(?:(?!-1\b)(?!-2\b)-?\d+(?:_-?\d+_-?\d+)+)(?:\|(?!-1\b)(?!-2\b)-?\d+(?:_-?\d+_-?\d+)+)*|-1$";
-        // 旧的是："^(-1)$|((?!-1)(-?\\d+))(_-?\\d+){2,}((_-?\\d+){2})*$"
+        // 路径节点格式：放宽正则，详细验证交给解析器
+        // 匹配 -1 或 任意非空字符串（包含数字、逗号、冒号、下划线、竖线、点、减号和方向字母）
+        public const string PathNode = @"^-1$|^[-\d.,_|:tblrc\s]+$";
+    }
+
+
+    /// <summary>
+    /// 锚点方向标记常量
+    /// </summary>
+    public static class AnchorMarks
+    {
+        public const string Top = "t";
+        public const string Bottom = "b";
+        public const string Left = "l";
+        public const string Right = "r";
+        public const string Center = "c";
     }
 
     /// <summary>
@@ -132,5 +141,6 @@ public static class Constants
         public static readonly UnityEngine.Color AnchorNormal = new UnityEngine.Color(0.94f, 0.99f, 0.53f);
         public static readonly UnityEngine.Color AnchorSelected = new UnityEngine.Color(0.92f, 0.45f, 0.25f);
         public static readonly UnityEngine.Color AnchorHover = new UnityEngine.Color(0.6f, 0.8f, 1f, 1f);
+        public static readonly UnityEngine.Color ActiveLineHighlight = new UnityEngine.Color(0f, 1f, 1f, 1f);
     }
 }

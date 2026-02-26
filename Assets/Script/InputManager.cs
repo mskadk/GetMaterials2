@@ -108,18 +108,31 @@ public class InputManager : MonoBehaviour
 
         if (DataManager.Instance.ScienceDict.TryGetValue(int.Parse(nodeTo), out var sc))
         {
-            int positionCount = lr.positionCount;
-            string newpos = null;
+            // 解析当前路径，保留方向信息
+            var connections = sc.PathNode.ParsePathConnections();
+            int preId = int.Parse(nodeFrom);
 
-            for (int i = 1; i < positionCount - 1; i++)
+            for (int c = 0; c < connections.Count; c++)
             {
-                if (newpos != null) newpos += "_";
-                Vector3 pos = lr.GetPosition(i);
-                // 使用世界坐标，三位小数
-                newpos += $"{pos.x:F3}_{pos.y:F3}";
+                if (connections[c].PreId == preId)
+                {
+                    var conn = connections[c];
+                    // 从 LineRenderer 重建中间点（跳过首尾）
+                    conn.Waypoints.Clear();
+                    int positionCount = lr.positionCount;
+                    for (int i = 1; i < positionCount - 1; i++)
+                    {
+                        Vector3 pos = lr.GetPosition(i);
+                        conn.Waypoints.Add(new Vector2(
+                            (float)System.Math.Round(pos.x, 1),
+                            (float)System.Math.Round(pos.y, 1)));
+                    }
+                    connections[c] = conn;
+                    break;
+                }
             }
 
-            sc.PathNode = sc.PathNode.UpdatePathNodeById(nodeFrom, newpos);
+            sc.PathNode = MyExtensions.SerializePathConnections(connections);
 
             if (CurrentEditPanel)
             {
@@ -142,8 +155,7 @@ public class InputManager : MonoBehaviour
             {
                 foreach (Transform child in currentNode.transform)
                 {
-                    if (child.tag == Constants.Tags.NodeLine)
-                        linestoCheck.Add(child.gameObject);
+                    if (child.tag == Constants.Tags.NodeLine) linestoCheck.Add(child.gameObject);
                 }
             }
         }
@@ -273,6 +285,12 @@ public class InputManager : MonoBehaviour
 
         if (!EventSystem.current.currentSelectedGameObject)
         {
+            // === 方向键修改锚点方向 ===
+            if (HandleDirectionKeyInput()) return;
+
+            // === 数字键切换活动连接线 ===
+            if (HandleNumberKeyInput()) return;
+
             // 删除
             if (Input.GetKeyDown(KeyCode.Delete))
             {
@@ -342,6 +360,70 @@ public class InputManager : MonoBehaviour
             }
         }
     }
+
+    /// <summary>
+    /// 处理方向键输入，修改活动连接线的锚点方向
+    /// </summary>
+    private bool HandleDirectionKeyInput()
+    {
+        // 只在有选中节点时生效
+        if (SelectionManager.Instance.NodeCount == 0) return false;
+
+        // 检查是否有活动连接线
+        var activeLine = SelectionManager.Instance.GetActiveLine();
+        if (activeLine == null) return false;
+
+        bool isRightShift = Input.GetKey(KeyCode.RightShift);
+        AnchorDirection? newDir = null;
+
+        if (Input.GetKeyDown(KeyCode.UpArrow))
+            newDir = AnchorDirection.Top;
+        else if (Input.GetKeyDown(KeyCode.DownArrow))
+            newDir = AnchorDirection.Bottom;
+        else if (Input.GetKeyDown(KeyCode.LeftArrow))
+            newDir = AnchorDirection.Left;
+        else if (Input.GetKeyDown(KeyCode.RightArrow))
+            newDir = AnchorDirection.Right;
+
+        if (newDir.HasValue)
+        {
+            // RightShift + 方向键 = 修改终止方向，否则修改起始方向
+            bool isStart = !isRightShift;
+            SelectionManager.Instance.UpdateActiveLineDirection(isStart, newDir.Value);
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 处理数字键输入，切换活动连接线
+    /// </summary>
+    private bool HandleNumberKeyInput()
+    {
+        // 只在有选中节点时生效
+        if (SelectionManager.Instance.NodeCount == 0) return false;
+
+        // 检查主键盘数字键 1-9
+        for (int i = 1; i <= 9; i++)
+        {
+            if (Input.GetKeyDown(KeyCode.Alpha1 + (i - 1)))
+            {
+                // 用户按 1 对应索引 0，按 2 对应索引 1，以此类推
+                SelectionManager.Instance.SetActiveLineIndex(i - 1);
+
+                var lines = SelectionManager.Instance.GetPrimaryNodeLines();
+                if (i <= lines.Count)
+                {
+                    EventCenter.Instance.TriggerLogMessage($"切换到连接线 {i}/{lines.Count}");
+                }
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void CopySelectedNodesToClipboard()
     {
         // 1. 获取 SelectionManager 中选中的节点列表
@@ -363,7 +445,7 @@ public class InputManager : MonoBehaviour
                 }
             }
         }
-        // 3. 如果没有选中节点，但当前正在编辑某个节点（打开了面板），则复制该节点
+        // 3. 如果没有选中节点，但当前正在编辑某个节点（编辑面板），复制该节点
         else if (CurrentEditPanel != null)
         {
             var panel = CurrentEditPanel.GetComponent<PanelScienceEdit>();
@@ -373,13 +455,12 @@ public class InputManager : MonoBehaviour
             }
         }
 
-        // 4. 如果收集到了数据，调用 DataManager 导出
+        // 4. 如果收集到了数据，调用 DataManager 复制
         if (list.Count > 0)
         {
             DataManager.Instance.ScienceToClipBoard(list);
         }
     }
-
 
     private void ChangeSelectedNodesScale(bool increase)
     {
@@ -489,8 +570,7 @@ public class InputManager : MonoBehaviour
 
         if (_anchorsVisibleInNormalMode)
         {
-            ShowAnchorsForSelectedNodes();
-            EventCenter.Instance.TriggerLogMessage($"显示 {selectedNodes.Count} 个节点的锚点");
+            ShowAnchorsForSelectedNodes(); EventCenter.Instance.TriggerLogMessage($"显示 {selectedNodes.Count} 个节点的锚点");
         }
         else
         {
@@ -567,7 +647,7 @@ public class InputManager : MonoBehaviour
     }
     #endregion
 
-    #region 公开属性和方法
+    #region 属性访问和方法
     public bool AnchorsVisibleInNormalMode => _anchorsVisibleInNormalMode;
 
     public void ResetAnchorVisibilityState()

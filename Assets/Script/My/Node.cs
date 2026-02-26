@@ -117,7 +117,7 @@ public class Node : MonoBehaviour
     #endregion
 
     /// <summary>
-    /// 更新节点的世界坐标位置
+    /// 更新节点世界坐标位置
     /// </summary>
     public void UpdateWorldPos(Vector2 worldPos)
     {
@@ -165,14 +165,35 @@ public class Node : MonoBehaviour
         }
         if (false || Environment.MachineName == "DESKTOP-0418DES")
         {
-            Debug.LogWarning("跳过图标绘制");
+            Debug.LogWarning("缺少图标资源");
             return;
         }
         GameObject g = SpriteManager.Paint(gameObject, "Icon_Technology", 0, sc.ModuleId);
-        //g.transform.localScale = Vector3.one * .01f;
         g.GetComponent<MeshRenderer>().material.shader = Shader.Find("Custom/ScienceIcon_Shader");
         g.GetComponent<MeshRenderer>().material.SetColor("_TintColor", getColor(sc.IconColor));
     }
+
+    /// <summary>
+    /// 获取指定方向锚点的世界坐标（带Z偏移）
+    /// </summary>
+    private Vector3 GetAnchorPos(Transform nodeTransform, AnchorDirection dir)
+    {
+        Vector3 pos = MyExtensions.GetAnchorWorldPosition(nodeTransform, dir);
+        pos.z = 1; // 线条Z偏移
+        return pos;
+    }
+
+    /// 从连接列表中查找指定preId的连接，找不到返回null
+    /// </summary>
+    private PathConnection? FindConnection(List<PathConnection> connections, int preId)
+    {
+        foreach (var conn in connections)
+        {
+            if (conn.PreId == preId) return conn;
+        }
+        return null;
+    }
+
 
     /// <summary>
     /// 只更新线的位置，不重建锚点
@@ -185,8 +206,7 @@ public class Node : MonoBehaviour
             parent = transform.parent?.gameObject;
         if (grid == null || parent == null) return;
 
-        // 使用新的解析方法获取世界坐标
-        List<Vector3> prePathsList = sc.PathNode.ParsePathNodeList();
+        List<PathConnection> connections = sc.PathNode.ParsePathConnections();
         List<int> preNodesList = sc.Pre_technology.ToList();
 
         if (preNodesList == null || preNodesList.Contains(-2))
@@ -215,17 +235,23 @@ public class Node : MonoBehaviour
             var line = lineTransform.GetComponent<LineRenderer>();
             if (line == null) continue;
 
-            // 构建路径点（使用世界坐标）
-            List<Vector3> positions = new() { preNodeGameObject.transform.position + Vector3.forward };
-            foreach (var path in prePathsList)
+            // 查找对应的连接信息
+            PathConnection? connInfo = FindConnection(connections, parentSc.Id);
+            AnchorDirection startDir = connInfo?.StartDirection ?? AnchorDirection.Center;
+            AnchorDirection endDir = connInfo?.EndDirection ?? AnchorDirection.Center;
+
+            // 构建路径点（使用锚点坐标）
+            List<Vector3> positions = new() { GetAnchorPos(preNodeGameObject.transform, startDir) };
+
+            if (connInfo.HasValue)
             {
-                if ((int)path.x == parentSc.Id)
+                foreach (var wp in connInfo.Value.Waypoints)
                 {
-                    // path.y = worldX, path.z = worldY
-                    positions.Add(new Vector3(path.y, path.z, 1));
+                    positions.Add(new Vector3(wp.x, wp.y, 1));
                 }
             }
-            positions.Add(transform.position + Vector3.forward);
+
+            positions.Add(GetAnchorPos(transform, endDir));
 
             if (line.positionCount == positions.Count)
             {
@@ -292,7 +318,7 @@ public class Node : MonoBehaviour
 
     void UpdateLine()
     {
-        List<Vector3> prePathsList = sc.PathNode.ParsePathNodeList();
+        List<PathConnection> connections = sc.PathNode.ParsePathConnections();
         List<int> preNodesList = sc.Pre_technology.ToList();
 
         if (preNodesList is null || preNodesList.Contains(-2))
@@ -329,18 +355,23 @@ public class Node : MonoBehaviour
                 }
 
                 var line = lineGO.GetComponent<LineRenderer>();
+                // 查找对应的连接信息
+                PathConnection? connInfo = FindConnection(connections, parentSc.Id);
+                AnchorDirection startDir = connInfo?.StartDirection ?? AnchorDirection.Center;
+                AnchorDirection endDir = connInfo?.EndDirection ?? AnchorDirection.Center;
 
                 // 构建路径点
-                List<Vector3> positions = new() { preNodeGameObject.transform.position + Vector3.forward };
-                foreach (var path in prePathsList)
+                List<Vector3> positions = new() { GetAnchorPos(preNodeGameObject.transform, startDir) };
+
+                if (connInfo.HasValue)
                 {
-                    if ((int)path.x == parentSc.Id)
+                    foreach (var wp in connInfo.Value.Waypoints)
                     {
-                        // path.y = worldX, path.z = worldY
-                        positions.Add(new Vector3(path.y, path.z, 1));
+                        positions.Add(new Vector3(wp.x, wp.y, 1));
                     }
                 }
-                positions.Add(transform.position + Vector3.forward);
+
+                positions.Add(GetAnchorPos(transform, endDir));
 
                 line.positionCount = positions.Count;
                 line.SetPositions(positions.ToArray());

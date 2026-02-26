@@ -6,14 +6,102 @@ using UnityEngine;
 
 namespace Assets.Script.My.Extention
 {
+    /// <summary>
+    /// 锚点方向枚举
+    /// </summary>
+    public enum AnchorDirection
+    {
+        Center, // c - 缺省值
+        Top,    // t
+        Bottom, // b
+        Left,   // l
+        Right   // r
+    }
+
+    /// <summary>
+    /// 解析后的路径连接信息
+    /// </summary>
+    public struct PathConnection
+    {
+        public int PreId;
+        public AnchorDirection StartDirection;  // 起始节点的锚点方向
+        public AnchorDirection EndDirection;    // 终止节点的锚点方向
+        public List<Vector2> Waypoints;        // 中间点列表
+
+        public PathConnection(int preId, AnchorDirection startDir, AnchorDirection endDir, List<Vector2> waypoints)
+        {
+            PreId = preId;
+            StartDirection = startDir;
+            EndDirection = endDir;
+            Waypoints = waypoints ?? new List<Vector2>();
+        }
+    }
+
     public static class MyExtensions
     {
         // 坐标精度：三位小数
-        private const string FLOAT_FORMAT = "F3";
+        private const string FLOAT_FORMAT = "F1";
+
+        #region 方向标记转换
+
+        public static AnchorDirection ParseDirection(string mark)
+        {
+            if (string.IsNullOrEmpty(mark)) return AnchorDirection.Center;
+            return mark.Trim().ToLower() switch
+            {
+                "t" => AnchorDirection.Top,
+                "b" => AnchorDirection.Bottom,
+                "l" => AnchorDirection.Left,
+                "r" => AnchorDirection.Right,
+                "c" => AnchorDirection.Center,
+                _ => AnchorDirection.Center
+            };
+        }
+
+        public static string DirectionToMark(AnchorDirection dir)
+        {
+            return dir switch
+            {
+                AnchorDirection.Top => "t",
+                AnchorDirection.Bottom => "b",
+                AnchorDirection.Left => "l",
+                AnchorDirection.Right => "r",
+                AnchorDirection.Center => "c",
+                _ => "c"
+            };
+        }
+
+        /// <summary>
+        /// 获取节点上指定方向锚点的世界坐标
+        /// </summary>
+        public static Vector3 GetAnchorWorldPosition(Transform nodeTransform, AnchorDirection dir)
+        {
+            string anchorName = dir switch
+            {
+                AnchorDirection.Top => "anc_top",
+                AnchorDirection.Bottom => "anc_bottom",
+                AnchorDirection.Left => "anc_left",
+                AnchorDirection.Right => "anc_right",
+                _ => null
+            };
+
+            if (anchorName != null)
+            {
+                Transform anchorTrans = nodeTransform.Find(anchorName);
+                if (anchorTrans != null)
+                {
+                    return anchorTrans.position;
+                }
+            }
+
+            // Center 或找不到锚点时返回节点中心
+            return nodeTransform.position;
+        }
+
+        #endregion
 
         /// <summary>
         /// 将输入的字符串以"|"分隔，组成整形数组
-        /// <para>空字符串、-1字符串返回空整形列表</para>
         /// </summary>
         public static List<int> ToList(this string input)
         {
@@ -26,35 +114,36 @@ namespace Assets.Script.My.Extention
                 .ToList();
         }
 
+        #region 新格式解析 (v2)
+
         /// <summary>
-        /// 解析路径节点字符串为世界坐标列表
-        /// 格式: "preId_x_y_x_y|preId_x_y" => List of (preId, x, y)
-        /// 返回 Vector3: x=preId, y=worldX, z=worldY
+        /// 解析新格式路径字符串为 PathConnection 列表
+        /// 新格式: "preId,startDir:x,y_x,y:endDir" 多组用 "|" 分隔
+        /// 兼容旧格式: "preId_x_y_x_y"
         /// </summary>
-        public static List<Vector3> ParsePathNodeList(this string input)
+        public static List<PathConnection> ParsePathConnections(this string input)
         {
-            List<Vector3> result = new();
+            List<PathConnection> result = new();
 
             if (string.IsNullOrEmpty(input) || input == "-1")
-            {
                 return result;
-            }
 
-            string[] mainParts = input.Split('|');
+            string[] groups = input.Split('|');
 
-            foreach (string item in mainParts)
+            foreach (string group in groups)
             {
-                string[] subParts = item.Split('_');
-                if (subParts.Length < 3) continue;
+                if (string.IsNullOrWhiteSpace(group)) continue;
 
-                int preId = int.Parse(subParts[0]);
-
-                // 每两个值是一组坐标 (x, y)
-                for (int i = 1; i < subParts.Length - 1; i += 2)
+                // 判断是新格式还是旧格式：新格式包含 ":"
+                if (group.Contains(':'))
                 {
-                    float x = float.Parse(subParts[i], CultureInfo.InvariantCulture);
-                    float y = float.Parse(subParts[i + 1], CultureInfo.InvariantCulture);
-                    result.Add(new Vector3(preId, x, y));
+                    var conn = ParseNewFormatGroup(group);
+                    if (conn.HasValue) result.Add(conn.Value);
+                }
+                else
+                {
+                    var conn = ParseOldFormatGroup(group);
+                    if (conn.HasValue) result.Add(conn.Value);
                 }
             }
 
@@ -62,19 +151,157 @@ namespace Assets.Script.My.Extention
         }
 
         /// <summary>
-        /// 旧方法保持兼容（但内部转换为float处理）
-        /// 返回 Vector3Int: x=preId, y=worldX取整, z=worldY取整
+        /// 解析新格式单组: "preId,startDir:x,y_x,y:endDir"
         /// </summary>
-        [Obsolete("请使用 ParsePathNodeList 获取精确的世界坐标")]
+        private static PathConnection? ParseNewFormatGroup(string group)
+        {
+            // 用 ':' 分隔为最多3段
+            string[] sections = group.Split(':');
+            if (sections.Length < 1) return null;
+
+            // === 第1段：起始信息 "preId,startDir" 或 "preId" ===
+            string startSection = sections[0];
+            string[] startParts = startSection.Split(',');
+            if (!int.TryParse(startParts[0], out int preId)) return null;
+
+            AnchorDirection startDir = AnchorDirection.Center;
+            if (startParts.Length > 1)
+                startDir = ParseDirection(startParts[1]);
+
+            // === 第2段：中间点 "x,y_x,y" （可能为空或不存在）===
+            List<Vector2> waypoints = new();
+            AnchorDirection endDir = AnchorDirection.Center;
+
+            if (sections.Length >= 2 && !string.IsNullOrWhiteSpace(sections[1]))
+            {
+                string waypointSection = sections[1];
+                string[] pointStrs = waypointSection.Split('_');
+                foreach (string pointStr in pointStrs)
+                {
+                    if (string.IsNullOrWhiteSpace(pointStr)) continue;
+                    string[] coords = pointStr.Split(',');
+                    if (coords.Length >= 2 &&
+                        float.TryParse(coords[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float x) &&
+                        float.TryParse(coords[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float y))
+                    {
+                        waypoints.Add(new Vector2(x, y));
+                    }
+                }
+            }
+
+            // === 第3段：终点方向 "endDir" （可能不存在）===
+            if (sections.Length >= 3 && !string.IsNullOrWhiteSpace(sections[2]))
+            {
+                endDir = ParseDirection(sections[2]);
+            }
+
+            return new PathConnection(preId, startDir, endDir, waypoints);
+        }
+
+        /// <summary>
+        /// 解析旧格式单组: "preId_x_y_x_y" → 兼容转换为 PathConnection（方向均为 Center）
+        /// </summary>
+        private static PathConnection? ParseOldFormatGroup(string group)
+        {
+            string[] parts = group.Split('_');
+            if (parts.Length < 1) return null;
+            if (!int.TryParse(parts[0], out int preId)) return null;
+
+            List<Vector2> waypoints = new();
+            for (int i = 1; i < parts.Length - 1; i += 2)
+            {
+                if (float.TryParse(parts[i], NumberStyles.Float, CultureInfo.InvariantCulture, out float x) &&
+                    float.TryParse(parts[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out float y))
+                {
+                    waypoints.Add(new Vector2(x, y));
+                }
+            }
+
+            return new PathConnection(preId, AnchorDirection.Center, AnchorDirection.Center, waypoints);
+        }
+
+        /// <summary>
+        /// 将 PathConnection 列表序列化为新格式字符串
+        /// </summary>
+        public static string SerializePathConnections(List<PathConnection> connections)
+        {
+            if (connections == null || connections.Count == 0) return "-1";
+
+            List<string> groups = new();
+            foreach (var conn in connections)
+            {
+                groups.Add(SerializeOneConnection(conn));
+            }
+            return string.Join("|", groups);
+        }
+
+        /// <summary>
+        /// 序列化单个 PathConnection 为新格式字符串
+        /// </summary>
+        private static string SerializeOneConnection(PathConnection conn)
+        {
+            // 起始段
+            string startMark = DirectionToMark(conn.StartDirection);
+            string startSection = $"{conn.PreId},{startMark}";
+
+            // 中间点段
+            string waypointSection = "";
+            if (conn.Waypoints != null && conn.Waypoints.Count > 0)
+            {
+                waypointSection = string.Join("_", conn.Waypoints.Select(wp =>
+                    $"{wp.x.ToString(FLOAT_FORMAT, CultureInfo.InvariantCulture)},{wp.y.ToString(FLOAT_FORMAT, CultureInfo.InvariantCulture)}"));
+            }
+
+            // 终点段
+            string endMark = DirectionToMark(conn.EndDirection);
+
+            return $"{startSection}:{waypointSection}:{endMark}";
+        }
+
+        #endregion
+
+        #region 兼容旧接口
+
+        /// <summary>
+        /// 【兼容旧代码】解析路径节点字符串为世界坐标列表
+        /// 返回 Vector3: x=preId, y=worldX, z=worldY
+        /// 同时支持新旧格式
+        /// </summary>
+        public static List<Vector3> ParsePathNodeList(this string input)
+        {
+            List<Vector3> result = new();
+
+            if (string.IsNullOrEmpty(input) || input == "-1")
+                return result;
+
+            var connections = ParsePathConnections(input);
+            foreach (var conn in connections)
+            {
+                foreach (var wp in conn.Waypoints)
+                {
+                    result.Add(new Vector3(conn.PreId, wp.x, wp.y));
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 旧方法保持兼容
+        /// </summary>
+        [Obsolete("请使用 ParsePathConnections 获取完整的连接信息")]
         public static List<Vector3Int> ParesV3IList(this string input)
         {
             var floatList = ParsePathNodeList(input);
             return floatList.Select(v => new Vector3Int(
-                (int)v.x,
-                Mathf.RoundToInt(v.y),
+                (int)v.x,Mathf.RoundToInt(v.y),
                 Mathf.RoundToInt(v.z)
             )).ToList();
         }
+
+        #endregion
+
+        #region 路径编辑操作（适配新格式）
 
         /// <summary>
         /// 替换前置科技字符串中某个科技的id
@@ -91,23 +318,23 @@ namespace Assets.Script.My.Extention
         }
 
         /// <summary>
-        /// 替换路径字符串中某个科技的id
+        /// 替换路径字符串中某个科技的id（支持新旧格式）
         /// </summary>
         public static string ReplacePathNode(this string input, string oldId, string newId)
         {
             if (string.IsNullOrEmpty(input) || input == "-1") return input;
 
-            var paths = input.Split('|').ToList();
-            for (int i = 0; i < paths.Count; i++)
+            var connections = ParsePathConnections(input);
+            for (int i = 0; i < connections.Count; i++)
             {
-                var segments = paths[i].Split('_').ToList();
-                if (segments[0] == oldId)
+                if (connections[i].PreId.ToString() == oldId)
                 {
-                    segments[0] = newId;
-                    paths[i] = string.Join("_", segments);
+                    var conn = connections[i];
+                    conn.PreId = int.Parse(newId);
+                    connections[i] = conn;
                 }
             }
-            return string.Join("|", paths);
+            return SerializePathConnections(connections);
         }
 
         /// <summary>
@@ -117,11 +344,10 @@ namespace Assets.Script.My.Extention
         {
             if (string.IsNullOrEmpty(input) || input == "-1") return input;
 
-            var paths = input.Split('|')
-                .Where(path => path.Split('_')[0] != target)
-                .ToList();
+            var connections = ParsePathConnections(input);
+            connections.RemoveAll(c => c.PreId.ToString() == target);
 
-            return paths.Count == 0 ? "-1" : string.Join("|", paths);
+            return connections.Count == 0 ? "-1" : SerializePathConnections(connections);
         }
 
         /// <summary>
@@ -147,75 +373,78 @@ namespace Assets.Script.My.Extention
         }
 
         /// <summary>
-        /// 更新前置路径中某个id的路径字段（使用世界坐标）
+        /// 更新前置路径中某个id的路径字段（新格式）
         /// </summary>
         public static string UpdatePathNodeById(this string input, string id, string newPath)
         {
             if (string.IsNullOrEmpty(input) || input == "-1")
             {
-                return string.IsNullOrEmpty(newPath) ? "-1" : $"{id}_{newPath}";
+                return string.IsNullOrEmpty(newPath) ? "-1" : newPath;
             }
 
-            var paths = input.Split('|').ToList();
-            bool found = false;
+            var connections = ParsePathConnections(input);
+            int targetId = int.Parse(id);
 
-            for (int i = 0; i < paths.Count; i++)
+            if (!string.IsNullOrEmpty(newPath))
             {
-                if (paths[i].Split('_')[0] == id)
+                var newConns = ParsePathConnections(newPath);
+
+                // 用循环查找，避免 struct FirstOrDefault 问题
+                PathConnection? newConn = null;
+                foreach (var nc in newConns)
                 {
-                    if (string.IsNullOrEmpty(newPath))
+                    if (nc.PreId == targetId) { newConn = nc; break; }
+                }
+
+                if (!newConn.HasValue)
+                {
+                    // newPath 中没有找到对应 preId 的连接，直接返回
+                    return input;
+                }
+
+                bool found = false;
+                for (int i = 0; i < connections.Count; i++)
+                {
+                    if (connections[i].PreId == targetId)
                     {
-                        paths.RemoveAt(i);
+                        connections[i] = newConn.Value;
+                        found = true;
+                        break;
                     }
-                    else
-                    {
-                        paths[i] = $"{id}_{newPath}";
-                    }
-                    found = true;
-                    break;
+                }
+
+                if (!found)
+                {
+                    connections.Add(newConn.Value);
                 }
             }
-
-            if (!found && !string.IsNullOrEmpty(newPath))
+            else
             {
-                paths.Add($"{id}_{newPath}");
+                connections.RemoveAll(c => c.PreId == targetId);
             }
 
-            return paths.Count == 0 ? "-1" : string.Join("|", paths);
+            return connections.Count == 0 ? "-1" : SerializePathConnections(connections);
         }
 
+
         /// <summary>
-        /// 在指定的前置节点路径中插入一个新的坐标点（使用世界坐标）
+        /// 在指定的前置节点路径中插入一个新的坐标点
         /// </summary>
         public static string InsertPathNode(this string pathNodeStr, string targetPreId, int insertIndex, Vector2 newPoint)
         {
-            string pointStr = $"{newPoint.x.ToString(FLOAT_FORMAT)}_{newPoint.y.ToString(FLOAT_FORMAT)}";
+            int preId = int.Parse(targetPreId);
 
-            if (string.IsNullOrEmpty(pathNodeStr) || pathNodeStr == "-1")
-            {
-                return $"{targetPreId}_{pointStr}";
-            }
-
-            var paths = pathNodeStr.Split('|').ToList();
+            var connections = ParsePathConnections(pathNodeStr);
             bool found = false;
 
-            for (int i = 0; i < paths.Count; i++)
+            for (int i = 0; i < connections.Count; i++)
             {
-                var segments = paths[i].Split('_').ToList();
-                string preId = segments[0];
-
-                if (preId == targetPreId)
+                if (connections[i].PreId == preId)
                 {
-                    // 格式: ID_X1_Y1_X2_Y2...
-                    // insertIndex 是 LineRenderer 的索引，从 1 开始
-                    int listIndex = 1 + (insertIndex - 1) * 2;
-                    if (listIndex > segments.Count) listIndex = segments.Count;
-                    if (listIndex < 1) listIndex = 1;
-
-                    segments.Insert(listIndex, newPoint.y.ToString(FLOAT_FORMAT));
-                    segments.Insert(listIndex, newPoint.x.ToString(FLOAT_FORMAT));
-
-                    paths[i] = string.Join("_", segments);
+                    var conn = connections[i];
+                    int idx = Mathf.Clamp(insertIndex - 1, 0, conn.Waypoints.Count);
+                    conn.Waypoints.Insert(idx, newPoint);
+                    connections[i] = conn;
                     found = true;
                     break;
                 }
@@ -223,10 +452,11 @@ namespace Assets.Script.My.Extention
 
             if (!found)
             {
-                paths.Add($"{targetPreId}_{pointStr}");
+                connections.Add(new PathConnection(preId, AnchorDirection.Center, AnchorDirection.Center,
+                    new List<Vector2> { newPoint }));
             }
 
-            return string.Join("|", paths);
+            return SerializePathConnections(connections);
         }
 
         /// <summary>
@@ -236,35 +466,34 @@ namespace Assets.Script.My.Extention
         {
             if (string.IsNullOrEmpty(pathNodeStr) || pathNodeStr == "-1") return pathNodeStr;
 
-            var paths = pathNodeStr.Split('|').ToList();
-            List<string> newPaths = new List<string>();
+            int preId = int.Parse(targetPreId);
+            var connections = ParsePathConnections(pathNodeStr);
 
-            foreach (var path in paths)
+            for (int i = 0; i < connections.Count; i++)
             {
-                var segments = path.Split('_').ToList();
-                string preId = segments[0];
-
-                if (preId == targetPreId)
+                if (connections[i].PreId == preId)
                 {
-                    int removeStart = 1 + (anchorIndex - 1) * 2;
-
-                    if (removeStart + 1 < segments.Count)
+                    var conn = connections[i];
+                    int idx = anchorIndex - 1;
+                    if (idx >= 0 && idx < conn.Waypoints.Count)
                     {
-                        segments.RemoveRange(removeStart, 2);
+                        conn.Waypoints.RemoveAt(idx);
                     }
 
-                    if (segments.Count > 1)
+                    if (conn.Waypoints.Count == 0)
                     {
-                        newPaths.Add(string.Join("_", segments));
+                        // 没有中间点了，但保留连接信息（方向信息仍有意义）
+                        connections[i] = conn;
                     }
-                }
-                else
-                {
-                    newPaths.Add(path);
+                    else
+                    {
+                        connections[i] = conn;
+                    }
+                    break;
                 }
             }
 
-            return newPaths.Count == 0 ? "-1" : string.Join("|", newPaths);
+            return connections.Count == 0 ? "-1" : SerializePathConnections(connections);
         }
 
         /// <summary>
@@ -282,5 +511,7 @@ namespace Assets.Script.My.Extention
         {
             return FormatWorldPos(pos.x, pos.y);
         }
+
+        #endregion
     }
 }

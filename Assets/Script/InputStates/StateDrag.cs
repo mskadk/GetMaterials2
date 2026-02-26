@@ -463,34 +463,57 @@ public class StateDrag : IInputState
         if (!DataManager.Instance.TryGetScience(info.targetNodeId, out var sc)) return;
         if (info.lr == null) return;
 
-        string newPath = null;
+        // 解析当前路径，保留方向信息
+        var connections = sc.PathNode.ParsePathConnections();
+        int preId = int.Parse(info.preNodeId);
 
-        for (int i = 1; i < info.lr.positionCount - 1; i++)
+        bool found = false;
+        for (int c = 0; c < connections.Count; c++)
         {
-            if (newPath != null) newPath += "_";
-            Vector3 pos = info.lr.GetPosition(i);
-            // 使用世界坐标，三位小数
-            newPath += $"{pos.x:F3}_{pos.y:F3}";
+            if (connections[c].PreId == preId)
+            {
+                var conn = connections[c];
+                // 从 LineRenderer 重建中间点（跳过首尾）
+                conn.Waypoints.Clear();
+                for (int i = 1; i < info.lr.positionCount - 1; i++)
+                {
+                    Vector3 pos = info.lr.GetPosition(i);
+                    conn.Waypoints.Add(new Vector2(
+                        (float)System.Math.Round(pos.x, 1),
+                        (float)System.Math.Round(pos.y, 1)));
+                }
+                connections[c] = conn;
+                found = true;
+                break;
+            }
         }
 
-        if (string.IsNullOrEmpty(newPath))
+        // 如果没找到对应连接（不应该发生，但做个保护）
+        if (!found && info.lr.positionCount > 2)
         {
-            sc.PathNode = sc.PathNode.RemoveIdPrePath(info.preNodeId);
+            var waypoints = new System.Collections.Generic.List<Vector2>();
+            for (int i = 1; i < info.lr.positionCount - 1; i++)
+            {
+                Vector3 pos = info.lr.GetPosition(i);
+                waypoints.Add(new Vector2(
+                    (float)System.Math.Round(pos.x, 1),
+                    (float)System.Math.Round(pos.y, 1)));
+            }
+            connections.Add(new PathConnection(preId, AnchorDirection.Center, AnchorDirection.Center, waypoints));
         }
-        else
-        {
-            sc.PathNode = sc.PathNode.UpdatePathNodeById(info.preNodeId, newPath);
-        }
+
+        sc.PathNode = MyExtensions.SerializePathConnections(connections);
 
         if (context.CurrentEditPanel != null)
         {
             var panelScript = context.CurrentEditPanel.GetComponent<PanelScienceEdit>();
             if (panelScript.sc.Id == info.targetNodeId)
             {
-                panelScript.UpdatePrePath(sc.PathNode);
+                panelScript.RefreshUI();  // 只刷新UI显示，不触发验证回调
             }
         }
     }
+
 
     private void RefreshAffectedNodes(InputManager context)
     {

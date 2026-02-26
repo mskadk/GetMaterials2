@@ -134,8 +134,8 @@ public class PanelScienceEdit : MonoBehaviour
                 i_prePath.text = sc.PathNode;
             }
             // 使用三位小数显示
-            i_x.text = sc.HexGridX.ToString("F3");
-            i_y.text = sc.HexGridY.ToString("F3");
+            i_x.text = sc.HexGridX.ToString("F1");
+            i_y.text = sc.HexGridY.ToString("F1");
         }
     }
 
@@ -206,27 +206,55 @@ public class PanelScienceEdit : MonoBehaviour
 
     public void UpdatePrePath()
     {
-        i_prePath.text = i_prePath.text.Replace("——", "_");
-        //i_prePath.text = i_prePath.text.Replace("--", "-");
-        if (Regex.IsMatch(i_prePath.text, Constants.RegexPatterns.PathNode))
+        i_prePath.text = i_prePath.text.Replace("，", ",");
+
+        // 用解析器验证格式是否合法
+        string input = i_prePath.text.Trim();
+        bool isValid = false;
+
+        if (input == "-1")
+        {
+            isValid = true;
+        }
+        else
+        {
+            try
+            {
+                var connections = input.ParsePathConnections();
+                // 只要能解析出至少一个连接，或者输入确实是合法的空中间点格式
+                isValid = connections.Count > 0;
+
+                // 额外检查：每个连接的 PreId 必须是有效数字
+                foreach (var conn in connections)
+                {
+                    if (conn.PreId == 0 && !input.Contains("0,") && !input.StartsWith("0:"))
+                    {
+                        // PreId 为 0 但输入中没有明确的 0，说明解析出了默认值
+                        isValid = false;
+                        break;
+                    }
+                }
+            }
+            catch
+            {
+                isValid = false;
+            }
+        }
+
+        if (isValid)
         {
             i_prePath.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.black;
-            sc.PathNode = i_prePath.text;
+            sc.PathNode = input;
             if (sc.PathNode != "-1")
             {
-                //前置校验
-                List<string> preListinPath = new();
-                preListinPath.Clear();
-                sc.PathNode.Split("|").ToList().ForEach(IdandPath =>
-                {
-                    preListinPath.Add(IdandPath.Split("_")[0]);
-                });
+                // 前置校验
+                var connections = sc.PathNode.ParsePathConnections();
                 List<string> prePath = sc.Pre_technology.Split("|").ToList();
-                //判断是否输入了不存在的id
+
                 bool have = false;
-                foreach (var id in preListinPath)
+                foreach (var conn in connections)
                 {
-                    if (prePath.Contains(id))
+                    if (prePath.Contains(conn.PreId.ToString()))
                     {
                         have = true;
                         break;
@@ -234,7 +262,7 @@ public class PanelScienceEdit : MonoBehaviour
                 }
                 if (!have)
                 {
-                    debug.LogWarning($"节点{sc.Id}添加了不属于前置的路径");
+                    debug.LogWarning($"节点{sc.Id}引用了不存在的前置路径");
                 }
             }
 
@@ -245,9 +273,11 @@ public class PanelScienceEdit : MonoBehaviour
         else
         {
             i_prePath.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.red;
-            debug.LogError($"路径输入有误");
+            debug.LogError($"路径格式不正确");
         }
     }
+
+
 
     public void UpdatePrePath(string path)
     {

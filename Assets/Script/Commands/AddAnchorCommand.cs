@@ -6,7 +6,7 @@ public class AddAnchorCommand : ICommand
     private string targetPreId;
     private int targetNodeId;
     private int insertIndex;
-    private Vector2 newWorldPos; // 改为世界坐标
+    private Vector2 newWorldPos;
     private string oldPath;
     private string newPath;
 
@@ -16,7 +16,7 @@ public class AddAnchorCommand : ICommand
     {
         if (!lr.name.Contains("->"))
         {
-            Debug.LogError($"LineRenderer 命名格式错误: {lr.name}");
+            Debug.LogError($"LineRenderer 名称格式错误: {lr.name}");
             return;
         }
 
@@ -25,17 +25,30 @@ public class AddAnchorCommand : ICommand
         targetNodeId = int.Parse(parts[1]);
         insertIndex = index;
 
-        // 获取吸附后的世界坐标
-        // 如果是在 Free 模式下，SnapToGrid 会直接返回 worldPos
-        // 如果是在 Hex/Square 模式下，会返回网格中心
         Vector3 snappedPos = GridManager.Instance.SnapToGrid(worldPos);
-        newWorldPos = new Vector2(snappedPos.x, snappedPos.y);
+        newWorldPos = new Vector2(
+            (float)System.Math.Round(snappedPos.x, 1),
+            (float)System.Math.Round(snappedPos.y, 1));
 
         if (DataManager.Instance.TryGetScience(targetNodeId, out var sc))
         {
             oldPath = sc.PathNode;
-            // 使用新的 InsertPathNode 方法（传入 Vector2）
-            newPath = oldPath.InsertPathNode(targetPreId, insertIndex, newWorldPos);
+
+            // 如果当前路径是 -1 或空，需要先为该 preId 创建一个带方向的连接
+            if (string.IsNullOrEmpty(oldPath) || oldPath == "-1")
+            {
+                var newConn = new PathConnection(
+                    int.Parse(targetPreId),
+                    AnchorDirection.Center,
+                    AnchorDirection.Center,
+                    new System.Collections.Generic.List<Vector2> { newWorldPos });
+                newPath = MyExtensions.SerializePathConnections(
+                    new System.Collections.Generic.List<PathConnection> { newConn });
+            }
+            else
+            {
+                newPath = oldPath.InsertPathNode(targetPreId, insertIndex, newWorldPos);
+            }
         }
     }
 
@@ -43,9 +56,11 @@ public class AddAnchorCommand : ICommand
     {
         if (DataManager.Instance.TryGetScience(targetNodeId, out var sc))
         {
+            Debug.Log($"[AddAnchor] 设置 PathNode: {newPath}");
             sc.PathNode = newPath;
             NodeManager.Instance.GetNode(targetNodeId)?.UpdateNodeAppearance();
             RefreshEditPanelUI(targetNodeId);
+            Debug.Log($"[AddAnchor] 执行后 PathNode: {sc.PathNode}");
         }
     }
 

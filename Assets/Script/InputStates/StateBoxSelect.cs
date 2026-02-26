@@ -183,28 +183,22 @@ public class StateBoxSelect : IInputState
         if (string.IsNullOrEmpty(sc.PathNode) || sc.PathNode == "-1")
             return result;
 
-        var paths = sc.PathNode.Split('|');
-        foreach (var path in paths)
+        // 使用新格式解析
+        var connections = sc.PathNode.ParsePathConnections();
+
+        foreach (var conn in connections)
         {
-            var segments = path.Split('_');
-            if (segments.Length < 3) continue;
-
-            string preNodeId = segments[0];
-
+            string preNodeId = conn.PreId.ToString();
             int anchorIndex = 1;
-            // 格式: ID_X1_Y1_X2_Y2...
-            // 索引: 0  1  2  3  4
-            for (int i = 1; i + 1 < segments.Length; i += 2)
+
+            foreach (var wp in conn.Waypoints)
             {
-                if (float.TryParse(segments[i], NumberStyles.Float, CultureInfo.InvariantCulture, out float x) &&
-                    float.TryParse(segments[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out float y))
-                {
-                    result.Add((preNodeId, anchorIndex, new Vector2(x, y)));
-                    anchorIndex++;
-                }
+                result.Add((preNodeId, anchorIndex, wp));
+                anchorIndex++;
             }
         }
 
         return result;
     }
+
 }
