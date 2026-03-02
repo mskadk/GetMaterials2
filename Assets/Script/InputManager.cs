@@ -164,7 +164,7 @@ public class InputManager : MonoBehaviour
             return (null, -1, Vector3.zero);
         }
 
-        float minDst = 5f;
+        float minDst = 500f;
         LineRenderer bestLr = null;
         int bestIndex = -1;
         Vector3 bestPoint = Vector3.zero;

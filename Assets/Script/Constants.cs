@@ -89,9 +89,9 @@ public static class Constants
     /// </summary>
     public static class LineWidth
     {
-        public const float Thick = 6f;
-        public const float Medium = 4f;
-        public const float Thin = 2f;
+        public const float Thick = 12f;
+        public const float Medium = 8f;
+        public const float Thin = 4f;
     }
 
     /// <summary>

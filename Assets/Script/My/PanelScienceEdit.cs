@@ -206,6 +206,10 @@ public class PanelScienceEdit : MonoBehaviour
 
     public void UpdatePrePath()
     {
+        if (i_prePath.text is null)
+        {
+            i_prePath.text = "-1";
+        }
         i_prePath.text = i_prePath.text.Replace("，", ",");
 
         // 用解析器验证格式是否合法
