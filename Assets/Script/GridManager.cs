@@ -10,7 +10,7 @@ public enum GridType
 
 public class GridManager : MonoBehaviour
 {
-    public GridType CurrentGridType { get; private set; } = GridType.Hexagon;
+    public GridType CurrentGridType { get; private set; } = GridType.Square;
 
     // 网格尺寸配置
     public static readonly Vector3 HexCellSize = new Vector3(86.59766f, 100f, 100f);
@@ -94,12 +94,12 @@ public class GridManager : MonoBehaviour
         {
             return worldPos;
         }
-        // 2. 正方形模式：吸附到 0.5 格子大小
+        // 2. 正方形模式：吸附到成倍率的网格
         if (CurrentGridType == GridType.Square)
         {
             // 获取当前格子大小（假设XY一致）
             float cellSize = grid.cellSize.x;
-            float step = cellSize * 0.5f; // 0.5倍步长
+            float step = cellSize * 0.25f; // 吸附步长
             // 数学四舍五入计算
             float x = Mathf.Round(worldPos.x / step) * step;
             float y = Mathf.Round(worldPos.y / step) * step;

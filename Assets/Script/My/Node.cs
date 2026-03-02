@@ -158,20 +158,32 @@ public class Node : MonoBehaviour
         tmDown.text = $"{sc.Name}";
         transform.localScale = sc.IconScale * Vector3.one;
 
+        // 删除旧图标
         Transform del = transform.Find("fw_icon");
         if (del)
         {
             Destroy(del.gameObject);
         }
+
         if (false || Environment.MachineName == "DESKTOP-0418DES")
         {
             Debug.LogWarning("缺少图标资源");
             return;
         }
+
+        // 生成新图标
         GameObject g = SpriteManager.Paint(gameObject, "Icon_Technology", 0, sc.ModuleId);
-        g.GetComponent<MeshRenderer>().material.shader = Shader.Find("Custom/ScienceIcon_Shader");
-        g.GetComponent<MeshRenderer>().material.SetColor("_TintColor", getColor(sc.IconColor));
+        if (g == null) return;
+
+        // 对 fw_icon 下所有子模块的 SpriteRenderer 设置颜色
+        Color tintColor = getColor(sc.IconColor);
+        SpriteRenderer[] renderers = g.GetComponentsInChildren<SpriteRenderer>();
+        foreach (var renderer in renderers)
+        {
+            renderer.color = tintColor;
+        }
     }
+
 
     /// <summary>
     /// 获取指定方向锚点的世界坐标（带Z偏移）

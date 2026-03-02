@@ -13,15 +13,13 @@ public class TextureUtils
     /// </summary>
     public static Texture2D loadImage(byte[] datas, TextureFormat format, bool mipmap, bool _linear)
     {
-
-        Texture2D tex = new Texture2D(1, 1, format, mipmap, _linear);
-        tex.LoadImage(datas);
-
-        //apply之后  才有mipmap
+        // 先用 RGBA32 创建，确保有 Alpha 通道
+        Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, mipmap, _linear);
+        tex.LoadImage(datas); // LoadImage 会自动调整尺寸和格式
         tex.Apply(true);
-
         return tex;
     }
+
 
 
     /// <summary>
@@ -40,44 +38,30 @@ public class TextureUtils
 
     public static Texture2DArray CreateTexture2DArray(Texture2D[] texList, bool minmip, bool linear)
     {
-
         Texture2DArray tex2DArr = null;
         if (texList.Length > 0)
         {
             Texture2D tex = texList[0];
             tex2DArr = new Texture2DArray(tex.width, tex.height, texList.Length, tex.format, minmip, linear);
 
-            FairyRunnable.postRunnableIm(() => {
-
-                for (int i = 0; i < texList.Length; i++)
-                {
-                    Texture2D txt = texList[i];
-                    //Debug.LogError("tex==" + i + "  "+texList[i]);
-                    Graphics.CopyTexture(txt, 0, 0, tex2DArr, i, 0);
-                }
-                tex2DArr.Apply();
-
-            });
-
-           /* for (int i = 0; i < texList.Length; i++)
+            for (int i = 0; i < texList.Length; i++)
             {
-                Texture2D txt = texList[i];
-                //Debug.LogError("tex==" + i + "  "+texList[i]);
-                Graphics.CopyTexture(txt, 0, 0, tex2DArr, i, 0);
+                Graphics.CopyTexture(texList[i], 0, 0, tex2DArr, i, 0);
             }
-            tex2DArr.Apply();*/
+            tex2DArr.Apply();
         }
         return tex2DArr;
     }
-/*
 
-    public static int CreateTexture2DArray(Texture2DArray tex2D, Texture2D tex, bool minmip, bool linear)
-    {
-        tex2D.updateCount
-        int index = 
-        Graphics.CopyTexture(txt, 0, 0, tex2D, i, 0);
-        tex2D.Apply();
-    }*/
+    /*
+
+        public static int CreateTexture2DArray(Texture2DArray tex2D, Texture2D tex, bool minmip, bool linear)
+        {
+            tex2D.updateCount
+            int index = 
+            Graphics.CopyTexture(txt, 0, 0, tex2D, i, 0);
+            tex2D.Apply();
+        }*/
 
     public static void setPixelMode(Texture tex)
     {

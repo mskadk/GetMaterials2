@@ -35,7 +35,7 @@ public class GridDrawer : MonoBehaviour
     public float 辅助线角度偏移 = 0f; // 默认为0，具体值在切换时设置
 
     // 当前网格类型
-    private GridType currentGridType = GridType.Hexagon;
+    private GridType currentGridType = GridType.Square;
 
     void Start()
     {
@@ -327,8 +327,8 @@ public class GridDrawer : MonoBehaviour
         }
         else if (currentGridType == GridType.Square)
         {
-            // Square模式：吸附到 0.5 格子
-            float step = grid.cellSize.x * 0.5f;
+            // Square模式：吸附到 成倍率的 格子
+            float step = grid.cellSize.x * 0.25f;
             float x = Mathf.Round(mousePos.x / step) * step;
             float y = Mathf.Round(mousePos.y / step) * step;
             centerPos = new Vector3(x, y, 0);

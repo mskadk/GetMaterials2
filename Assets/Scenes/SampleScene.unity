@@ -2059,7 +2059,7 @@ MonoBehaviour:
   m_CaptionImage: {fileID: 0}
   m_ItemText: {fileID: 587741394}
   m_ItemImage: {fileID: 0}
-  m_Value: 0
+  m_Value: 1
   m_Options:
     m_Options:
     - m_Text: Hexagon
@@ -3978,7 +3978,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Hexagon
+  m_Text: Square
 --- !u!222 &999155154
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -6074,9 +6074,9 @@ Grid:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1606730383}
   m_Enabled: 1
-  m_CellSize: {x: 86.59766, y: 100, z: 100}
+  m_CellSize: {x: 100, y: 100, z: 100}
   m_CellGap: {x: 0, y: 0, z: 0}
-  m_CellLayout: 1
+  m_CellLayout: 0
   m_CellSwizzle: 2
 --- !u!1 &1614301601
 GameObject:

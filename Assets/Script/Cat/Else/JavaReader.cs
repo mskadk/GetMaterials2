@@ -13,19 +13,10 @@ using UnityEngine;
 public class JavaReader
 {
 
-    public BinaryFile file;
     public BinaryReader br;
     public BinaryWriter bw;
 
 
-
-    public bool loadPath(string path)
-    {
-        file = new BinaryFile();
-        br = file.readBinaryFile(path);
-        if (br != null) return true;
-        return false;
-    }
 
     public void setBinaryReader(BinaryReader br)
     {
@@ -53,11 +44,6 @@ public class JavaReader
     }
     public void release()
     {
-        if(file != null)
-        {
-            file.closeIoLink();
-            file = null;
-        }
 
         if(br != null)
         {

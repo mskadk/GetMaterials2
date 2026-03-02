@@ -40,7 +40,7 @@ public class TextureManager
         if (jr != null)
         {
             //Debug.LogWarning("加载png图片=======================" + path);  
-            Texture2D tex = TextureUtils.loadImage(jr.toByteArrayBR(), TextureFormat.RGB24, mipmap, linear);
+            Texture2D tex = TextureUtils.loadImage(jr.toByteArrayBR(), TextureFormat.RGBA32, mipmap, linear);
             tex.name = path;
      
             TextureNode node = new TextureNode(mipmap);

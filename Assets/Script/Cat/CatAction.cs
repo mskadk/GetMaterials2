@@ -1,62 +1,43 @@
 using System;
-using System.Collections.Generic;
-
 using UnityEngine;
 
+/// <summary>
+/// 动作 - 包含一组帧的序列
+/// </summary>
+public class CatAction
+{
+    public int id;
+    public CatFrame[] frames;
 
-/**
- * 动作
- * @author Cat
- * @version 1.0.1
- */
-public class CatAction {
-	
-	public int id;//id
-	
-	public CatFrame[] frames;//本动作包含的帧
-
-	public short[] lastTime;//每个帧持续的时间
-
-	public void read(int id, JavaReader din, CatActionGroup data){
-		try {
-			this.id=id;
-			int type=din.readByte();//TODO 暂时不给与拼合动作的支持
-			int size=din.readShort();
-			frames=new CatFrame[size];
-			lastTime=new short[size];
-			for (int i = 0; i < size; i++) {
-				frames[i]=data.frames[din.readShort()];
-				lastTime[i]=din.readShort();
-			}
-		} catch (Exception e) {
-            Debug.Log(e.StackTrace);
-		}
-	}
-
-
-
-	public CatFrame getFrame(int frameIndex) {
-		if(frameIndex > -1 && frameIndex < frames.Length)
+    public void read(int id, JavaReader din, CatActionGroup data)
+    {
+        try
         {
-			return frames[frameIndex];
-		}
-		Debug.Log("ArrayIndexOutOfBound："+frameIndex+"/"+frames.Length );
-		return null;
-	}
+            this.id = id;
+            din.readByte(); // type，跳过
 
-	public CatFrame getLastFrame() {
-		return frames[frames.Length - 1];
-	}
+            int size = din.readShort();
+            frames = new CatFrame[size];
 
-	public CatFrame getFrameId(int i) {
-		return frames[i];
-	}
+            for (int i = 0; i < size; i++)
+            {
+                frames[i] = data.frames[din.readShort()];
+                din.readShort(); // lastTime，跳过
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.Log(e.StackTrace);
+        }
+    }
 
-	public void clear() {
-		for (int i = 0; i < frames.Length; i++) {
-			frames[i]=null;
-		}
-		frames=null;
-		lastTime=null;
-	}
+    public void clear()
+    {
+        if (frames != null)
+        {
+            for (int i = 0; i < frames.Length; i++)
+                frames[i] = null;
+            frames = null;
+        }
+    }
 }

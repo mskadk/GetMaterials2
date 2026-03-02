@@ -163,7 +163,7 @@ public class StateDrag : IInputState
     }
 
     private void RecordNodeInfo(InputManager context, GameObject nodeObj, Node node, Grid grid,
-        Dictionary<string, Vector2> selectedAnchorPositions)
+    Dictionary<string, Vector2> selectedAnchorPositions)
     {
         // 解析当前节点的路径连接信息
         var connections = node.sc.PathNode.ParsePathConnections();
@@ -171,7 +171,7 @@ public class StateDrag : IInputState
         var info = new NodeMoveInfo
         {
             node = node,
-            startWorldPos = new Vector2(node.sc.HexGridX, node.sc.HexGridY),  // 使用存储的世界坐标
+            startWorldPos = new Vector2(node.sc.HexGridX, node.sc.HexGridY),
             lineRenderers = new List<LineRendererInfo>()
         };
 
@@ -213,26 +213,27 @@ public class StateDrag : IInputState
                         endDirection = endDir
                     });
 
-                    // 收集该LineRenderer下未被选中的锚点
+                    // 收集该LineRenderer下未被选中的锚点（从LineRenderer获取位置，而非GameObject）
                     for (int i = 1; i < lr.positionCount - 1; i++)
                     {
                         string anchorKey = $"{node.sc.Id}->{preNodeId}->{i}";
 
                         if (!selectedAnchorPositions.ContainsKey(anchorKey))
                         {
+                            // 从 LineRenderer 获取精确位置，而不是从锚点GameObject
+                            Vector3 posFromLR = lr.GetPosition(i);
+
                             var anchorTransform = child.Find(i.ToString());
-                            if (anchorTransform != null)
+
+                            unselectedAnchorInfos[anchorKey] = new UnselectedAnchorInfo
                             {
-                                unselectedAnchorInfos[anchorKey] = new UnselectedAnchorInfo
-                                {
-                                    targetNodeId = node.sc.Id,
-                                    preNodeId = preNodeId,
-                                    anchorIndex = i,
-                                    startWorldPos = anchorTransform.position,
-                                    anchorObj = anchorTransform.gameObject,
-                                    lr = lr
-                                };
-                            }
+                                targetNodeId = node.sc.Id,
+                                preNodeId = preNodeId,
+                                anchorIndex = i,
+                                startWorldPos = new Vector3(posFromLR.x, posFromLR.y, 0),  // 从LR获取，去掉Z
+                                anchorObj = anchorTransform?.gameObject,  // 可能为null
+                                lr = lr
+                            };
                         }
                     }
                 }
@@ -244,6 +245,7 @@ public class StateDrag : IInputState
         // 收集后继节点的连接线信息
         CollectSuccessorLineInfos(context, node);
     }
+
 
     private void CollectSuccessorLineInfos(InputManager context, Node node)
     {
@@ -336,7 +338,7 @@ public class StateDrag : IInputState
         Dictionary<int, Vector3> movedNodeNewPositions = new Dictionary<int, Vector3>();
         Dictionary<int, Transform> movedNodeTransforms = new Dictionary<int, Transform>();
 
-        // 1. 移动选中的节点
+        // ========== 第一轮：更新所有节点位置 ==========
         foreach (var kvp in nodeInfos)
         {
             GameObject nodeObj = kvp.Key;
@@ -360,8 +362,17 @@ public class StateDrag : IInputState
 
             movedNodeNewPositions[info.node.sc.Id] = snappedWorldPos;
             movedNodeTransforms[info.node.sc.Id] = nodeObj.transform;
+        }
 
-            // 更新该节点下的所有LineRenderer的末端点（使用方向偏移）
+        // ========== 第二轮：更新所有连接线 ==========
+        foreach (var kvp in nodeInfos)
+        {
+            GameObject nodeObj = kvp.Key;
+            if (nodeObj == null) continue;
+
+            NodeMoveInfo info = kvp.Value;
+
+            // 更新该节点下的所有LineRenderer
             foreach (var lrInfo in info.lineRenderers)
             {
                 // 计算带方向偏移的终点位置
@@ -369,20 +380,32 @@ public class StateDrag : IInputState
                 newEndPoint.z = 1;
                 lrInfo.lr.SetPosition(lrInfo.lr.positionCount - 1, newEndPoint);
 
-                // 如果前置节点也在移动，更新起点
+                // 更新起点：优先使用已移动的前置节点位置
                 if (int.TryParse(lrInfo.preNodeId, out int preNodeId))
                 {
                     if (movedNodeTransforms.TryGetValue(preNodeId, out Transform preNodeTransform))
                     {
+                        // 前置节点也在移动
                         Vector3 newStartPoint = MyExtensions.GetAnchorWorldPosition(preNodeTransform, lrInfo.startDirection);
                         newStartPoint.z = 1;
                         lrInfo.lr.SetPosition(0, newStartPoint);
+                    }
+                    else
+                    {
+                        // 前置节点没有移动，从场景中查找
+                        var preNodeObj = context.UI.tilemap.transform.Find(preNodeId.ToString());
+                        if (preNodeObj != null)
+                        {
+                            Vector3 newStartPoint = MyExtensions.GetAnchorWorldPosition(preNodeObj, lrInfo.startDirection);
+                            newStartPoint.z = 1;
+                            lrInfo.lr.SetPosition(0, newStartPoint);
+                        }
                     }
                 }
             }
         }
 
-        // 2. 更新后继节点的连接线起点
+        // 3. 更新后继节点的连接线起点
         foreach (var kvp in successorLineInfos)
         {
             int movedNodeId = kvp.Key;
@@ -390,7 +413,7 @@ public class StateDrag : IInputState
 
             foreach (var lineInfo in kvp.Value)
             {
-                // 检查后继节点是否也在移动（如果是，则在上面的循环中已处理）
+                // 检查后继节点是否也在移动（如果是，已在上面处理过）
                 bool successorAlsoMoved = movedNodeTransforms.ContainsKey(lineInfo.successorNodeId);
                 if (successorAlsoMoved) continue;
 
@@ -401,19 +424,25 @@ public class StateDrag : IInputState
             }
         }
 
-        // 3. 更新未选中锚点（保持世界坐标不变）
+        // 4. 更新未选中锚点（保持世界坐标不变）
         foreach (var kvp in unselectedAnchorInfos)
         {
             var info = kvp.Value;
-            if (info.anchorObj == null || info.lr == null) continue;
+            if (info.lr == null) continue;
 
-            info.anchorObj.transform.position = info.startWorldPos;
-
+            // 保持 LineRenderer 中的位置不变
             Vector3 linePos = new Vector3(info.startWorldPos.x, info.startWorldPos.y, 1);
             info.lr.SetPosition(info.anchorIndex, linePos);
+
+            // 如果锚点 GameObject 存在，也更新它的位置
+            if (info.anchorObj != null)
+            {
+                info.anchorObj.transform.position = new Vector2(info.startWorldPos.x, info.startWorldPos.y);
+            }
         }
 
-        // 4. 移动选中的锚点
+
+        // 5. 移动选中的锚点
         foreach (var kvp in anchorInfos)
         {
             var info = kvp.Value;
@@ -433,6 +462,7 @@ public class StateDrag : IInputState
             }
         }
     }
+
 
     public void OnExit(InputManager context)
     {
