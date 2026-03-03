@@ -1,4 +1,4 @@
-using OfficeOpenXml.FormulaParsing.Excel.Functions.Math;
+Ôªøusing OfficeOpenXml.FormulaParsing.Excel.Functions.Math;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -22,11 +22,11 @@ public class BtnReload : MonoBehaviour
     public IEnumerator Click1I() {
         if (!c1)
         {
-            transform.GetComponentInChildren<Text>().text = "»∑∂®£ø";
+            transform.GetComponentInChildren<Text>().text = "Á°ÆÂÆöÔºü";
             GetComponent<Image>().color = Color.green;
             c1 = true;
             yield return new WaitForSeconds(1);
-            transform.GetComponentInChildren<Text>().text = "÷ÿ‘ÿ";
+            transform.GetComponentInChildren<Text>().text = "ÈáçËΩΩ";
             GetComponent<Image>().color = c;
             c1 = false;
         }

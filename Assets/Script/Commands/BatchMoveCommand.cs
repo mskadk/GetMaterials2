@@ -1,20 +1,17 @@
-using System.Collections.Generic;
+ï»¿using System.Collections.Generic;
 
 public class BatchMoveCommand : ICommand
 {
     private List<MoveNodeCommand> commands = new List<MoveNodeCommand>();
 
-    public string Description => $"ÅúÁ¿ÒÆ¶¯ {commands.Count} ¸ö½Úµã";
+    public string Description => $"æ‰¹é‡ç§»åŠ¨ {commands.Count} ä¸ªèŠ‚ç‚¹";
 
     public void Add(MoveNodeCommand cmd)
     {
         commands.Add(cmd);
     }
 
-    public bool HasCommands()
-    {
-        return commands.Count > 0;
-    }
+    public bool HasCommands => commands.Count > 0;
 
     public void Execute()
     {

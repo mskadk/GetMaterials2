@@ -1,4 +1,4 @@
-using Assets.Script.My.Extention;
+ï»¿using Assets.Script.My.Extention;
 using UnityEngine;
 
 public class AddAnchorCommand : ICommand
@@ -10,13 +10,13 @@ public class AddAnchorCommand : ICommand
     private string oldPath;
     private string newPath;
 
-    public string Description => "Ìí¼ÓÃªµã";
+    public string Description => "æ·»åŠ é”šç‚¹";
 
     public AddAnchorCommand(LineRenderer lr, int index, Vector3 worldPos)
     {
         if (!lr.name.Contains("->"))
         {
-            Debug.LogError($"LineRenderer Ãû³Æ¸ñÊ½´íÎó: {lr.name}");
+            Debug.LogError($"LineRenderer åç§°æ ¼å¼é”™è¯¯: {lr.name}");
             return;
         }
 
@@ -34,7 +34,7 @@ public class AddAnchorCommand : ICommand
         {
             oldPath = sc.PathNode;
 
-            // Èç¹ûµ±Ç°Â·¾¶ÊÇ -1 »ò¿Õ£¬ĞèÒªÏÈÎª¸Ã preId ´´½¨Ò»¸ö´ø·½ÏòµÄÁ¬½Ó
+            // å¦‚æœå½“å‰è·¯å¾„æ˜¯ -1 æˆ–ç©ºï¼Œéœ€è¦å…ˆä¸ºè¯¥ preId åˆ›å»ºä¸€ä¸ªå¸¦æ–¹å‘çš„è¿æ¥
             if (string.IsNullOrEmpty(oldPath) || oldPath == "-1")
             {
                 var newConn = new PathConnection(
@@ -56,11 +56,9 @@ public class AddAnchorCommand : ICommand
     {
         if (DataManager.Instance.TryGetScience(targetNodeId, out var sc))
         {
-            Debug.Log($"[AddAnchor] ÉèÖÃ PathNode: {newPath}");
             sc.PathNode = newPath;
             NodeManager.Instance.GetNode(targetNodeId)?.UpdateNodeAppearance();
             RefreshEditPanelUI(targetNodeId);
-            Debug.Log($"[AddAnchor] Ö´ĞĞºó PathNode: {sc.PathNode}");
         }
     }
 

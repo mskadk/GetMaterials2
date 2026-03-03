@@ -1,10 +1,10 @@
-using System.Collections.Generic;
+ï»¿using System.Collections.Generic;
 
 public class BatchChangeNodeScaleCommand : ICommand
 {
     private List<ChangeNodeScaleCommand> commands = new List<ChangeNodeScaleCommand>();
 
-    public string Description => $"ÅúÁ¿ĞŞ¸Ä {commands.Count} ¸ö½Úµã³ß´ç";
+    public string Description => $"æ‰¹é‡ä¿®æ”¹ {commands.Count} ä¸ªèŠ‚ç‚¹å°ºå¯¸";
 
     public void Add(ChangeNodeScaleCommand cmd)
     {

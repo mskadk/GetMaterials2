@@ -39,6 +39,7 @@ namespace Assets.Script.My.Excel
             Time = 16,
             IconColor = 17,
             Trigger_technology = 18,
+            Apply = 19,
         };
 
         public ExcelManager()
@@ -60,7 +61,7 @@ namespace Assets.Script.My.Excel
             ExcelWorksheet saveEW = saveEP.Workbook.Worksheets[1];
 
             // 保存表头
-            for (int j = 1; j <= 18; j++)
+            for (int j = 1; j <= 19; j++)
             {
                 saveEW.Cells[1, j].Value = TypeRow[j - 1];
                 saveEW.Cells[2, j].Value = NameRow[j - 1];
@@ -91,13 +92,14 @@ namespace Assets.Script.My.Excel
                 saveEW.Cells[row, (int)Scc.Time].Value = sc.Time;
                 saveEW.Cells[row, (int)Scc.IconColor].Value = sc.IconColor;
                 saveEW.Cells[row, (int)Scc.Trigger_technology].Value = sc.Trigger_technology;
+                saveEW.Cells[row, (int)Scc.Apply].Value = sc.Apply;
                 row++;
             }
 
             // 设置保存样式
             saveEW.Cells.AutoFitColumns();
             saveEW.Cells.Style.Font.Name = "等线";
-            saveEW.Cells["A2:R2"].Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thick;
+            saveEW.Cells["A2:S2"].Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thick;
             saveEP.Save();
 
             return saveFI.FullName;
@@ -114,7 +116,7 @@ namespace Assets.Script.My.Excel
             // 建立科技表的表头字段
             TypeRow.Clear();
             NameRow.Clear();
-            for (int i = 1; i <= 18; i++)
+            for (int i = 1; i <= 19; i++)
             {
                 TypeRow.Add(worksheet.Cells[1, i].GetValue<string>());
                 NameRow.Add(worksheet.Cells[2, i].GetValue<string>());
@@ -129,6 +131,10 @@ namespace Assets.Script.My.Excel
                 // 读取坐标为float（兼容旧的int格式和新的float格式）
                 float posX = worksheet.Cells[i, (int)Scc.HexGridX].GetValue<float>();
                 float posY = worksheet.Cells[i, (int)Scc.HexGridY].GetValue<float>();
+
+                // Apply 列：单元格为空或值为 TRUE 时均视为 true（向后兼容旧表）
+                string applyRaw = worksheet.Cells[i, (int)Scc.Apply].GetValue<string>();
+                bool applyVal = string.IsNullOrEmpty(applyRaw) || !applyRaw.Equals("FALSE", StringComparison.OrdinalIgnoreCase);
 
                 Science science = new(
                     worksheet.Cells[i, (int)Scc.ID].GetValue<int>(),
@@ -148,7 +154,8 @@ namespace Assets.Script.My.Excel
                     worksheet.Cells[i, (int)Scc.S_Materials].GetValue<string>(),
                     worksheet.Cells[i, (int)Scc.Time].GetValue<float>(),
                     worksheet.Cells[i, (int)Scc.IconColor].GetValue<int>(),
-                    worksheet.Cells[i, (int)Scc.Trigger_technology].GetValue<string>()
+                    worksheet.Cells[i, (int)Scc.Trigger_technology].GetValue<string>(),
+                    applyVal
                 );
 
                 if (science.SubType == 1)

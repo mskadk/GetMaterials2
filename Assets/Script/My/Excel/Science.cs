@@ -1,4 +1,4 @@
-using Assets.Script.My.Extention;
+ï»¿using Assets.Script.My.Extention;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,18 +15,19 @@ public class Science
     string detail_2;
     string building_unlock;
     string nonBuilding_unlock;
-    float worldPosX;  // Ô­ hexGridX£¬ÏÖÔÚÊÇÊÀ½ç×ø±êX
-    float worldPosY;  // Ô­ hexGridY£¬ÏÖÔÚÊÇÊÀ½ç×ø±êY
+    float worldPosX;  // åŸ hexGridXï¼Œç°åœ¨æ˜¯ä¸–ç•Œåæ ‡X
+    float worldPosY;  // åŸ hexGridYï¼Œç°åœ¨æ˜¯ä¸–ç•Œåæ ‡Y
     string pre_technology;
     string pathNode;
     string s_Materials;
     float time;
     int iconColor;
     string trigger_technology;
+    bool apply;
 
     HashSet<int> after_technology;
 
-    #region ·â×°×Ö¶Î
+    #region å°è£…å­—æ®µ
     public int Id { get => id; set => id = value; }
     public int SubType { get => subType; set => subType = value; }
     public int ModuleId { get => moduleId; set => moduleId = value; }
@@ -38,11 +39,11 @@ public class Science
     public string Building_unlock { get => building_unlock; set => building_unlock = value; }
     public string NonBuilding_unlock { get => nonBuilding_unlock; set => nonBuilding_unlock = value; }
 
-    // ±£³ÖÊôĞÔÃû²»±ä£¬µ«ÀàĞÍ¸ÄÎªfloat£¨ÊÀ½ç×ø±ê£©
+    // ä¿æŒå±æ€§åä¸å˜ï¼Œä½†ç±»å‹æ”¹ä¸ºfloatï¼ˆä¸–ç•Œåæ ‡ï¼‰
     public float HexGridX { get => worldPosX; set => worldPosX = value; }
     public float HexGridY { get => worldPosY; set => worldPosY = value; }
 
-    // ĞÂÔö±ã½İÊôĞÔ
+    // æ–°å¢ä¾¿æ·å±æ€§
     public UnityEngine.Vector2 WorldPosition
     {
         get => new UnityEngine.Vector2(worldPosX, worldPosY);
@@ -55,10 +56,11 @@ public class Science
     public float Time { get => time; set => time = value; }
     public int IconColor { get => iconColor; set => iconColor = value; }
     public string Trigger_technology { get => trigger_technology; set => trigger_technology = value; }
+    public bool Apply { get => apply; set => apply = value; }
     public HashSet<int> After_technology { get => after_technology; set => after_technology = value; }
     #endregion
 
-    #region ¹¹Ôìº¯Êı
+    #region æ„é€ å‡½æ•°
     public Science()
     {
         after_technology = new HashSet<int>();
@@ -67,7 +69,8 @@ public class Science
     public Science(int id, int subType, int moduleId, float iconScale, float lineScale,
         string name, string detail, string detail_2, string building_unlock, string nonBuilding_unlock,
         float worldPosX, float worldPosY, string pre_technology, string pathNode,
-        string s_materials, float time, int iconColor, string trigger_technology)
+        string s_materials, float time, int iconColor, string trigger_technology,
+        bool apply = true)
     {
         this.id = id;
         this.subType = subType;
@@ -87,6 +90,7 @@ public class Science
         this.time = time;
         this.iconColor = iconColor;
         this.trigger_technology = trigger_technology;
+        this.apply = apply;
         this.after_technology = new HashSet<int>();
     }
     #endregion
@@ -134,13 +138,13 @@ public class Science
          $" {s_Materials}\t" +
          $" {time}\t" +
          $" {iconColor}\t" +
-         $" {trigger_technology}" +
-         $"";
+         $" {trigger_technology}\t" +
+         $" {apply}";
     }
 
     internal string ParseString()
     {
-        return $"{id}\t{subType}\t{moduleId}\t{iconScale}\t{lineScale}\t{name}\t{detail}\t{detail_2}\t{building_unlock}\t{nonBuilding_unlock}\t{worldPosX:F3}\t{worldPosY:F3}\t{pre_technology}\t{pathNode}\t{s_Materials}\t{time}\t{IconColor}\t{trigger_technology}";
+        return $"{id}\t{subType}\t{moduleId}\t{iconScale}\t{lineScale}\t{name}\t{detail}\t{detail_2}\t{building_unlock}\t{nonBuilding_unlock}\t{worldPosX:F3}\t{worldPosY:F3}\t{pre_technology}\t{pathNode}\t{s_Materials}\t{time}\t{IconColor}\t{trigger_technology}\t{apply}";
     }
     #endregion
 }

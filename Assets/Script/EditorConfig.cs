@@ -1,19 +1,19 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 [CreateAssetMenu(fileName = "EditorConfig", menuName = "TechTree/EditorConfig")]
 public class EditorConfig : ScriptableObject
 {
-    [Header("=== ¹¤×÷Â·¾¶ÅäÖÃ ===")]
-    [Tooltip("¾«Áé×ÊÔ´Â·¾¶")]
+    [Header("=== å·¥ä½œè·¯å¾„é…ç½® ===")]
+    [Tooltip("ç²¾çµèµ„æºè·¯å¾„")]
     public string spritePath = "D:\\work\\manager\\Assets WorkSpace\\FreeWorld\\sprite\\";
 
-    [Tooltip("Excel±í¸ñÂ·¾¶")]
-    public string excelPath = "D:\\work\\manager\\²ß»®\\ÏîÄ¿Æó»®\\Êı¾İ±í\\";
+    [Tooltip("Excelè¡¨æ ¼è·¯å¾„")]
+    public string excelPath = "D:\\work\\manager\\ç­–åˆ’\\é¡¹ç›®ä¼åˆ’\\æ•°æ®è¡¨\\";
 
-    [Tooltip("µ¼³ö±£´æÂ·¾¶")]
+    [Tooltip("å¯¼å‡ºä¿å­˜è·¯å¾„")]
     public string savePath = "C:\\Users\\Administrator\\Desktop\\";
 
-    [Header("=== ½ÚµãÑÕÉ«ÅäÖÃ ===")]
+    [Header("=== èŠ‚ç‚¹é¢œè‰²é…ç½® ===")]
     public Color colorRed = Color.red;
     public Color colorOrange = new Color(1, 0.5f, 0);
     public Color colorYellow = new Color(1, 1, 0);
@@ -21,14 +21,14 @@ public class EditorConfig : ScriptableObject
     public Color colorBlue = new Color(0.2f, 0.5f, 1);
     public Color colorWhite = Color.white;
 
-    [Header("=== Ô¤ÖÆÌåÒıÓÃ ===")]
-    [Tooltip("¿ÉÑ¡£ººóĞø¿ÉÒÔ°ÑÔ¤ÖÆÌåÒıÓÃÒ²·ÅÕâÀï")]
+    [Header("=== é¢„åˆ¶ä½“å¼•ç”¨ ===")]
+    [Tooltip("å¯é€‰ï¼šåç»­å¯ä»¥æŠŠé¢„åˆ¶ä½“å¼•ç”¨ä¹Ÿæ”¾è¿™é‡Œ")]
     public GameObject nodePrefab;
     public GameObject ghostNodePrefab;
     public GameObject editPanelPrefab;
 
     /// <summary>
-    /// ¸ù¾İÑÕÉ«Ë÷Òı»ñÈ¡ÑÕÉ«
+    /// æ ¹æ®é¢œè‰²ç´¢å¼•è·å–é¢œè‰²
     /// </summary>
     public Color GetColor(int colorIndex)
     {

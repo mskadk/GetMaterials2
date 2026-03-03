@@ -1,13 +1,13 @@
-using UnityEngine;
+锘縰sing UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UIElements;
 using Input = UnityEngine.Input;
 
 public class CameraEventControll : MonoBehaviour
 {
-    public int 滚轮速度 = 1;
+    public int 婊氳疆閫熷害 = 1;
     public int mb = (int)MouseButton.MiddleMouse;
-    [Header("镜头缩放大小")]
+    [Header("闀滃ご缂╂斁澶у皬")]
     public int ScaleMin = 200;
     public int ScaleMax = 8000;
     Camera cam;
@@ -28,7 +28,7 @@ public class CameraEventControll : MonoBehaviour
     private float scroll;
     void updateMouseDown()
     {
-        //拾取位置
+        //鎷惧彇浣嶇疆
         if (Input.GetMouseButtonDown(mb))
         {
             dragOrigin = Input.mousePosition;
@@ -45,7 +45,7 @@ public class CameraEventControll : MonoBehaviour
         scroll = Input.GetAxis("Mouse ScrollWheel");
         if (scroll != 0)
         {
-            cam.orthographicSize -= scroll * 滚轮速度 * 500;
+            cam.orthographicSize -= scroll * 婊氳疆閫熷害 * 500;
             cam.orthographicSize = Mathf.Clamp(cam.orthographicSize, ScaleMin, ScaleMax);
         }
     }

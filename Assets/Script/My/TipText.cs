@@ -1,4 +1,4 @@
-using System.Collections;
+锘縰sing System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,14 +11,14 @@ public class TipText : MonoBehaviour
     }
     private void OnEnable()
     {
-        // 订阅事件
+        // 璁㈤槄浜嬩欢
         EventCenter.Instance.OnLogMessage += Log;
         EventCenter.Instance.OnLogWarning += LogWarning;
         EventCenter.Instance.OnLogError += LogError;
     }
     private void OnDisable()
     {
-        // 取消订阅
+        // 鍙栨秷璁㈤槄
         if (EventCenter.Instance != null)
         {
             EventCenter.Instance.OnLogMessage -= Log;

@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class GhostNode : MonoBehaviour
@@ -14,21 +14,21 @@ public class GhostNode : MonoBehaviour
 
     void Update()
     {
-        // ¸úËæÊó±êÒÆ¶¯
+        // è·Ÿéšé¼ æ ‡ç§»åŠ¨
         Vector3 worldPos = ui.camSence.ScreenToWorldPoint(Input.mousePosition);
         worldPos.z = 0;
 
-        // ¸ù¾İÍø¸ñÀàĞÍ¾ö¶¨ÊÇ·ñ¶ÔÆë
+        // æ ¹æ®ç½‘æ ¼ç±»å‹å†³å®šæ˜¯å¦å¯¹é½
         Vector3 displayPos = GridManager.Instance.SnapToGrid(worldPos);
         transform.position = displayPos;
 
-        // ×ó¼ü - ´´½¨½Úµã
+        // å·¦é”® - åˆ›å»ºèŠ‚ç‚¹
         if (!EventSystem.current.currentSelectedGameObject && Input.GetMouseButtonDown(0))
         {
             CreateNode(displayPos);
         }
 
-        // ÓÒ¼ü»òESC - È¡Ïû
+        // å³é”®æˆ–ESC - å–æ¶ˆ
         if (!EventSystem.current.currentSelectedGameObject &&
             (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1)))
         {
@@ -38,10 +38,10 @@ public class GhostNode : MonoBehaviour
 
     private void CreateNode(Vector3 worldPos)
     {
-        // »ñÈ¡µ±Ç°ÑÕÉ«Ë÷Òı
+        // è·å–å½“å‰é¢œè‰²ç´¢å¼•
         int colorInt = UIManager.Instance.CurrentNodeColorIndex;
 
-        // Ê¹ÓÃÊÀ½ç×ø±ê´´½¨½Úµã
+        // ä½¿ç”¨ä¸–ç•Œåæ ‡åˆ›å»ºèŠ‚ç‚¹
         Vector2 pos = new Vector2(
             (float)System.Math.Round(worldPos.x, 3),
             (float)System.Math.Round(worldPos.y, 3)
@@ -50,6 +50,6 @@ public class GhostNode : MonoBehaviour
         var createCmd = new CreateNodeCommand(pos, colorInt, ui);
         CommandManager.Instance.ExecuteCommand(createCmd);
 
-        EventCenter.Instance.TriggerLogMessage($"ÔÚ ({pos.x:F3},{pos.y:F3}) ´´½¨ÁËĞÂ½Úµã");
+        EventCenter.Instance.TriggerLogMessage($"åœ¨ ({pos.x:F3},{pos.y:F3}) åˆ›å»ºäº†æ–°èŠ‚ç‚¹");
     }
 }

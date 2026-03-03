@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
@@ -20,6 +20,8 @@ public class UIReferences : MonoBehaviour
     public Button btnFilterClear;
     public Button btnClipBoard;
     public Button btnExport;
+    public Button btnUndo;
+    public Button btnRedo;
 
     [Header("=== 其他 UI 组件 ===")]
     public ScrollRect scrollViewTechTreeItem;

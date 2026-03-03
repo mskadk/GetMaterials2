@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 /// <summary>
@@ -77,6 +77,11 @@ public class EventCenter : MonoBehaviour
     public event Action<string> OnLogWarning;
     public event Action<string> OnLogError;
 
+    /// <summary>
+    /// 命令历史发生变化（执行/撤销/重做/清空）时触发，参数为 (canUndo, canRedo)
+    /// </summary>
+    public event Action<bool, bool> OnCommandHistoryChanged;
+
     #endregion
 
     #region 数据事件
@@ -99,6 +104,7 @@ public class EventCenter : MonoBehaviour
     public void TriggerLogMessage(string message) => OnLogMessage?.Invoke(message);
     public void TriggerLogWarning(string message) => OnLogWarning?.Invoke(message);
     public void TriggerLogError(string message) => OnLogError?.Invoke(message);
+    public void TriggerCommandHistoryChanged(bool canUndo, bool canRedo) => OnCommandHistoryChanged?.Invoke(canUndo, canRedo);
     public void TriggerDataLoaded() => OnDataLoaded?.Invoke();
     public void TriggerDataSaveStarted() => OnDataSaveStarted?.Invoke();
     public void TriggerDataSaveCompleted(string filepath) => OnDataSaveCompleted?.Invoke(filepath);
