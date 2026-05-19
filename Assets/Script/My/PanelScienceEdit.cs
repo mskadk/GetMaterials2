@@ -142,20 +142,22 @@ public class PanelScienceEdit : MonoBehaviour
         }
     }
 
-    int oldId;
+    string oldId;
     public void UpdateId()
     {
         oldId = sc.Id;
-        int id = int.Parse(i_id.text);
+        string id = i_id.text.Trim();
         if (id == oldId) return;
+        if (string.IsNullOrEmpty(id) || id == Constants.SpecialIds.InvalidId || id == Constants.SpecialIds.PdaTech ||
+            id.Contains("|") || id.Contains(":") || id.Contains(","))
+        {
+            debug.LogError($"{id}不能作为id");
+            i_id.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.red;
+            return;
+        }
         if (DataManager.Instance.ScienceDict.ContainsKey(id))
         {
             debug.LogError($"{id}已经存在");
-            i_id.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.red;
-        }
-        else if (i_id.text == "-1")
-        {
-            debug.LogError($"{id}不能是id");
             i_id.transform.Find("Text (Legacy)").GetComponent<Text>().color = Color.red;
         }
         else
@@ -168,7 +170,7 @@ public class PanelScienceEdit : MonoBehaviour
             //更新nodeid的文本
             node.transform.Find("text_up").GetComponent<TextMesh>().text = sc.Id.ToString();
             //更新node名字
-            node.name = id.ToString();
+            node.name = id;
             //更新自身射线的名字
             for (int i = 0; i < node.transform.childCount; i++)
             {
@@ -186,15 +188,15 @@ public class PanelScienceEdit : MonoBehaviour
                 DataManager.Instance.ScienceDict.TryGetValue(idAfter, out var scAfter);
                 if (scAfter != null)
                 {
-                    scAfter.Pre_technology = scAfter.Pre_technology.ReplacePreTech(oldId.ToString(), id.ToString());
-                    scAfter.PathNode = scAfter.PathNode.ReplacePathNode(oldId.ToString(), id.ToString());
+                    scAfter.Pre_technology = scAfter.Pre_technology.ReplacePreTech(oldId, id);
+                    scAfter.PathNode = scAfter.PathNode.ReplacePathNode(oldId, id);
                 }
             }
 
             //更新前置sc的Afternode中，自己的id
             sc.Pre_technology.Split("|").ToList().ForEach(idpre =>
             {
-                DataManager.Instance.ScienceDict.TryGetValue(int.Parse(idpre), out var scpre);
+                DataManager.Instance.ScienceDict.TryGetValue(idpre, out var scpre);
                 if (scpre != null)
                 {
                     scpre.After_technology.Remove(oldId);
@@ -231,12 +233,11 @@ public class PanelScienceEdit : MonoBehaviour
                 // 只要能解析出至少一个连接，或者输入确实是合法的空中间点格式
                 isValid = connections.Count > 0;
 
-                // 额外检查：每个连接的 PreId 必须是有效数字
+                // 额外检查：每个连接的 PreId 必须非空
                 foreach (var conn in connections)
                 {
-                    if (conn.PreId == 0 && !input.Contains("0,") && !input.StartsWith("0:"))
+                    if (string.IsNullOrEmpty(conn.PreId))
                     {
-                        // PreId 为 0 但输入中没有明确的 0，说明解析出了默认值
                         isValid = false;
                         break;
                     }
@@ -261,7 +262,7 @@ public class PanelScienceEdit : MonoBehaviour
                 bool have = false;
                 foreach (var conn in connections)
                 {
-                    if (prePath.Contains(conn.PreId.ToString()))
+                    if (prePath.Contains(conn.PreId))
                     {
                         have = true;
                         break;
@@ -304,7 +305,7 @@ public class PanelScienceEdit : MonoBehaviour
             //输入内容校验
             foreach (var item in n)
             {
-                if (item != "-1" && !DataManager.Instance.ScienceDict.ContainsKey(int.Parse(item)))
+                if (item != "-1" && !DataManager.Instance.ScienceDict.ContainsKey(item))
                 {
                     debug.LogError($"当前所有节点中不存在一个id为{item}的节点。");
                     return;
@@ -313,7 +314,7 @@ public class PanelScienceEdit : MonoBehaviour
 
             foreach (var oldsc in o)
             {
-                DataManager.Instance.ScienceDict.TryGetValue(int.Parse(oldsc), out Science outSc);
+                DataManager.Instance.ScienceDict.TryGetValue(oldsc, out Science outSc);
                 if (outSc is not null && outSc.After_technology.Contains(sc.Id))
                 {
                     outSc.After_technology.Remove(sc.Id);
@@ -321,7 +322,7 @@ public class PanelScienceEdit : MonoBehaviour
             }
             foreach (var newSc in n)
             {
-                DataManager.Instance.ScienceDict.TryGetValue(int.Parse(newSc), out Science outSc);
+                DataManager.Instance.ScienceDict.TryGetValue(newSc, out Science outSc);
                 if (outSc is not null)
                 {
                     outSc.After_technology.Add(sc.Id);
@@ -423,7 +424,7 @@ public class PanelScienceEdit : MonoBehaviour
             DataManager.Instance.TechTreeItemDict.TryGetValue(id, out var tti);
             if (tti != null)
             {
-                if (!content.transform.Find(tti.Id.ToString()))
+                if (!content.transform.Find(tti.Id))
                 {
                     GameObject o = Instantiate(tti.GO, content.transform);
                 }
@@ -434,7 +435,7 @@ public class PanelScienceEdit : MonoBehaviour
             DataManager.Instance.TechTreeItemDict.TryGetValue(id, out var tti);
             if (tti != null)
             {
-                if (!content.transform.Find(tti.Id.ToString()))
+                if (!content.transform.Find(tti.Id))
                 {
                     GameObject o = Instantiate(tti.GO, content.transform);
                 }
@@ -532,7 +533,7 @@ public class PanelScienceEdit : MonoBehaviour
     private Science GetPanelScience()
     {
         Science save = new(
-            int.Parse(i_id.text),
+            i_id.text.Trim(),
             int.Parse(i_subtype.text),
             int.Parse(i_icon.text),
             d_scale.value switch

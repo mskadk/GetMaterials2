@@ -46,8 +46,8 @@ public class DataManager : MonoBehaviour
     private ExcelManager excelManager;
 
     // 数据字典
-    public Dictionary<int, Science> ScienceDict { get; private set; }
-    public Dictionary<int, TechTreeItem> TechTreeItemDict { get; private set; }
+    public Dictionary<string, Science> ScienceDict { get; private set; }
+    public Dictionary<string, TechTreeItem> TechTreeItemDict { get; private set; }
 
     // 配置文件引用
     private EditorConfig config;
@@ -86,7 +86,7 @@ public class DataManager : MonoBehaviour
         }
     }
 
-    public void RemoveScience(int id)
+    public void RemoveScience(string id)
     {
         if (ScienceDict.ContainsKey(id))
         {
@@ -94,12 +94,12 @@ public class DataManager : MonoBehaviour
         }
     }
 
-    public bool TryGetScience(int id, out Science science)
+    public bool TryGetScience(string id, out Science science)
     {
         return ScienceDict.TryGetValue(id, out science);
     }
 
-    public bool TryGetTechTreeItem(int id, out TechTreeItem item)
+    public bool TryGetTechTreeItem(string id, out TechTreeItem item)
     {
         return TechTreeItemDict.TryGetValue(id, out item);
     }
@@ -112,7 +112,7 @@ public class DataManager : MonoBehaviour
     /// <summary>
     /// 更新科技ID（同时更新字典键值）
     /// </summary>
-    public void UpdateScienceId(int oldId, int newId)
+    public void UpdateScienceId(string oldId, string newId)
     {
         if (!ScienceDict.ContainsKey(oldId))
         {

@@ -4,7 +4,7 @@ using UnityEngine;
 public class DeleteAnchorCommand : ICommand
 {
     private string targetPreId;
-    private int targetNodeId;
+    private string targetNodeId;
     private int anchorIndex; // 这个锚点是第几个（名字就是索引）
     private string oldPath;
     private string newPath;
@@ -20,7 +20,7 @@ public class DeleteAnchorCommand : ICommand
         var lr = anchorObj.transform.parent.gameObject;
         var parts = lr.name.Split(new string[] { "->" }, System.StringSplitOptions.None);
         targetPreId = parts[0];
-        targetNodeId = int.Parse(parts[1]);
+        targetNodeId = parts[1];
 
         if (DataManager.Instance.TryGetScience(targetNodeId, out var sc))
         {
@@ -49,7 +49,7 @@ public class DeleteAnchorCommand : ICommand
         }
     }
     // 辅助方法：查找并刷新面板
-    private void RefreshEditPanelUI(int nodeId)
+    private void RefreshEditPanelUI(string nodeId)
     {
         // 通过 InputManager 获取当前面板
         var inputMgr = GameObject.Find(Constants.GameObjectNames.MainManager)?.GetComponent<InputManager>();

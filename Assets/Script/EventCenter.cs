@@ -59,7 +59,7 @@ public class EventCenter : MonoBehaviour
     public event Action<Node> OnNodeSelected;
     public event Action<Node> OnNodeDeselected;
     public event Action<Node, Vector3Int> OnNodeMoved;
-    public event Action<int> OnNodeDeleted;
+    public event Action<string> OnNodeDeleted;
     public event Action<Node> OnNodeCreated;
     public event Action<Science> OnNodeDataChanged;
 
@@ -97,7 +97,7 @@ public class EventCenter : MonoBehaviour
     public void TriggerNodeSelected(Node node) => OnNodeSelected?.Invoke(node);
     public void TriggerNodeDeselected(Node node) => OnNodeDeselected?.Invoke(node);
     public void TriggerNodeMoved(Node node, Vector3Int newPos) => OnNodeMoved?.Invoke(node, newPos);
-    public void TriggerNodeDeleted(int nodeId) => OnNodeDeleted?.Invoke(nodeId);
+    public void TriggerNodeDeleted(string nodeId) => OnNodeDeleted?.Invoke(nodeId);
     public void TriggerNodeCreated(Node node) => OnNodeCreated?.Invoke(node);
     public void TriggerNodeDataChanged(Science science) => OnNodeDataChanged?.Invoke(science);
     public void TriggerTechTreeItemUpdate(string oldStr, string newStr) => OnTechTreeItemUpdate?.Invoke(oldStr, newStr);

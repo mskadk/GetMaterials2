@@ -61,7 +61,7 @@ public class NodeManager : MonoBehaviour
         Vector3 worldPos = new Vector3(sc.HexGridX, sc.HexGridY, 0);
 
         GameObject nodeObj = Instantiate(ui.nodePrefab, worldPos, Quaternion.identity, ui.tilemap.transform);
-        nodeObj.name = sc.Id.ToString();
+        nodeObj.name = sc.Id;
 
         Node nodeScript = nodeObj.GetComponent<Node>();
         nodeScript.sc = sc;
@@ -72,9 +72,9 @@ public class NodeManager : MonoBehaviour
     /// <summary>
     /// 销毁节点对象
     /// </summary>
-    public void DestroyNodeObject(int id)
+    public void DestroyNodeObject(string id)
     {
-        Transform nodeTrans = ui.tilemap.transform.Find(id.ToString());
+        Transform nodeTrans = ui.tilemap.transform.Find(id);
         if (nodeTrans != null)
         {
             Destroy(nodeTrans.gameObject);
@@ -84,9 +84,9 @@ public class NodeManager : MonoBehaviour
     /// <summary>
     /// 获取节点对象
     /// </summary>
-    public Node GetNode(int id)
+    public Node GetNode(string id)
     {
-        Transform nodeTrans = ui.tilemap.transform.Find(id.ToString());
+        Transform nodeTrans = ui.tilemap.transform.Find(id);
         return nodeTrans != null ? nodeTrans.GetComponent<Node>() : null;
     }
 

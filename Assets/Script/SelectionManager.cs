@@ -241,7 +241,7 @@ public class SelectionManager : MonoBehaviour
         if (!lineName.Contains("->")) return null;
 
         var parts = lineName.Split(new string[] { "->" }, System.StringSplitOptions.None);
-        int preId = int.Parse(parts[0]);
+        string preId = parts[0];
 
         // 从 PathNode 中查找对应的连接
         var connections = node.sc.PathNode.ParsePathConnections();
@@ -272,7 +272,7 @@ public class SelectionManager : MonoBehaviour
         if (!lineName.Contains("->")) return;
 
         var parts = lineName.Split(new string[] { "->" }, System.StringSplitOptions.None);
-        int preId = int.Parse(parts[0]);
+        string preId = parts[0];
 
         // 解析当前路径
         var connections = node.sc.PathNode.ParsePathConnections();
@@ -336,7 +336,7 @@ public class SelectionManager : MonoBehaviour
     /// <summary>
     /// 生成锚点唯一Key
     /// </summary>
-    private string GetAnchorKey(int targetNodeId, string preNodeId, int anchorIndex)
+    private string GetAnchorKey(string targetNodeId, string preNodeId, int anchorIndex)
     {
         return $"{targetNodeId}->{preNodeId}->{anchorIndex}";
     }
@@ -344,16 +344,16 @@ public class SelectionManager : MonoBehaviour
     /// <summary>
     /// 解析锚点Key
     /// </summary>
-    private (int targetNodeId, string preNodeId, int anchorIndex) ParseAnchorKey(string key)
+    private (string targetNodeId, string preNodeId, int anchorIndex) ParseAnchorKey(string key)
     {
         var parts = key.Split(new string[] { "->" }, System.StringSplitOptions.None);
-        return (int.Parse(parts[0]), parts[1], int.Parse(parts[2]));
+        return (parts[0], parts[1], int.Parse(parts[2]));
     }
 
     /// <summary>
     /// 添加锚点选择（通过位置信息）
     /// </summary>
-    public void AddAnchorByPosition(int targetNodeId, string preNodeId, int anchorIndex, Vector2 worldPos)
+    public void AddAnchorByPosition(string targetNodeId, string preNodeId, int anchorIndex, Vector2 worldPos)
     {
         string key = GetAnchorKey(targetNodeId, preNodeId, anchorIndex);
         if (!selectedAnchorPositions.ContainsKey(key))
@@ -384,7 +384,7 @@ public class SelectionManager : MonoBehaviour
     /// <summary>
     /// 从锚点GameObject获取信息
     /// </summary>
-    private (int targetNodeId, string preNodeId, int anchorIndex, Vector2 worldPos)? GetAnchorInfoFromGameObject(GameObject anchorObj)
+    private (string targetNodeId, string preNodeId, int anchorIndex, Vector2 worldPos)? GetAnchorInfoFromGameObject(GameObject anchorObj)
     {
         if (anchorObj == null) return null;
 
@@ -397,7 +397,7 @@ public class SelectionManager : MonoBehaviour
 
         var parts = lineName.Split(new string[] { "->" }, System.StringSplitOptions.None);
         string preNodeId = parts[0];
-        int targetNodeId = int.Parse(parts[1]);
+        string targetNodeId = parts[1];
 
         // 锚点名称就是索引
         int anchorIndex = int.Parse(anchorObj.name);
@@ -411,7 +411,7 @@ public class SelectionManager : MonoBehaviour
     /// <summary>
     /// 更新已选锚点的位置信息
     /// </summary>
-    public void UpdateAnchorPosition(int targetNodeId, string preNodeId, int anchorIndex, Vector2 newWorldPos)
+    public void UpdateAnchorPosition(string targetNodeId, string preNodeId, int anchorIndex, Vector2 newWorldPos)
     {
         string key = GetAnchorKey(targetNodeId, preNodeId, anchorIndex);
         if (selectedAnchorPositions.ContainsKey(key))
@@ -423,7 +423,7 @@ public class SelectionManager : MonoBehaviour
     /// <summary>
     /// 兼容旧代码：如果其他代码传入 Vector3Int，给出警告
     /// </summary>
-    public void UpdateAnchorPosition(int targetNodeId, string preNodeId, int anchorIndex, Vector3Int gridPos)
+    public void UpdateAnchorPosition(string targetNodeId, string preNodeId, int anchorIndex, Vector3Int gridPos)
     {
         Debug.LogWarning("UpdateAnchorPosition with Vector3Int is deprecated. Use Vector2 worldPos instead.");
     }
@@ -468,7 +468,7 @@ public class SelectionManager : MonoBehaviour
         var node = nodeObj.GetComponent<Node>();
         if (node == null) return;
 
-        int nodeId = node.sc.Id;
+        string nodeId = node.sc.Id;
         var keysToRemove = selectedAnchorPositions.Keys
             .Where(k => k.StartsWith($"{nodeId}->"))
             .ToList();
@@ -506,11 +506,11 @@ public class SelectionManager : MonoBehaviour
     /// <summary>
     /// 尝试高亮/取消高亮锚点GameObject
     /// </summary>
-    private void TryHighlightAnchorObject(int targetNodeId, string preNodeId, int anchorIndex, bool highlight)
+    private void TryHighlightAnchorObject(string targetNodeId, string preNodeId, int anchorIndex, bool highlight)
     {
         // 查找对应的锚点GameObject
         var tilemap = UIReferences.Instance.tilemap;
-        var nodeTransform = tilemap.transform.Find(targetNodeId.ToString());
+        var nodeTransform = tilemap.transform.Find(targetNodeId);
         if (nodeTransform == null) return;
 
         var lineTransform = nodeTransform.Find($"{preNodeId}->{targetNodeId}");
@@ -550,12 +550,12 @@ public class SelectionManager : MonoBehaviour
             var parts = kvp.Key.Split(new string[] { "->" }, System.StringSplitOptions.None);
             if (parts.Length < 3) continue;
 
-            int targetNodeId = int.Parse(parts[0]);
+            string targetNodeId = parts[0];
             string preNodeId = parts[1];
             int anchorIndex = int.Parse(parts[2]);
 
             // 查找锚点GameObject
-            var nodeTransform = tilemap.transform.Find(targetNodeId.ToString());
+            var nodeTransform = tilemap.transform.Find(targetNodeId);
             if (nodeTransform == null) continue;
 
             var lineTransform = nodeTransform.Find($"{preNodeId}->{targetNodeId}");
@@ -585,7 +585,7 @@ public class SelectionManager : MonoBehaviour
         return selectedAnchorPositions.ContainsKey(key);
     }
 
-    public bool ContainsAnchorPosition(int targetNodeId, string preNodeId, int anchorIndex)
+    public bool ContainsAnchorPosition(string targetNodeId, string preNodeId, int anchorIndex)
     {
         string key = GetAnchorKey(targetNodeId, preNodeId, anchorIndex);
         return selectedAnchorPositions.ContainsKey(key);

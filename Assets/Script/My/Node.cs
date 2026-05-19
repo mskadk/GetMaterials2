@@ -197,7 +197,7 @@ public class Node : MonoBehaviour
 
     /// 从连接列表中查找指定preId的连接，找不到返回null
     /// </summary>
-    private PathConnection? FindConnection(List<PathConnection> connections, int preId)
+    private PathConnection? FindConnection(List<PathConnection> connections, string preId)
     {
         foreach (var conn in connections)
         {
@@ -219,9 +219,9 @@ public class Node : MonoBehaviour
         if (grid == null || parent == null) return;
 
         List<PathConnection> connections = sc.PathNode.ParsePathConnections();
-        List<int> preNodesList = sc.Pre_technology.ToList();
+        List<string> preNodesList = sc.Pre_technology.ToList();
 
-        if (preNodesList == null || preNodesList.Contains(-2))
+        if (preNodesList == null || preNodesList.Contains(Constants.SpecialIds.PdaTech))
         {
             foreach (var item in getAllLineGOs())
             {
@@ -233,7 +233,7 @@ public class Node : MonoBehaviour
         List<string> lineNameList = new();
         foreach (var preNodeId in preNodesList)
         {
-            GameObject preNodeGameObject = parent.transform.Find(preNodeId.ToString())?.gameObject;
+            GameObject preNodeGameObject = parent.transform.Find(preNodeId)?.gameObject;
             if (preNodeGameObject == null) continue;
             Science parentSc = preNodeGameObject.GetComponent<Node>()?.sc;
             if (parentSc == null) continue;
@@ -331,9 +331,9 @@ public class Node : MonoBehaviour
     void UpdateLine()
     {
         List<PathConnection> connections = sc.PathNode.ParsePathConnections();
-        List<int> preNodesList = sc.Pre_technology.ToList();
+        List<string> preNodesList = sc.Pre_technology.ToList();
 
-        if (preNodesList is null || preNodesList.Contains(-2))
+        if (preNodesList is null || preNodesList.Contains(Constants.SpecialIds.PdaTech))
         {
             foreach (var item in getAllLineGOs())
             {
@@ -346,7 +346,7 @@ public class Node : MonoBehaviour
             List<string> lineNameList = new();
             foreach (var preNodeId in preNodesList)
             {
-                GameObject preNodeGameObject = parent.transform.Find(preNodeId.ToString())?.gameObject;
+                GameObject preNodeGameObject = parent.transform.Find(preNodeId)?.gameObject;
                 if (preNodeGameObject == null) continue;
 
                 Science parentSc = preNodeGameObject.GetComponent<Node>()?.sc;

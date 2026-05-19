@@ -23,12 +23,12 @@ namespace Assets.Script.My.Extention
     /// </summary>
     public struct PathConnection
     {
-        public int PreId;
+        public string PreId;
         public AnchorDirection StartDirection;  // 起始节点的锚点方向
         public AnchorDirection EndDirection;    // 终止节点的锚点方向
         public List<Vector2> Waypoints;        // 中间点列表
 
-        public PathConnection(int preId, AnchorDirection startDir, AnchorDirection endDir, List<Vector2> waypoints)
+        public PathConnection(string preId, AnchorDirection startDir, AnchorDirection endDir, List<Vector2> waypoints)
         {
             PreId = preId;
             StartDirection = startDir;
@@ -101,16 +101,17 @@ namespace Assets.Script.My.Extention
         #endregion
 
         /// <summary>
-        /// 将输入的字符串以"|"分隔，组成整形数组
+        /// 将输入的字符串以"|"分隔，组成 ID 字符串数组
         /// </summary>
-        public static List<int> ToList(this string input)
+        public static List<string> ToList(this string input)
         {
             if (string.IsNullOrEmpty(input) || input.Equals("-1"))
             {
                 return new();
             }
             return input.Split("|")
-                .Select(item => int.Parse(item))
+                .Select(item => item.Trim())
+                .Where(item => !string.IsNullOrEmpty(item))
                 .ToList();
         }
 
@@ -162,7 +163,8 @@ namespace Assets.Script.My.Extention
             // === 第1段：起始信息 "preId,startDir" 或 "preId" ===
             string startSection = sections[0];
             string[] startParts = startSection.Split(',');
-            if (!int.TryParse(startParts[0], out int preId)) return null;
+            string preId = startParts[0].Trim();
+            if (string.IsNullOrEmpty(preId)) return null;
 
             AnchorDirection startDir = AnchorDirection.Center;
             if (startParts.Length > 1)
@@ -205,7 +207,8 @@ namespace Assets.Script.My.Extention
         {
             string[] parts = group.Split('_');
             if (parts.Length < 1) return null;
-            if (!int.TryParse(parts[0], out int preId)) return null;
+            string preId = parts[0].Trim();
+            if (string.IsNullOrEmpty(preId)) return null;
 
             List<Vector2> waypoints = new();
             for (int i = 1; i < parts.Length - 1; i += 2)
@@ -279,7 +282,10 @@ namespace Assets.Script.My.Extention
             {
                 foreach (var wp in conn.Waypoints)
                 {
-                    result.Add(new Vector3(conn.PreId, wp.x, wp.y));
+                    if (float.TryParse(conn.PreId, NumberStyles.Float, CultureInfo.InvariantCulture, out float numericPreId))
+                    {
+                        result.Add(new Vector3(numericPreId, wp.x, wp.y));
+                    }
                 }
             }
 
@@ -327,10 +333,10 @@ namespace Assets.Script.My.Extention
             var connections = ParsePathConnections(input);
             for (int i = 0; i < connections.Count; i++)
             {
-                if (connections[i].PreId.ToString() == oldId)
+                if (connections[i].PreId == oldId)
                 {
                     var conn = connections[i];
-                    conn.PreId = int.Parse(newId);
+                    conn.PreId = newId;
                     connections[i] = conn;
                 }
             }
@@ -345,7 +351,7 @@ namespace Assets.Script.My.Extention
             if (string.IsNullOrEmpty(input) || input == "-1") return input;
 
             var connections = ParsePathConnections(input);
-            connections.RemoveAll(c => c.PreId.ToString() == target);
+            connections.RemoveAll(c => c.PreId == target);
 
             return connections.Count == 0 ? "-1" : SerializePathConnections(connections);
         }
@@ -383,7 +389,7 @@ namespace Assets.Script.My.Extention
             }
 
             var connections = ParsePathConnections(input);
-            int targetId = int.Parse(id);
+            string targetId = id;
 
             if (!string.IsNullOrEmpty(newPath))
             {
@@ -432,7 +438,7 @@ namespace Assets.Script.My.Extention
         /// </summary>
         public static string InsertPathNode(this string pathNodeStr, string targetPreId, int insertIndex, Vector2 newPoint)
         {
-            int preId = int.Parse(targetPreId);
+            string preId = targetPreId;
 
             var connections = ParsePathConnections(pathNodeStr);
             bool found = false;
@@ -466,7 +472,7 @@ namespace Assets.Script.My.Extention
         {
             if (string.IsNullOrEmpty(pathNodeStr) || pathNodeStr == "-1") return pathNodeStr;
 
-            int preId = int.Parse(targetPreId);
+            string preId = targetPreId;
             var connections = ParsePathConnections(pathNodeStr);
 
             for (int i = 0; i < connections.Count; i++)

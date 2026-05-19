@@ -99,9 +99,9 @@ public static class Constants
     /// </summary>
     public static class SpecialIds
     {
-        public const int InvalidId = -1;
-        public const int PdaTech = -2;
-        public const int NewNodeStartId = -3;
+        public const string InvalidId = "-1";
+        public const string PdaTech = "-2";
+        public const string NewNodePrefix = "tmp_";
     }
 
     /// <summary>
@@ -109,12 +109,12 @@ public static class Constants
     /// </summary>
     public static class RegexPatterns
     {
-        // 前置科技格式: -1 或 数字|数字|...
-        public const string PreTechnology = @"^\(-1\)|(?!-1\b)(?!-2\b)-?\d+(?:\|(?!-1\b)(?!-2\b)-?\d+)*$";
+        // 前置科技格式: -1 或 stringId|stringId|...，ID 不允许包含列表/路径结构分隔符。
+        public const string PreTechnology = @"^-1$|^(?!-1$)(?!-2$)[^|:,\s]+(?:\|(?!-1$)(?!-2$)[^|:,\s]+)*$";
 
         // 路径节点格式：放宽正则，详细验证交给解析器
-        // 匹配 -1 或 任意非空字符串（包含数字、逗号、冒号、下划线、竖线、点、减号和方向字母）
-        public const string PathNode = @"^-1$|^[-\d.,_|:tblrc\s]+$";
+        // 匹配 -1 或新格式路径字符串。
+        public const string PathNode = @"^-1$|^[^|:,\s]+,[tblrc]:(?:-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?(?:_-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?)*)?:[tblrc](?:\|[^|:,\s]+,[tblrc]:(?:-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?(?:_-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?)*)?:[tblrc])*$";
     }
 
 

@@ -5,7 +5,7 @@ using System.Linq;
 
 public class Science
 {
-    int id;
+    string id;
     int subType;
     int moduleId;
     float iconScale;
@@ -25,10 +25,10 @@ public class Science
     string trigger_technology;
     bool apply;
 
-    HashSet<int> after_technology;
+    HashSet<string> after_technology;
 
     #region 封装字段
-    public int Id { get => id; set => id = value; }
+    public string Id { get => id; set => id = value; }
     public int SubType { get => subType; set => subType = value; }
     public int ModuleId { get => moduleId; set => moduleId = value; }
     public float IconScale { get => iconScale; set => iconScale = value; }
@@ -57,16 +57,16 @@ public class Science
     public int IconColor { get => iconColor; set => iconColor = value; }
     public string Trigger_technology { get => trigger_technology; set => trigger_technology = value; }
     public bool Apply { get => apply; set => apply = value; }
-    public HashSet<int> After_technology { get => after_technology; set => after_technology = value; }
+    public HashSet<string> After_technology { get => after_technology; set => after_technology = value; }
     #endregion
 
     #region 构造函数
     public Science()
     {
-        after_technology = new HashSet<int>();
+        after_technology = new HashSet<string>();
     }
 
-    public Science(int id, int subType, int moduleId, float iconScale, float lineScale,
+    public Science(string id, int subType, int moduleId, float iconScale, float lineScale,
         string name, string detail, string detail_2, string building_unlock, string nonBuilding_unlock,
         float worldPosX, float worldPosY, string pre_technology, string pathNode,
         string s_materials, float time, int iconColor, string trigger_technology,
@@ -91,30 +91,30 @@ public class Science
         this.iconColor = iconColor;
         this.trigger_technology = trigger_technology;
         this.apply = apply;
-        this.after_technology = new HashSet<int>();
+        this.after_technology = new HashSet<string>();
     }
     #endregion
 
     #region Getter Setter
-    public List<int> GetPredecessorList(Science sc)
+    public List<string> GetPredecessorList(Science sc)
     {
-        List<int> list = new();
+        List<string> list = new();
         if (!sc.pre_technology.Equals("-1"))
         {
             foreach (var pre in sc.pre_technology.Split("|"))
             {
-                list.Add(int.Parse(pre.Split("_")[0]));
+                list.Add(pre.Trim());
             }
         }
         return list;
     }
 
-    public void AddSuccessor(Science sc, int id)
+    public void AddSuccessor(Science sc, string id)
     {
         sc.after_technology.Add(id);
     }
 
-    public List<int> GetSucccessorList(Science sc)
+    public List<string> GetSucccessorList(Science sc)
     {
         return sc.after_technology.ToList();
     }

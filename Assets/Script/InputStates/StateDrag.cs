@@ -20,7 +20,7 @@ public class StateDrag : IInputState
     private Dictionary<string, UnselectedAnchorInfo> unselectedAnchorInfos = new Dictionary<string, UnselectedAnchorInfo>();
 
     // 后继节点的连接线信息
-    private Dictionary<int, List<SuccessorLineInfo>> successorLineInfos = new Dictionary<int, List<SuccessorLineInfo>>();
+    private Dictionary<string, List<SuccessorLineInfo>> successorLineInfos = new Dictionary<string, List<SuccessorLineInfo>>();
 
     private struct NodeMoveInfo
     {
@@ -40,7 +40,7 @@ public class StateDrag : IInputState
 
     private struct AnchorMoveInfo
     {
-        public int targetNodeId;
+        public string targetNodeId;
         public string preNodeId;
         public int anchorIndex;
         public Vector2 startWorldPos;  // 世界坐标
@@ -50,7 +50,7 @@ public class StateDrag : IInputState
 
     private struct UnselectedAnchorInfo
     {
-        public int targetNodeId;
+        public string targetNodeId;
         public string preNodeId;
         public int anchorIndex;
         public Vector3 startWorldPos;
@@ -60,9 +60,9 @@ public class StateDrag : IInputState
 
     private struct SuccessorLineInfo
     {
-        public int successorNodeId;
+        public string successorNodeId;
         public LineRenderer lr;
-        public int preNodeId;
+        public string preNodeId;
         public AnchorDirection startDirection;  // 新增：起始方向
     }
 
@@ -140,7 +140,7 @@ public class StateDrag : IInputState
         foreach (var kvp in selectedAnchorPositions)
         {
             var parts = kvp.Key.Split(new string[] { "->" }, System.StringSplitOptions.None);
-            int targetNodeId = int.Parse(parts[0]);
+            string targetNodeId = parts[0];
             string preNodeId = parts[1];
             int anchorIndex = int.Parse(parts[2]);
             var anchorObj = FindAnchorGameObject(context, targetNodeId, preNodeId, anchorIndex);
@@ -191,16 +191,13 @@ public class StateDrag : IInputState
                     AnchorDirection startDir = AnchorDirection.Center;
                     AnchorDirection endDir = AnchorDirection.Center;
 
-                    if (int.TryParse(preNodeId, out int preId))
+                    foreach (var conn in connections)
                     {
-                        foreach (var conn in connections)
+                        if (conn.PreId == preNodeId)
                         {
-                            if (conn.PreId == preId)
-                            {
-                                startDir = conn.StartDirection;
-                                endDir = conn.EndDirection;
-                                break;
-                            }
+                            startDir = conn.StartDirection;
+                            endDir = conn.EndDirection;
+                            break;
                         }
                     }
 
@@ -249,7 +246,7 @@ public class StateDrag : IInputState
 
     private void CollectSuccessorLineInfos(InputManager context, Node node)
     {
-        int nodeId = node.sc.Id;
+        string nodeId = node.sc.Id;
 
         if (!successorLineInfos.ContainsKey(nodeId))
         {
@@ -295,9 +292,9 @@ public class StateDrag : IInputState
         }
     }
 
-    private GameObject FindAnchorGameObject(InputManager context, int targetNodeId, string preNodeId, int anchorIndex)
+    private GameObject FindAnchorGameObject(InputManager context, string targetNodeId, string preNodeId, int anchorIndex)
     {
-        var nodeTransform = context.UI.tilemap.transform.Find(targetNodeId.ToString());
+        var nodeTransform = context.UI.tilemap.transform.Find(targetNodeId);
         if (nodeTransform == null) return null;
 
         var lineTransform = nodeTransform.Find($"{preNodeId}->{targetNodeId}");
@@ -335,8 +332,8 @@ public class StateDrag : IInputState
         Vector3 worldDelta = currentMouseWorldPos - startMouseWorldPos;
 
         // 记录移动后的节点位置和Transform，用于计算锚点位置
-        Dictionary<int, Vector3> movedNodeNewPositions = new Dictionary<int, Vector3>();
-        Dictionary<int, Transform> movedNodeTransforms = new Dictionary<int, Transform>();
+        Dictionary<string, Vector3> movedNodeNewPositions = new Dictionary<string, Vector3>();
+        Dictionary<string, Transform> movedNodeTransforms = new Dictionary<string, Transform>();
 
         // ========== 第一轮：更新所有节点位置 ==========
         foreach (var kvp in nodeInfos)
@@ -381,7 +378,8 @@ public class StateDrag : IInputState
                 lrInfo.lr.SetPosition(lrInfo.lr.positionCount - 1, newEndPoint);
 
                 // 更新起点：优先使用已移动的前置节点位置
-                if (int.TryParse(lrInfo.preNodeId, out int preNodeId))
+                string preNodeId = lrInfo.preNodeId;
+                if (!string.IsNullOrEmpty(preNodeId))
                 {
                     if (movedNodeTransforms.TryGetValue(preNodeId, out Transform preNodeTransform))
                     {
@@ -393,7 +391,7 @@ public class StateDrag : IInputState
                     else
                     {
                         // 前置节点没有移动，从场景中查找
-                        var preNodeObj = context.UI.tilemap.transform.Find(preNodeId.ToString());
+                        var preNodeObj = context.UI.tilemap.transform.Find(preNodeId);
                         if (preNodeObj != null)
                         {
                             Vector3 newStartPoint = MyExtensions.GetAnchorWorldPosition(preNodeObj, lrInfo.startDirection);
@@ -408,7 +406,7 @@ public class StateDrag : IInputState
         // 3. 更新后继节点的连接线起点
         foreach (var kvp in successorLineInfos)
         {
-            int movedNodeId = kvp.Key;
+            string movedNodeId = kvp.Key;
             if (!movedNodeTransforms.TryGetValue(movedNodeId, out Transform movedNodeTransform)) continue;
 
             foreach (var lineInfo in kvp.Value)
@@ -539,7 +537,7 @@ public class StateDrag : IInputState
 
         // 解析当前路径，保留方向信息
         var connections = sc.PathNode.ParsePathConnections();
-        int preId = int.Parse(info.preNodeId);
+        string preId = info.preNodeId;
 
         bool found = false;
         for (int c = 0; c < connections.Count; c++)
@@ -590,7 +588,7 @@ public class StateDrag : IInputState
 
     private void RefreshAffectedNodes(InputManager context)
     {
-        HashSet<int> affectedNodeIds = new HashSet<int>();
+        HashSet<string> affectedNodeIds = new HashSet<string>();
 
         foreach (var kvp in nodeInfos)
         {

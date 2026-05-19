@@ -23,12 +23,17 @@ public class CreateNodeCommand : ICommand
         this.nodeColorInt = colorInt;
 
         // 生成新ID
-        int id = Constants.SpecialIds.NewNodeStartId;
-        while (DataManager.Instance.ScienceDict.ContainsKey(id)) { id--; }
+        string id;
+        int index = 1;
+        do
+        {
+            id = $"{Constants.SpecialIds.NewNodePrefix}{index:000}";
+            index++;
+        } while (DataManager.Instance.ScienceDict.ContainsKey(id));
 
         // 创建Science对象（使用世界坐标）
         newScience = new Science(
-            id, 1, 0, 0.75f, 4,
+            id, 1, 0, 1, 4,
             "新科技", "描述", "备注",
             "-1", "-1",
             (float)System.Math.Round(worldPos.x, 3),  // 世界坐标X

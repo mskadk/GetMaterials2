@@ -4,7 +4,7 @@ using UnityEngine;
 public class AddAnchorCommand : ICommand
 {
     private string targetPreId;
-    private int targetNodeId;
+    private string targetNodeId;
     private int insertIndex;
     private Vector2 newWorldPos;
     private string oldPath;
@@ -22,7 +22,7 @@ public class AddAnchorCommand : ICommand
 
         var parts = lr.name.Split(new string[] { "->" }, System.StringSplitOptions.None);
         targetPreId = parts[0];
-        targetNodeId = int.Parse(parts[1]);
+        targetNodeId = parts[1];
         insertIndex = index;
 
         Vector3 snappedPos = GridManager.Instance.SnapToGrid(worldPos);
@@ -38,7 +38,7 @@ public class AddAnchorCommand : ICommand
             if (string.IsNullOrEmpty(oldPath) || oldPath == "-1")
             {
                 var newConn = new PathConnection(
-                    int.Parse(targetPreId),
+                    targetPreId,
                     AnchorDirection.Center,
                     AnchorDirection.Center,
                     new System.Collections.Generic.List<Vector2> { newWorldPos });
@@ -72,7 +72,7 @@ public class AddAnchorCommand : ICommand
         }
     }
 
-    private void RefreshEditPanelUI(int nodeId)
+    private void RefreshEditPanelUI(string nodeId)
     {
         var inputMgr = GameObject.Find(Constants.GameObjectNames.MainManager)?.GetComponent<InputManager>();
         var currentPanel = inputMgr?.CurrentEditPanel;

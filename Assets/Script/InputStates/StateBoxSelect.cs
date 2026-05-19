@@ -107,10 +107,10 @@ public class StateBoxSelect : IInputState
     /// <summary>
     /// 通过计算选中锚点，返回新选中的锚点信息
     /// </summary>
-    private List<(int targetNodeId, string preNodeId, int anchorIndex, Vector2 worldPos)> SelectAnchorsByCalculation(
+    private List<(string targetNodeId, string preNodeId, int anchorIndex, Vector2 worldPos)> SelectAnchorsByCalculation(
         InputManager context, Rect selectionRect)
     {
-        var newlySelected = new List<(int, string, int, Vector2)>();
+        var newlySelected = new List<(string, string, int, Vector2)>();
 
         var selectedNodes = SelectionManager.Instance.GetSelectedNodes();
 
@@ -150,10 +150,10 @@ public class StateBoxSelect : IInputState
     /// 确保选中的锚点可见（生成锚点GameObject）
     /// </summary>
     private void EnsureAnchorsVisible(InputManager context,
-        List<(int targetNodeId, string preNodeId, int anchorIndex, Vector2 worldPos)> anchors)
+        List<(string targetNodeId, string preNodeId, int anchorIndex, Vector2 worldPos)> anchors)
     {
         // 收集需要显示锚点的节点ID
-        HashSet<int> nodeIdsNeedingAnchors = new HashSet<int>();
+        HashSet<string> nodeIdsNeedingAnchors = new HashSet<string>();
         foreach (var anchor in anchors)
         {
             nodeIdsNeedingAnchors.Add(anchor.targetNodeId);
@@ -188,7 +188,7 @@ public class StateBoxSelect : IInputState
 
         foreach (var conn in connections)
         {
-            string preNodeId = conn.PreId.ToString();
+            string preNodeId = conn.PreId;
             int anchorIndex = 1;
 
             foreach (var wp in conn.Waypoints)

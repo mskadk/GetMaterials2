@@ -14,8 +14,8 @@ public class DeleteNodeCommand : ICommand
     private Science deletedScience;
 
     // 记录受影响的其他节点数据，用于恢复连线关系
-    private Dictionary<int, string> affectedPreTechs;
-    private Dictionary<int, string> affectedPathNodes;
+    private Dictionary<string, string> affectedPreTechs;
+    private Dictionary<string, string> affectedPathNodes;
 
     public string Description => $"删除节点 {deletedScience.Id}:{deletedScience.Name}";
 
@@ -26,8 +26,8 @@ public class DeleteNodeCommand : ICommand
         this.deletedScience = science;
 
         // --- 记录受影响的后续节点数据（用于撤销时恢复连线）---
-        affectedPreTechs = new Dictionary<int, string>();
-        affectedPathNodes = new Dictionary<int, string>();
+        affectedPreTechs = new Dictionary<string, string>();
+        affectedPathNodes = new Dictionary<string, string>();
 
         foreach (var aftId in science.After_technology)
         {
@@ -41,7 +41,7 @@ public class DeleteNodeCommand : ICommand
 
     public void Execute()
     {
-        int id = deletedScience.Id;
+        string id = deletedScience.Id;
 
         // 1. 更新 UI 显示（减少计数）
         EventCenter.Instance.TriggerTechTreeItemUpdate(deletedScience.Building_unlock, "");
@@ -78,7 +78,7 @@ public class DeleteNodeCommand : ICommand
 
     public void Undo()
     {
-        int id = deletedScience.Id;
+        string id = deletedScience.Id;
 
         // 1. 恢复数据到字典
         DataManager.Instance.AddScience(deletedScience);
@@ -90,8 +90,9 @@ public class DeleteNodeCommand : ICommand
         // 3. 恢复前置节点的关联
         foreach (var pre in deletedScience.Pre_technology.Split('|'))
         {
-            if (int.TryParse(pre, out int preId))
+            if (!string.IsNullOrWhiteSpace(pre))
             {
+                string preId = pre.Trim();
                 if (DataManager.Instance.TryGetScience(preId, out var preScience))
                 {
                     if (!preScience.After_technology.Contains(id))

@@ -16,8 +16,8 @@ namespace Assets.Script.My.Excel
         List<string> TypeRow = new();
         List<string> NameRow = new();
 
-        Dictionary<int, Science> ScienceDict;
-        Dictionary<int, TechTreeItem> TechTreeItemDict;
+        Dictionary<string, Science> ScienceDict;
+        Dictionary<string, TechTreeItem> TechTreeItemDict;
 
         private enum Scc : int
         {
@@ -46,7 +46,7 @@ namespace Assets.Script.My.Excel
         {
         }
 
-        public string SaveScience(string path, string source, Dictionary<int, Science> dict)
+        public string SaveScience(string path, string source, Dictionary<string, Science> dict)
         {
             ScienceDict = dict;
             string saveName = "Science";
@@ -105,7 +105,7 @@ namespace Assets.Script.My.Excel
             return saveFI.FullName;
         }
 
-        public Dictionary<int, Science> LoadScience(string FilePath)
+        public Dictionary<string, Science> LoadScience(string FilePath)
         {
             fileInfo = new FileInfo(FilePath);
             excelPackage = new ExcelPackage(fileInfo);
@@ -123,8 +123,8 @@ namespace Assets.Script.My.Excel
             }
 
             // 为科技表建立字典
-            ScienceDict = new Dictionary<int, Science>();
-            Dictionary<int, List<int>> AfterDict = new();
+            ScienceDict = new Dictionary<string, Science>();
+            Dictionary<string, List<string>> AfterDict = new();
 
             for (int i = startRow + SKIP_ROW; i <= endRow; i++)
             {
@@ -136,8 +136,11 @@ namespace Assets.Script.My.Excel
                 string applyRaw = worksheet.Cells[i, (int)Scc.Apply].GetValue<string>();
                 bool applyVal = string.IsNullOrEmpty(applyRaw) || !applyRaw.Equals("FALSE", StringComparison.OrdinalIgnoreCase);
 
+                string scienceId = worksheet.Cells[i, (int)Scc.ID].GetValue<string>()?.Trim();
+                if (string.IsNullOrEmpty(scienceId)) continue;
+
                 Science science = new(
-                    worksheet.Cells[i, (int)Scc.ID].GetValue<int>(),
+                    scienceId,
                     worksheet.Cells[i, (int)Scc.SubType].GetValue<int>(),
                     worksheet.Cells[i, (int)Scc.ModuleId].GetValue<int>(),
                     worksheet.Cells[i, (int)Scc.IconScale].GetValue<float>(),
@@ -180,20 +183,24 @@ namespace Assets.Script.My.Excel
             return ScienceDict;
         }
 
-        public Dictionary<int, TechTreeItem> LoadTechTreeitem(string FilePath)
+        public Dictionary<string, TechTreeItem> LoadTechTreeitem(string FilePath)
         {
             fileInfo = new FileInfo(FilePath);
             excelPackage = new ExcelPackage(fileInfo);
             worksheet = excelPackage.Workbook.Worksheets[1];
             int startRow = worksheet.Dimension.Start.Row;
             int endRow = worksheet.Dimension.Rows;
-            TechTreeItemDict = new Dictionary<int, TechTreeItem>();
+            TechTreeItemDict = new Dictionary<string, TechTreeItem>();
             for (int i = startRow + SKIP_ROW; i <= endRow; i++)
             {
+                string itemId = worksheet.Cells[i, 1].GetValue<string>()?.Trim();
+                if (string.IsNullOrEmpty(itemId)) continue;
+
                 TechTreeItem item = new(
-                    worksheet.Cells[i, 1].GetValue<int>(),
+                    itemId,
                     worksheet.Cells[i, 3].GetValue<string>(),
-                    worksheet.Cells[i, 4].GetValue<string>()
+                    worksheet.Cells[i, 4].GetValue<string>(),
+                    worksheet.Cells[i, 6].GetValue<string>()
                 );
                 TechTreeItemDict.Add(item.Id, item);
             }

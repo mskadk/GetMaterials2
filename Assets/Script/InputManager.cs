@@ -106,11 +106,11 @@ public class InputManager : MonoBehaviour
         string nodeFrom = lr.gameObject.name.Split("->")[0];
         string nodeTo = lr.gameObject.name.Split("->")[1];
 
-        if (DataManager.Instance.ScienceDict.TryGetValue(int.Parse(nodeTo), out var sc))
+        if (DataManager.Instance.ScienceDict.TryGetValue(nodeTo, out var sc))
         {
             // 解析当前路径，保留方向信息
             var connections = sc.PathNode.ParsePathConnections();
-            int preId = int.Parse(nodeFrom);
+            string preId = nodeFrom;
 
             for (int c = 0; c < connections.Count; c++)
             {
@@ -148,7 +148,7 @@ public class InputManager : MonoBehaviour
 
         if (CurrentEditPanel != null)
         {
-            int currentId = CurrentEditPanel.GetComponent<PanelScienceEdit>().sc.Id;
+            string currentId = CurrentEditPanel.GetComponent<PanelScienceEdit>().sc.Id;
             Node currentNode = NodeManager.Instance.GetNode(currentId);
 
             if (currentNode != null)
@@ -276,11 +276,11 @@ public class InputManager : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Z)) { CommandManager.Instance.Undo(); return; }
             if (Input.GetKeyDown(KeyCode.Y)) { CommandManager.Instance.Redo(); return; }
-            if (Input.GetKeyDown(KeyCode.C))
-            {
-                CopySelectedNodesToClipboard();
-                return;
-            }
+            //if (Input.GetKeyDown(KeyCode.C))
+            //{
+            //    CopySelectedNodesToClipboard();
+            //    return;
+            //}
         }
 
         if (!EventSystem.current.currentSelectedGameObject)
@@ -520,7 +520,7 @@ public class InputManager : MonoBehaviour
         foreach (var kvp in anchorPositions)
         {
             var parts = kvp.Key.Split(new string[] { "->" }, System.StringSplitOptions.None);
-            int targetNodeId = int.Parse(parts[0]);
+            string targetNodeId = parts[0];
             string preNodeId = parts[1];
             int anchorIndex = int.Parse(parts[2]);
 
@@ -539,9 +539,9 @@ public class InputManager : MonoBehaviour
         SelectionManager.Instance.ClearAnchors();
     }
 
-    private GameObject FindAnchorGameObject(int targetNodeId, string preNodeId, int anchorIndex)
+    private GameObject FindAnchorGameObject(string targetNodeId, string preNodeId, int anchorIndex)
     {
-        var nodeTransform = UI.tilemap.transform.Find(targetNodeId.ToString());
+        var nodeTransform = UI.tilemap.transform.Find(targetNodeId);
         if (nodeTransform == null) return null;
 
         var lineTransform = nodeTransform.Find($"{preNodeId}->{targetNodeId}");

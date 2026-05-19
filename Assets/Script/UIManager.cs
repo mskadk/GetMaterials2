@@ -95,10 +95,10 @@ public class UIManager : MonoBehaviour
         foreach (var tti in DataManager.Instance.TechTreeItemDict)
         {
             GameObject o = Instantiate(ui.techTreeItemTextPrefab, content.transform);
-            o.name = tti.Key.ToString();
+            o.name = tti.Key;
             TechTreeItemText ttit = o.GetComponent<TechTreeItemText>();
             tti.Value.GO = o;
-            ttit.t_id.text = tti.Key.ToString();
+            ttit.t_id.text = tti.Key;
             ttit.t_name.text = tti.Value.Name;
             ttit.t_desc.text = tti.Value.Desc;
             ttit.t_times.text = "0";
@@ -117,7 +117,7 @@ public class UIManager : MonoBehaviour
 
         foreach (var item in oldList)
         {
-            Transform t = content.transform.Find(item.ToString());
+            Transform t = content.transform.Find(item);
             if (t)
             {
                 var ttit = t.GetComponent<TechTreeItemText>();
@@ -148,7 +148,7 @@ public class UIManager : MonoBehaviour
 
         foreach (var item in newList)
         {
-            Transform t = content.transform.Find(item.ToString());
+            Transform t = content.transform.Find(item);
             if (t)
             {
                 var ttit = t.GetComponent<TechTreeItemText>();
@@ -172,7 +172,7 @@ public class UIManager : MonoBehaviour
             }
             else
             {
-                newNotFound += newNotFound + " " + item.ToString();
+                newNotFound += " " + item;
             }
         }
         if (newNotFound is not null)
@@ -218,8 +218,14 @@ public class UIManager : MonoBehaviour
         {
             var g = ttit.Value.GO;
             var gc = g.GetComponent<TechTreeItemText>();
-            int id = int.Parse(gc.t_id.text);
-            g.SetActive(id >= filterMin && id <= filterMax);
+            if (int.TryParse(gc.t_id.text, out int id))
+            {
+                g.SetActive(id >= filterMin && id <= filterMax);
+            }
+            else
+            {
+                g.SetActive(false);
+            }
         }
     }
 

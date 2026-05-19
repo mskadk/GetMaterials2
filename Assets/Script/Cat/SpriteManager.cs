@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 
 namespace Assets.Script.My
 {
@@ -98,6 +99,64 @@ namespace Assets.Script.My
                 }
             }
 
+            return container;
+        }
+
+        public static GameObject PaintUI(GameObject parent, string spriteName, int actionId, int frameId, float pixelsPerUnit = 1f)
+        {
+            CatActionGroup data = CatActionGroup.Load(spriteName);
+            if (data == null || data.actions == null) return null;
+            if (actionId >= data.actions.Length) return null;
+            CatAction action = data.actions[actionId];
+            if (frameId >= action.frames.Length) return null;
+            CatFrame frame = action.frames[frameId];
+            GameObject container = new GameObject("fw_icon_ui", typeof(RectTransform));
+            RectTransform containerRt = container.GetComponent<RectTransform>();
+            containerRt.SetParent(parent.transform, false);
+            containerRt.anchorMin = containerRt.anchorMax = new Vector2(0.5f, 0.5f);
+            containerRt.pivot = new Vector2(0.5f, 0.5f);
+            containerRt.anchoredPosition = Vector2.zero;
+            containerRt.localScale = Vector3.one;
+            for (int i = 0; i < frame.modules.Length; i++)
+            {
+                CatModule mod = frame.modules[i];
+                if (mod == null) continue;
+                if (frame.moduleTransparency != null && frame.moduleTransparency[i] <= 0f) continue;
+                Texture2D tex = data.imgSource[mod.imgIndex];
+                if (tex == null) continue;
+                int srcX = mod.x;
+                int srcY = tex.height - mod.y - mod.height;
+                int srcW = mod.width;
+                int srcH = mod.height;
+                srcX = Mathf.Clamp(srcX, 0, tex.width);
+                srcY = Mathf.Clamp(srcY, 0, tex.height);
+                srcW = Mathf.Min(srcW, tex.width - srcX);
+                srcH = Mathf.Min(srcH, tex.height - srcY);
+                if (srcW <= 0 || srcH <= 0) continue;
+                Sprite sprite = Sprite.Create(tex, new Rect(srcX, srcY, srcW, srcH), new Vector2(0.5f, 0.5f), pixelsPerUnit);
+                GameObject moduleObj = new GameObject($"mod_{i}", typeof(RectTransform), typeof(Image));
+                RectTransform rt = moduleObj.GetComponent<RectTransform>();
+                rt.SetParent(containerRt, false);
+                Image img = moduleObj.GetComponent<Image>();
+                img.sprite = sprite;
+                img.SetNativeSize();
+                if (frame.moduleTransparency != null && frame.moduleTransparency[i] < 1f)
+                {
+                    Color c = img.color;
+                    c.a = frame.moduleTransparency[i];
+                    img.color = c;
+                }
+                float posX = frame.locx[i] + mod.halfW;
+                float posY = -(frame.locy[i] + mod.halfH);
+                rt.anchoredPosition = new Vector2(posX, posY); // UI坐标
+                if (frame.moduleScaleX != null && frame.moduleScaleY != null)
+                {
+                    float scaleX = frame.moduleScaleX[i] * frame.frameScaleX;
+                    float scaleY = frame.moduleScaleY[i] * frame.frameScaleY;
+                    rt.localScale = new Vector3(scaleX, scaleY, 1f);
+                }
+                rt.SetSiblingIndex(i); // 代替 sortingOrder
+            }
             return container;
         }
 

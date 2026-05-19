@@ -37,7 +37,7 @@ public class StateIdle : IInputState
                 }
                 lastClickTime = Time.time;
 
-                int editId = context.CurrentEditPanel.GetComponent<PanelScienceEdit>().sc.Id;
+                string editId = context.CurrentEditPanel.GetComponent<PanelScienceEdit>().sc.Id;
 
                 // 情况 A: 点击了当前正在编辑的节点 -> 进入统一拖拽状态
                 if (hit != null && hit.tag == Constants.Tags.Node && hit.GetComponent<Node>().sc.Id == editId)
